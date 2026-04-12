@@ -13,3 +13,271 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  logo          String?
+  currency      String    @default("AUD")
+  contactEmail  String?
+  primaryColour String?
+  createdAt     DateTime  @default(now())
+  users         User[]
+  clients       Client[]
+  contacts      Contact[]
+  suppliers     Supplier[]
+  campaigns     Campaign[]
+  coverages     Coverage[]
+  interactions  Interaction[]
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String?
+  role           String        @default("owner")
+  emailVerified  DateTime?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime      @default(now())
+  accounts       Account[]
+  sessions       Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Client {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  industry       String
+  colour         String
+  bgColour       String
+  initials       String
+  currency       String?
+  createdAt      DateTime     @default(now())
+  campaigns      Campaign[]
+}
+
+model Contact {
+  id               String            @id @default(cuid())
+  organizationId   String
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  name             String
+  email            String?
+  phone            String?
+  publication      String
+  beat             String
+  tier             String
+  health           String            @default("warm")
+  initials         String
+  avatarBg         String
+  avatarFg         String
+  instagram        String?
+  twitter          String?
+  linkedin         String?
+  notes            String?
+  createdAt        DateTime          @default(now())
+  campaignContacts CampaignContact[]
+  outreaches       Outreach[]
+  coverages        Coverage[]
+  interactions     Interaction[]
+}
+
+model Supplier {
+  id                String             @id @default(cuid())
+  organizationId    String
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  name              String
+  serviceCategory   String
+  email             String?
+  phone             String?
+  website           String?
+  notes             String?
+  rating            Int?
+  createdAt         DateTime           @default(now())
+  contacts          SupplierContact[]
+  campaignSuppliers CampaignSupplier[]
+  budgetLineItems   BudgetLineItem[]
+}
+
+model SupplierContact {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  name       String
+  role       String?
+  email      String?
+  phone      String?
+}
+
+model Campaign {
+  id                String             @id @default(cuid())
+  organizationId    String
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  clientId          String
+  client            Client             @relation(fields: [clientId], references: [id])
+  name              String
+  type              String
+  status            String             @default("draft")
+  currentPhase      String?
+  budget            Decimal?
+  startDate         DateTime?
+  dueDate           DateTime?
+  brief             String?
+  createdAt         DateTime           @default(now())
+  phases            CampaignPhase[]
+  campaignContacts  CampaignContact[]
+  campaignSuppliers CampaignSupplier[]
+  budgetLineItems   BudgetLineItem[]
+  outreaches        Outreach[]
+  coverages         Coverage[]
+  interactions      Interaction[]
+  eventDetail       EventDetail?
+}
+
+model CampaignPhase {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name       String
+  order      Int
+  status     String   @default("pending")
+}
+
+model BudgetLineItem {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  description String
+  amount      Decimal
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+}
+
+model CampaignContact {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id])
+  status     String   @default("added")
+
+  @@unique([campaignId, contactId])
+}
+
+model CampaignSupplier {
+  id         String    @id @default(cuid())
+  campaignId String
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+  role       String
+  agreedCost Decimal?
+  status     String    @default("pending")
+
+  @@unique([campaignId, supplierId])
+}
+
+model Outreach {
+  id            String    @id @default(cuid())
+  campaignId    String
+  campaign      Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId     String
+  contact       Contact   @relation(fields: [contactId], references: [id])
+  subject       String
+  body          String
+  status        String    @default("draft")
+  generatedByAI Boolean   @default(false)
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model Coverage {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  campaignId     String?
+  campaign       Campaign?     @relation(fields: [campaignId], references: [id])
+  contactId      String?
+  contact        Contact?      @relation(fields: [contactId], references: [id])
+  publication    String
+  date           DateTime
+  type           String
+  url            String?
+  mediaValue     Decimal?
+  attachmentUrl  String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+}
+
+model Interaction {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  contactId      String
+  contact        Contact      @relation(fields: [contactId], references: [id])
+  type           String
+  date           DateTime
+  summary        String?
+  campaignId     String?
+  campaign       Campaign?    @relation(fields: [campaignId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model EventDetail {
+  id              String          @id @default(cuid())
+  campaignId      String          @unique
+  campaign        Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  venue           String?
+  eventDate       DateTime?
+  eventTime       String?
+  guestCount      Int?
+  runsheetEntries RunsheetEntry[]
+}
+
+model RunsheetEntry {
+  id            String      @id @default(cuid())
+  eventDetailId String
+  eventDetail   EventDetail @relation(fields: [eventDetailId], references: [id], onDelete: Cascade)
+  time          String
+  endTime       String?
+  activity      String
+  assignee      String?
+  location      String?
+  notes         String?
+  order         Int
+}
