@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
+import { getValidToken, sendMail } from "@/lib/email/microsoft-graph";
 
 export async function saveBrief(campaignId: string, brief: string) {
   try {
@@ -225,4 +226,112 @@ export async function suggestContacts(campaignId: string) {
     console.error("suggestContacts error:", error);
     return { error: error instanceof Error ? error.message : "Failed to suggest contacts" };
   }
+}
+
+export async function sendOutreach(outreachId: string) {
+  try {
+    const outreach = await db.outreach.findUnique({
+      where: { id: outreachId },
+      include: {
+        contact: true,
+        campaign: true,
+      },
+    });
+
+    if (!outreach) {
+      return { error: "Outreach not found" };
+    }
+
+    if (outreach.status !== "approved") {
+      return { error: "Outreach must be approved before sending" };
+    }
+
+    if (!outreach.contact.email) {
+      return { error: "Contact has no email address" };
+    }
+
+    // Find an EmailAccount for the org (via user -> organization)
+    const emailAccount = await db.emailAccount.findFirst({
+      where: {
+        user: {
+          organizationId: outreach.campaign.organizationId,
+        },
+      },
+    });
+
+    if (!emailAccount) {
+      return { error: "Connect your email account in Settings first" };
+    }
+
+    const accessToken = await getValidToken(emailAccount.id);
+
+    // Convert body to HTML paragraphs
+    const bodyHtml = outreach.body
+      .split(/\n\n+/)
+      .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+      .join("");
+
+    const result = await sendMail(accessToken, {
+      to: outreach.contact.email,
+      subject: outreach.subject,
+      bodyHtml,
+    });
+
+    await db.outreach.update({
+      where: { id: outreachId },
+      data: {
+        status: "sent",
+        sentAt: new Date(),
+        sentVia: "microsoft_graph",
+        messageId: result.messageId,
+        conversationId: result.conversationId,
+      },
+    });
+
+    await db.interaction.create({
+      data: {
+        type: "email_sent",
+        contactId: outreach.contactId,
+        campaignId: outreach.campaignId,
+        organizationId: outreach.campaign.organizationId,
+        date: new Date(),
+        summary: outreach.subject,
+      },
+    });
+
+    revalidatePath(`/campaigns/${outreach.campaignId}`);
+    revalidatePath("/outreach");
+    return { success: true };
+  } catch (error) {
+    console.error("sendOutreach error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to send outreach" };
+  }
+}
+
+export async function sendBulkOutreach(campaignId: string) {
+  const approved = await db.outreach.findMany({
+    where: {
+      campaignId,
+      status: "approved",
+    },
+    select: { id: true },
+  });
+
+  let sent = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (const outreach of approved) {
+    const result = await sendOutreach(outreach.id);
+    if ("success" in result && result.success) {
+      sent++;
+    } else {
+      failed++;
+      if ("error" in result && result.error) {
+        errors.push(result.error);
+      }
+    }
+  }
+
+  return { sent, failed, errors };
 }
