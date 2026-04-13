@@ -1,12 +1,32 @@
-export default function PageName() {
+import { notFound } from "next/navigation";
+import { getContactById, getContactDetailStats } from "@/lib/queries/contact-queries";
+import { ContactDetailClient } from "@/components/contacts/contact-detail-client";
+
+export const dynamic = "force-dynamic";
+
+
+export default async function ContactDetailPage({
+  params,
+}: {
+  params: Promise<{ contactId: string }>;
+}) {
+  const { contactId } = await params;
+
+  const [contact, stats] = await Promise.all([
+    getContactById(contactId),
+    getContactDetailStats(contactId),
+  ]);
+
+  if (!contact) {
+    notFound();
+  }
+
+  // Serialize Dates to ISO strings and Decimals to numbers for client components
+  const serializedContact = JSON.parse(JSON.stringify(contact));
+
   return (
-    <div className="flex flex-1 items-center justify-center p-6" style={{ minHeight: "60vh" }}>
-      <div className="text-center">
-        <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Contact Detail</h2>
-        <p className="mt-1 text-[13px]" style={{ color: "var(--text-muted-custom)" }}>
-          Coming in Phase 2
-        </p>
-      </div>
+    <div style={{ padding: "16px" }} className="md:p-6">
+      <ContactDetailClient contact={serializedContact} stats={stats} />
     </div>
   );
 }
