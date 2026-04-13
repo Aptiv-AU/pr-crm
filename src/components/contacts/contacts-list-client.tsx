@@ -45,7 +45,7 @@ export function ContactsListClient({ contacts, stats, beats }: ContactsListClien
   }
 
   return (
-    <>
+    <div className="p-4 md:p-6">
       {/* Header row */}
       <div className="flex items-center justify-end" style={{ marginBottom: 16 }}>
         <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
@@ -84,6 +84,6 @@ export function ContactsListClient({ contacts, stats, beats }: ContactsListClien
       <SlideOverPanel open={addOpen} onClose={() => setAddOpen(false)} title="Add Contact">
         {addOpen && <ContactForm onSuccess={handleSuccess} />}
       </SlideOverPanel>
-    </>
+    </div>
   );
 }
