@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { updateAISettings, updateOrganizationSettings } from "@/actions/settings-actions";
 import { type AIProvider, PROVIDER_INFO, DEFAULT_MODELS } from "@/lib/ai/provider";
 
@@ -20,11 +21,17 @@ interface SettingsClientProps {
     openrouter: boolean;
     minimax: boolean;
   };
+  emailAccount?: {
+    id: string;
+    email: string;
+    provider: string;
+    createdAt: string;
+  } | null;
 }
 
 const PROVIDERS: AIProvider[] = ["anthropic", "openai", "openrouter", "minimax"];
 
-export function SettingsClient({ org, apiKeyStatus }: SettingsClientProps) {
+export function SettingsClient({ org, apiKeyStatus, emailAccount }: SettingsClientProps) {
   const router = useRouter();
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>(
     (org.aiProvider as AIProvider) ?? "anthropic"
@@ -167,6 +174,75 @@ export function SettingsClient({ org, apiKeyStatus }: SettingsClientProps) {
             </span>
           )}
         </div>
+      </Card>
+
+      {/* Email Account section */}
+      <Card style={{ padding: 20, marginBottom: 16 }}>
+        <h2
+          className="text-[16px] font-bold"
+          style={{ color: "var(--text-primary)", marginBottom: 4 }}
+        >
+          Email Account
+        </h2>
+        <p
+          className="text-[12px]"
+          style={{ color: "var(--text-sub)", marginBottom: 16 }}
+        >
+          Connect your Outlook account to send pitches directly
+        </p>
+
+        {emailAccount ? (
+          <div>
+            <div
+              className="text-[13px] font-medium"
+              style={{ color: "var(--text-primary)", marginBottom: 4 }}
+            >
+              {emailAccount.email}
+            </div>
+            <div className="text-[12px]" style={{ color: "var(--text-sub)", marginBottom: 2 }}>
+              Microsoft Outlook
+            </div>
+            <div className="text-[12px]" style={{ color: "var(--text-muted-custom)", marginBottom: 12 }}>
+              Connected{" "}
+              {new Date(emailAccount.createdAt).toLocaleDateString("en-AU", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              style={{ color: "var(--red, #ef4444)" }}
+              onClick={async () => {
+                await fetch("/api/email/disconnect", { method: "POST" });
+                window.location.reload();
+              }}
+            >
+              Disconnect
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <a
+              href="/api/email/connect"
+              className="inline-flex items-center justify-center rounded-[7px] font-medium whitespace-nowrap cursor-pointer transition-opacity hover:opacity-80 h-[30px] px-[10px] text-[12px] gap-[5px]"
+              style={{
+                backgroundColor: "var(--accent-custom)",
+                color: "#fff",
+                border: "1px solid var(--accent-custom)",
+                textDecoration: "none",
+                marginBottom: 8,
+              }}
+            >
+              <Icon name="mail" size={13} />
+              Connect Outlook
+            </a>
+            <div className="text-[12px]" style={{ color: "var(--text-muted-custom)", marginTop: 8 }}>
+              Requires Microsoft 365 or Outlook. Pitches will be sent from your email address.
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Organization section */}

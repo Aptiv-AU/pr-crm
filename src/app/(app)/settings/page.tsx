@@ -16,6 +16,10 @@ export default async function SettingsPage() {
     minimax: !!(process.env.MINIMAX_API_KEY && process.env.MINIMAX_API_KEY !== "" && !process.env.MINIMAX_API_KEY.startsWith("your-")),
   };
 
+  const emailAccount = await db.emailAccount.findFirst({
+    select: { id: true, email: true, provider: true, createdAt: true },
+  });
+
   return (
     <SettingsClient
       org={{
@@ -25,6 +29,16 @@ export default async function SettingsPage() {
         aiModel: org.aiModel,
       }}
       apiKeyStatus={apiKeyStatus}
+      emailAccount={
+        emailAccount
+          ? {
+              id: emailAccount.id,
+              email: emailAccount.email,
+              provider: emailAccount.provider,
+              createdAt: emailAccount.createdAt.toISOString(),
+            }
+          : null
+      }
     />
   );
 }
