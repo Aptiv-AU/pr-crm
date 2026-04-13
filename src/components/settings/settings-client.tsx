@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { updateAISettings, updateOrganizationSettings } from "@/actions/settings-actions";
@@ -24,6 +25,7 @@ interface SettingsClientProps {
 const PROVIDERS: AIProvider[] = ["anthropic", "openai", "openrouter", "minimax"];
 
 export function SettingsClient({ org, apiKeyStatus }: SettingsClientProps) {
+  const router = useRouter();
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>(
     (org.aiProvider as AIProvider) ?? "anthropic"
   );
@@ -51,6 +53,7 @@ export function SettingsClient({ org, apiKeyStatus }: SettingsClientProps) {
     await updateAISettings(formData);
     setAiSaving(false);
     setAiSaved(true);
+    router.refresh();
   }
 
   async function handleSaveOrg() {
@@ -62,6 +65,7 @@ export function SettingsClient({ org, apiKeyStatus }: SettingsClientProps) {
     await updateOrganizationSettings(formData);
     setOrgSaving(false);
     setOrgSaved(true);
+    router.refresh();
   }
 
   return (
