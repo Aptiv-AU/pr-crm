@@ -17,14 +17,17 @@ interface NavItem {
   badge?: string;
 }
 
-const navItems: NavItem[] = [
+const globalItems: NavItem[] = [
   { label: "Workspaces", icon: "workspace", href: "/workspaces" },
-  { label: "Contacts", icon: "contacts", href: "/contacts", badge: "248" },
+  { label: "Contacts", icon: "contacts", href: "/contacts" },
   { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
-  { label: "Campaigns", icon: "campaigns", href: "/campaigns", badge: "6" },
-  { label: "Outreach", icon: "outreach", href: "/outreach", badge: "4" },
-  { label: "Events", icon: "events", href: "/events" },
   { label: "Coverage", icon: "coverage", href: "/coverage" },
+];
+
+const workspaceItems: NavItem[] = [
+  { label: "Campaigns", icon: "campaigns", href: "/campaigns" },
+  { label: "Outreach", icon: "outreach", href: "/outreach" },
+  { label: "Events", icon: "events", href: "/events" },
 ];
 
 interface MobileDrawerProps {
@@ -129,8 +132,15 @@ export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 px-3 pt-2 flex flex-col gap-0.5">
-          {navItems.map((item) => {
+        <nav className="flex-1 px-3 pt-2 flex flex-col gap-0.5 overflow-y-auto">
+          {/* Directory */}
+          <div
+            className="px-2 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--text-muted-custom)" }}
+          >
+            Directory
+          </div>
+          {globalItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
@@ -138,28 +148,37 @@ export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
                 href={item.href}
                 className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors no-underline"
                 style={{
-                  backgroundColor: isActive
-                    ? "var(--active-bg)"
-                    : "transparent",
+                  backgroundColor: isActive ? "var(--active-bg)" : "transparent",
                   color: isActive ? "var(--accent-text)" : "var(--text-sub)",
                 }}
               >
-                <Icon
-                  name={item.icon}
-                  size={14}
-                  color={
-                    isActive ? "var(--accent-custom)" : "var(--text-sub)"
-                  }
-                />
+                <Icon name={item.icon} size={14} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
                 <span className="flex-1">{item.label}</span>
-                {item.badge && (
-                  <span
-                    className="text-[11px] font-normal"
-                    style={{ color: "var(--text-muted-custom)" }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
+              </Link>
+            );
+          })}
+
+          {/* Workspace */}
+          <div
+            className="px-2 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--text-muted-custom)" }}
+          >
+            Workspace
+          </div>
+          {workspaceItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors no-underline"
+                style={{
+                  backgroundColor: isActive ? "var(--active-bg)" : "transparent",
+                  color: isActive ? "var(--accent-text)" : "var(--text-sub)",
+                }}
+              >
+                <Icon name={item.icon} size={14} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
+                <span className="flex-1">{item.label}</span>
               </Link>
             );
           })}
