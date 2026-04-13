@@ -16,6 +16,7 @@ interface ContactRow {
   tier: string;
   health: string;
   createdAt: Date | string;
+  lastContactDate?: string | null;
 }
 
 interface ContactCardListProps {

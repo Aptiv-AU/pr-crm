@@ -27,6 +27,7 @@ export default async function ContactsPage() {
     tier: c.tier,
     health: c.health,
     createdAt: c.createdAt.toISOString(),
+    lastContactDate: c.interactions[0]?.date?.toISOString() ?? null,
   }));
 
   return (

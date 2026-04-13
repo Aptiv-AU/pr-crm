@@ -16,6 +16,7 @@ interface ContactRow {
   tier: string;
   health: string;
   createdAt: Date | string;
+  lastContactDate?: string | null;
 }
 
 interface ContactTableProps {
@@ -134,7 +135,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
             <td style={cellStyle}>
               <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span style={{ fontSize: 12, color: "var(--text-muted-custom)" }}>
-                  {relativeTime(contact.createdAt)}
+                  {contact.lastContactDate ? relativeTime(contact.lastContactDate) : "—"}
                 </span>
               </Link>
             </td>

@@ -6,6 +6,13 @@ export async function getContacts(organizationId: string, beat?: string) {
       organizationId,
       ...(beat && beat !== "All" ? { beat } : {}),
     },
+    include: {
+      interactions: {
+        select: { date: true },
+        orderBy: { date: "desc" },
+        take: 1,
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
