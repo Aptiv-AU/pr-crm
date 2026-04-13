@@ -103,47 +103,67 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#888888",
   },
-  tableSection: {
+  coverageSection: {
     paddingHorizontal: 32,
   },
-  tableTitle: {
+  coverageTitle: {
     fontSize: 12,
     fontFamily: "Helvetica-Bold",
     fontWeight: 700,
-    marginBottom: 8,
+    marginBottom: 10,
     color: "#1a1a1a",
   },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 4,
-    padding: "6px 8px",
-    marginBottom: 4,
+  coverageCard: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderStyle: "solid",
+    borderRadius: 8,
+    padding: "12px 14px",
+    marginBottom: 8,
   },
-  tableHeaderText: {
-    fontSize: 8,
+  coverageCardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  coveragePublication: {
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     fontWeight: 700,
+    color: "#1a1a1a",
+    flex: 1,
+  },
+  coverageTypeBadge: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    fontWeight: 600,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    backgroundColor: "#f0f0f0",
     color: "#666666",
-    textTransform: "uppercase",
   },
-  tableRow: {
-    flexDirection: "row",
-    padding: "6px 8px",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    borderBottomStyle: "solid",
-  },
-  tableCell: {
+  coverageDate: {
     fontSize: 9,
-    color: "#333333",
+    color: "#999999",
   },
-  colPublication: { flex: 2.5 },
-  colContact: { flex: 2 },
-  colDate: { flex: 1.5 },
-  colType: { flex: 1 },
-  colValue: { flex: 1.5, textAlign: "right" as const },
-  colLink: { flex: 2 },
+  coverageDetail: {
+    fontSize: 9,
+    color: "#666666",
+    marginTop: 4,
+  },
+  coverageValue: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    fontWeight: 700,
+    color: "#15803D",
+    marginTop: 4,
+  },
+  coverageLink: {
+    fontSize: 8,
+    color: "#2563EB",
+    marginTop: 3,
+  },
   footer: {
     position: "absolute",
     bottom: 20,
@@ -214,38 +234,41 @@ export function CampaignReport(props: CampaignReportProps) {
           </View>
         </View>
 
-        {/* Coverage table */}
+        {/* Coverage cards */}
         {props.coverages.length > 0 && (
-          <View style={styles.tableSection}>
-            <Text style={styles.tableTitle}>Coverage</Text>
+          <View style={styles.coverageSection}>
+            <Text style={styles.coverageTitle}>Coverage</Text>
 
-            {/* Header row */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, styles.colPublication]}>Publication</Text>
-              <Text style={[styles.tableHeaderText, styles.colContact]}>Contact</Text>
-              <Text style={[styles.tableHeaderText, styles.colDate]}>Date</Text>
-              <Text style={[styles.tableHeaderText, styles.colType]}>Type</Text>
-              <Text style={[styles.tableHeaderText, styles.colValue]}>Value</Text>
-              <Text style={[styles.tableHeaderText, styles.colLink]}>Link</Text>
-            </View>
+            {props.coverages.map((cov, i) => {
+              const typeLabel = cov.type.charAt(0).toUpperCase() + cov.type.slice(1);
+              return (
+                <View key={i} style={styles.coverageCard}>
+                  {/* Row 1: publication + type badge + date */}
+                  <View style={styles.coverageCardRow}>
+                    <Text style={styles.coveragePublication}>{cov.publication}</Text>
+                    <Text style={styles.coverageTypeBadge}>{typeLabel}</Text>
+                    <Text style={styles.coverageDate}>{formatDate(cov.date)}</Text>
+                  </View>
 
-            {/* Data rows */}
-            {props.coverages.map((cov, i) => (
-              <View key={i} style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.colPublication]}>{cov.publication}</Text>
-                <Text style={[styles.tableCell, styles.colContact]}>{cov.contactName ?? "—"}</Text>
-                <Text style={[styles.tableCell, styles.colDate]}>{formatDate(cov.date)}</Text>
-                <Text style={[styles.tableCell, styles.colType]}>
-                  {cov.type.charAt(0).toUpperCase() + cov.type.slice(1)}
-                </Text>
-                <Text style={[styles.tableCell, styles.colValue]}>
-                  {cov.mediaValue != null ? formatCurrency(cov.mediaValue, props.currency) : "—"}
-                </Text>
-                <Text style={[styles.tableCell, styles.colLink, { color: "#2563EB", fontSize: 8 }]}>
-                  {cov.url ?? "—"}
-                </Text>
-              </View>
-            ))}
+                  {/* Row 2: contact */}
+                  {cov.contactName && (
+                    <Text style={styles.coverageDetail}>Contact: {cov.contactName}</Text>
+                  )}
+
+                  {/* Row 3: value + link */}
+                  <View style={[styles.coverageCardRow, { marginTop: 4 }]}>
+                    {cov.mediaValue != null && (
+                      <Text style={styles.coverageValue}>
+                        {formatCurrency(cov.mediaValue, props.currency)}
+                      </Text>
+                    )}
+                  </View>
+                  {cov.url && (
+                    <Text style={styles.coverageLink}>{cov.url}</Text>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
 
