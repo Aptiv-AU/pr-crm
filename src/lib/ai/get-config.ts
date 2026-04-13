@@ -2,21 +2,37 @@ import { db } from "@/lib/db";
 import type { AIConfig, AIProvider } from "./provider";
 import { DEFAULT_MODELS } from "./provider";
 
+const ENV_KEYS: Record<AIProvider, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  minimax: "MINIMAX_API_KEY",
+};
+
 export async function getAIConfig(): Promise<AIConfig | null> {
   const org = await db.organization.findFirst();
   if (!org) return null;
 
-  // For now, read from env vars. Later this will come from org settings in the DB.
-  // Check each provider in order of preference
-  const providers: { provider: AIProvider; envKey: string }[] = [
-    { provider: "anthropic", envKey: "ANTHROPIC_API_KEY" },
-    { provider: "openai", envKey: "OPENAI_API_KEY" },
-    { provider: "openrouter", envKey: "OPENROUTER_API_KEY" },
-    { provider: "minimax", envKey: "MINIMAX_API_KEY" },
-  ];
+  // If the organization has an explicit AI provider set, use that
+  if (org.aiProvider) {
+    const provider = org.aiProvider as AIProvider;
+    const envKey = ENV_KEYS[provider];
+    const apiKey = envKey ? process.env[envKey] : undefined;
 
-  for (const { provider, envKey } of providers) {
-    const apiKey = process.env[envKey];
+    if (apiKey && apiKey !== "" && !apiKey.startsWith("your-")) {
+      return {
+        provider,
+        apiKey,
+        model: org.aiModel ?? DEFAULT_MODELS[provider],
+      };
+    }
+  }
+
+  // Fall back to env var scanning — first available provider wins
+  const providers: AIProvider[] = ["anthropic", "openai", "openrouter", "minimax"];
+
+  for (const provider of providers) {
+    const apiKey = process.env[ENV_KEYS[provider]];
     if (apiKey && apiKey !== "" && !apiKey.startsWith("your-")) {
       return {
         provider,

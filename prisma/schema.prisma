@@ -20,6 +20,8 @@ model Organization {
   currency      String    @default("AUD")
   contactEmail  String?
   primaryColour String?
+  aiProvider    String?
+  aiModel       String?
   createdAt     DateTime  @default(now())
   users         User[]
   clients       Client[]
