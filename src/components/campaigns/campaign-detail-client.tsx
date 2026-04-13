@@ -63,10 +63,16 @@ interface CampaignDetailClientProps {
     }[];
     coverages: {
       id: string;
-      publication: string | null;
-      date: string | null;
-      type: string | null;
+      publication: string;
+      date: string;
+      type: string;
+      url: string | null;
       mediaValue: number | null;
+      attachmentUrl: string | null;
+      notes: string | null;
+      campaignId: string | null;
+      contactId: string | null;
+      contact: { id: string; name: string } | null;
     }[];
     outreaches: {
       id: string;
@@ -142,6 +148,8 @@ export function CampaignDetailClient({
             client: campaign.client,
           }}
           outreaches={campaign.outreaches}
+          coverages={campaign.coverages}
+          campaignName={campaign.name}
         />
       </div>
 

@@ -8,6 +8,7 @@ import { CampaignContactsTab } from "./campaign-contacts-tab";
 import { CampaignSuppliersTab } from "./campaign-suppliers-tab";
 import { CampaignBudget } from "./campaign-budget";
 import { DraftPitchesPhase } from "./phase-draft-pitches";
+import { CampaignCoverageTab } from "./campaign-coverage-tab";
 
 interface CampaignTabsProps {
   phases: { id: string; name: string; order: number; status: string }[];
@@ -88,6 +89,20 @@ interface CampaignTabsProps {
       publication: string | null;
     };
   }[];
+  coverages?: {
+    id: string;
+    publication: string;
+    date: string;
+    type: string;
+    url: string | null;
+    mediaValue: number | null;
+    attachmentUrl: string | null;
+    notes: string | null;
+    campaignId: string | null;
+    contactId: string | null;
+    contact: { id: string; name: string } | null;
+  }[];
+  campaignName?: string;
 }
 
 const tabs = ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
@@ -105,6 +120,8 @@ export function CampaignTabs({
   totalBudget,
   campaign,
   outreaches,
+  coverages,
+  campaignName,
 }: CampaignTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Phases");
   const router = useRouter();
@@ -200,16 +217,15 @@ export function CampaignTabs({
       )}
 
       {activeTab === "Coverage" && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px 20px",
-            color: "var(--text-muted-custom)",
-            fontSize: 13,
-          }}
-        >
-          Coming in Phase 6
-        </div>
+        <CampaignCoverageTab
+          campaignId={campaignId}
+          campaignName={campaignName ?? ""}
+          coverages={coverages ?? []}
+          contacts={campaignContacts.map((cc) => ({
+            id: cc.contact.id,
+            name: cc.contact.name,
+          }))}
+        />
       )}
     </div>
   );

@@ -117,8 +117,20 @@ export async function getCampaignById(campaignId: string) {
           publication: true,
           date: true,
           type: true,
+          url: true,
           mediaValue: true,
+          attachmentUrl: true,
+          notes: true,
+          campaignId: true,
+          contactId: true,
+          contact: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
+        orderBy: { date: "desc" },
       },
     },
   });

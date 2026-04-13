@@ -114,7 +114,13 @@ export default async function CampaignDetailPage({
       publication: cov.publication,
       date: cov.date ? cov.date.toISOString() : null,
       type: cov.type,
+      url: cov.url,
       mediaValue: cov.mediaValue ? Number(cov.mediaValue) : null,
+      attachmentUrl: cov.attachmentUrl,
+      notes: cov.notes,
+      campaignId: cov.campaignId,
+      contactId: cov.contactId,
+      contact: cov.contact,
     })),
     outreaches: campaign.outreaches.map((o) => ({
       id: o.id,
