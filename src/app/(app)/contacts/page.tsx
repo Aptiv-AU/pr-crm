@@ -1,12 +1,39 @@
-export default function PageName() {
+import { db } from "@/lib/db";
+import { getContacts, getContactStats, getContactBeats } from "@/lib/queries/contact-queries";
+import { ContactsListClient } from "@/components/contacts/contacts-list-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function ContactsPage() {
+  let org = await db.organization.findFirst();
+  if (!org) {
+    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
+  }
+
+  const [contacts, stats, beats] = await Promise.all([
+    getContacts(org.id),
+    getContactStats(org.id),
+    getContactBeats(org.id),
+  ]);
+
+  const serializedContacts = contacts.map((c) => ({
+    id: c.id,
+    name: c.name,
+    initials: c.initials,
+    avatarBg: c.avatarBg,
+    avatarFg: c.avatarFg,
+    publication: c.publication,
+    beat: c.beat,
+    tier: c.tier,
+    health: c.health,
+    createdAt: c.createdAt.toISOString(),
+  }));
+
   return (
-    <div className="flex flex-1 items-center justify-center p-6" style={{ minHeight: "60vh" }}>
-      <div className="text-center">
-        <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Contacts</h2>
-        <p className="mt-1 text-[13px]" style={{ color: "var(--text-muted-custom)" }}>
-          Coming in Phase 2
-        </p>
-      </div>
-    </div>
+    <ContactsListClient
+      contacts={serializedContacts}
+      stats={stats}
+      beats={["All", ...beats]}
+    />
   );
 }
