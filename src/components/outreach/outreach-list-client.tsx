@@ -1,0 +1,178 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { StatsBar } from "@/components/shared/stats-bar";
+import { FilterPills } from "@/components/shared/filter-pills";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
+
+interface OutreachContact {
+  id: string;
+  name: string;
+  initials: string;
+  avatarBg: string;
+  avatarFg: string;
+  publication: string;
+}
+
+interface OutreachClient {
+  id: string;
+  name: string;
+  initials: string;
+  colour: string;
+  bgColour: string;
+}
+
+interface OutreachCampaign {
+  id: string;
+  name: string;
+  client: OutreachClient;
+}
+
+interface OutreachRow {
+  id: string;
+  subject: string;
+  status: string;
+  createdAt: string;
+  contact: OutreachContact;
+  campaign: OutreachCampaign;
+}
+
+interface OutreachStats {
+  total: number;
+  draft: number;
+  approved: number;
+  sent: number;
+  replied: number;
+}
+
+interface OutreachListClientProps {
+  outreaches: OutreachRow[];
+  stats: OutreachStats;
+}
+
+const STATUS_FILTERS = ["All", "Draft", "Approved", "Sent", "Replied"];
+
+const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
+  draft: "draft",
+  approved: "outreach",
+  sent: "active",
+  replied: "warm",
+};
+
+export function OutreachListClient({ outreaches, stats }: OutreachListClientProps) {
+  const [selectedStatus, setSelectedStatus] = useState("All");
+
+  const filtered = useMemo(() => {
+    if (selectedStatus === "All") return outreaches;
+    return outreaches.filter((o) => o.status === selectedStatus.toLowerCase());
+  }, [outreaches, selectedStatus]);
+
+  return (
+    <div className="p-4 md:p-6">
+      {/* Stats */}
+      <div style={{ marginBottom: 16 }}>
+        <StatsBar
+          stats={[
+            { value: stats.total, label: "Total pitches" },
+            { value: stats.draft, label: "Draft" },
+            { value: stats.approved, label: "Approved" },
+            { value: stats.sent, label: "Sent" },
+          ]}
+        />
+      </div>
+
+      {/* Filter pills */}
+      <div style={{ marginBottom: 12 }}>
+        <FilterPills options={STATUS_FILTERS} selected={selectedStatus} onChange={setSelectedStatus} />
+      </div>
+
+      {/* Outreach list */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center" style={{ minHeight: "40vh" }}>
+          <div className="text-center">
+            <p className="text-[13px]" style={{ color: "var(--text-muted-custom)" }}>
+              No pitches drafted yet. Create a press campaign to get started.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-[8px]">
+          {filtered.map((outreach) => (
+            <Link
+              key={outreach.id}
+              href={`/campaigns/${outreach.campaign.id}`}
+              className="block rounded-[10px] p-3 transition-colors"
+              style={{
+                border: "1px solid var(--border-custom)",
+                backgroundColor: "var(--card-bg)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-mid)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-custom)";
+              }}
+            >
+              {/* Row 1: Contact info + status */}
+              <div className="flex items-center gap-[8px]">
+                <Avatar
+                  initials={outreach.contact.initials}
+                  bg={outreach.contact.avatarBg}
+                  fg={outreach.contact.avatarFg}
+                  size={22}
+                />
+                <span
+                  className="text-[13px] font-medium truncate"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {outreach.contact.name}
+                </span>
+                <span
+                  className="text-[12px] truncate shrink-0"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  {outreach.contact.publication}
+                </span>
+                <div className="ml-auto shrink-0">
+                  <Badge variant={STATUS_BADGE_VARIANT[outreach.status] ?? "default"}>
+                    {outreach.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Row 2: Campaign + subject */}
+              <div className="flex items-center gap-[8px] mt-[6px]">
+                <span
+                  className="inline-flex items-center justify-center rounded-[4px] text-[10px] font-semibold shrink-0"
+                  style={{
+                    width: 16,
+                    height: 16,
+                    backgroundColor: outreach.campaign.client.bgColour,
+                    color: outreach.campaign.client.colour,
+                    lineHeight: 1,
+                  }}
+                >
+                  {outreach.campaign.client.initials}
+                </span>
+                <span
+                  className="text-[12px] shrink-0"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  {outreach.campaign.name}
+                </span>
+                <span
+                  className="text-[13px] truncate"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {outreach.subject}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
