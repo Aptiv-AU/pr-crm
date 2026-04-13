@@ -47,7 +47,8 @@ export async function createClient(formData: FormData) {
 
     return { success: true, clientId: client.id };
   } catch (error) {
-    return { error: "Failed to create client" };
+    console.error("createClient error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to create client" };
   }
 }
 
@@ -79,6 +80,7 @@ export async function updateClient(clientId: string, formData: FormData) {
 
     return { success: true };
   } catch (error) {
-    return { error: "Failed to update client" };
+    console.error("updateClient error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to update client" };
   }
 }
