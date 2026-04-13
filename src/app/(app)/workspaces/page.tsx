@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
-import { StatsBar } from "@/components/workspaces/stats-bar";
+import { StatsBar } from "@/components/shared/stats-bar";
 import { ClientCard } from "@/components/workspaces/client-card";
 import { AddClientButton } from "@/components/workspaces/add-client-button";
 
