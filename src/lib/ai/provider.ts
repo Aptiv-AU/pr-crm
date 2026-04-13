@@ -21,23 +21,28 @@ export const DEFAULT_MODELS: Record<AIProvider, string> = {
   anthropic: "claude-sonnet-4-20250514",
   openai: "gpt-4o",
   openrouter: "anthropic/claude-sonnet-4",
-  minimax: "MiniMax-Text-01",
+  minimax: "MiniMax-M2.5",
 };
 
 // Provider display info
-export const PROVIDER_INFO: Record<AIProvider, { name: string; baseUrl?: string }> = {
-  anthropic: { name: "Claude (Anthropic)" },
-  openai: { name: "OpenAI GPT" },
-  openrouter: { name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1" },
-  minimax: { name: "MiniMax", baseUrl: "https://api.minimaxi.chat/v1" },
+export const PROVIDER_INFO: Record<AIProvider, { name: string; baseUrl?: string; sdk: "anthropic" | "openai" }> = {
+  anthropic: { name: "Claude (Anthropic)", sdk: "anthropic" },
+  openai: { name: "OpenAI GPT", sdk: "openai" },
+  openrouter: { name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", sdk: "openai" },
+  minimax: { name: "MiniMax", baseUrl: "https://api.minimax.io/anthropic", sdk: "anthropic" },
 };
 
 export async function generateText(config: AIConfig, options: GenerateOptions): Promise<string> {
   const { provider, apiKey, model } = config;
   const { systemPrompt, userPrompt, temperature = 0.7, maxTokens = 1024 } = options;
+  const info = PROVIDER_INFO[provider];
 
-  if (provider === "anthropic") {
-    const client = new Anthropic({ apiKey });
+  if (info.sdk === "anthropic") {
+    // Anthropic SDK — used for both Anthropic direct and MiniMax (Anthropic-compatible)
+    const client = new Anthropic({
+      apiKey,
+      ...(info.baseUrl ? { baseURL: info.baseUrl } : {}),
+    });
     const response = await client.messages.create({
       model,
       max_tokens: maxTokens,
@@ -49,11 +54,10 @@ export async function generateText(config: AIConfig, options: GenerateOptions): 
     return textBlock?.text ?? "";
   }
 
-  // OpenAI-compatible providers (openai, openrouter, minimax)
-  const baseURL = PROVIDER_INFO[provider]?.baseUrl;
+  // OpenAI-compatible providers (openai, openrouter)
   const client = new OpenAI({
     apiKey,
-    ...(baseURL ? { baseURL } : {}),
+    ...(info.baseUrl ? { baseURL: info.baseUrl } : {}),
   });
 
   const response = await client.chat.completions.create({
@@ -73,9 +77,14 @@ export async function generateText(config: AIConfig, options: GenerateOptions): 
 export async function* generateTextStream(config: AIConfig, options: GenerateOptions): AsyncGenerator<string> {
   const { provider, apiKey, model } = config;
   const { systemPrompt, userPrompt, temperature = 0.7, maxTokens = 1024 } = options;
+  const info = PROVIDER_INFO[provider];
 
-  if (provider === "anthropic") {
-    const client = new Anthropic({ apiKey });
+  if (info.sdk === "anthropic") {
+    // Anthropic SDK streaming — used for Anthropic and MiniMax
+    const client = new Anthropic({
+      apiKey,
+      ...(info.baseUrl ? { baseURL: info.baseUrl } : {}),
+    });
     const stream = await client.messages.stream({
       model,
       max_tokens: maxTokens,
@@ -91,11 +100,10 @@ export async function* generateTextStream(config: AIConfig, options: GenerateOpt
     return;
   }
 
-  // OpenAI-compatible streaming
-  const baseURL = PROVIDER_INFO[provider]?.baseUrl;
+  // OpenAI-compatible streaming (openai, openrouter)
   const client = new OpenAI({
     apiKey,
-    ...(baseURL ? { baseURL } : {}),
+    ...(info.baseUrl ? { baseURL: info.baseUrl } : {}),
   });
 
   const stream = await client.chat.completions.create({
