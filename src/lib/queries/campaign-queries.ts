@@ -94,9 +94,21 @@ export async function getCampaignById(campaignId: string) {
         select: {
           id: true,
           subject: true,
+          body: true,
           status: true,
+          generatedByAI: true,
           contactId: true,
           createdAt: true,
+          contact: {
+            select: {
+              id: true,
+              name: true,
+              initials: true,
+              avatarBg: true,
+              avatarFg: true,
+              publication: true,
+            },
+          },
         },
       },
       coverages: {

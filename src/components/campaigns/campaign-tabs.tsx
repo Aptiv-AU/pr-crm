@@ -26,6 +26,7 @@ interface CampaignTabsProps {
     };
   }[];
   campaignId: string;
+  campaignType: string;
   availableContacts: {
     id: string;
     name: string;
@@ -58,6 +59,34 @@ interface CampaignTabsProps {
     supplier: { id: string; name: string } | null;
   }[];
   totalBudget: number | null;
+  campaign?: {
+    id: string;
+    brief: string | null;
+    client: {
+      id: string;
+      name: string;
+      industry: string | null;
+      initials: string;
+      colour: string;
+      bgColour: string;
+    };
+  };
+  outreaches?: {
+    id: string;
+    subject: string;
+    body: string;
+    status: string;
+    generatedByAI: boolean;
+    contactId: string;
+    contact: {
+      id: string;
+      name: string;
+      initials: string;
+      avatarBg: string;
+      avatarFg: string;
+      publication: string | null;
+    };
+  }[];
 }
 
 const tabs = ["Phases", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
@@ -67,11 +96,14 @@ export function CampaignTabs({
   phases,
   campaignContacts,
   campaignId,
+  campaignType,
   availableContacts,
   campaignSuppliers,
   availableSuppliers,
   budgetLineItems,
   totalBudget,
+  campaign,
+  outreaches,
 }: CampaignTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Phases");
   const router = useRouter();
@@ -126,7 +158,15 @@ export function CampaignTabs({
 
       {/* Tab content */}
       {activeTab === "Phases" && (
-        <CampaignPhaseList phases={phases} onUpdatePhase={handleUpdatePhase} />
+        <CampaignPhaseList
+          phases={phases}
+          campaignType={campaignType}
+          onUpdatePhase={handleUpdatePhase}
+          campaign={campaign}
+          campaignContacts={campaignContacts}
+          availableContacts={availableContacts}
+          outreaches={outreaches}
+        />
       )}
 
       {activeTab === "Contacts" && (

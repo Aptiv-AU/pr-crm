@@ -116,6 +116,15 @@ export default async function CampaignDetailPage({
       type: cov.type,
       mediaValue: cov.mediaValue ? Number(cov.mediaValue) : null,
     })),
+    outreaches: campaign.outreaches.map((o) => ({
+      id: o.id,
+      subject: o.subject,
+      body: o.body,
+      status: o.status,
+      generatedByAI: o.generatedByAI,
+      contactId: o.contactId,
+      contact: o.contact,
+    })),
   };
 
   return (

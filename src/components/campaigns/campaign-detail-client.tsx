@@ -68,6 +68,22 @@ interface CampaignDetailClientProps {
       type: string | null;
       mediaValue: number | null;
     }[];
+    outreaches: {
+      id: string;
+      subject: string;
+      body: string;
+      status: string;
+      generatedByAI: boolean;
+      contactId: string;
+      contact: {
+        id: string;
+        name: string;
+        initials: string;
+        avatarBg: string;
+        avatarFg: string;
+        publication: string | null;
+      };
+    }[];
   };
   budgetStats: { spent: number; total: number | null };
   availableContacts: {
@@ -114,11 +130,18 @@ export function CampaignDetailClient({
           phases={campaign.phases}
           campaignContacts={campaign.campaignContacts}
           campaignId={campaign.id}
+          campaignType={campaign.type}
           availableContacts={availableContacts}
           campaignSuppliers={campaign.campaignSuppliers}
           availableSuppliers={availableSuppliers}
           budgetLineItems={campaign.budgetLineItems}
           totalBudget={campaign.budget}
+          campaign={{
+            id: campaign.id,
+            brief: campaign.brief,
+            client: campaign.client,
+          }}
+          outreaches={campaign.outreaches}
         />
       </div>
 
