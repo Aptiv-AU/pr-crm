@@ -5,17 +5,27 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { Topbar } from "@/components/layout/topbar";
 
-interface AppShellProps {
-  children: React.ReactNode;
+interface ClientOption {
+  id: string;
+  name: string;
+  industry: string;
+  colour: string;
+  bgColour: string;
+  initials: string;
 }
 
-export function AppShell({ children }: AppShellProps) {
+interface AppShellProps {
+  children: React.ReactNode;
+  clients: ClientOption[];
+}
+
+export function AppShell({ children, clients }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: "var(--page-bg)" }}>
-      <Sidebar />
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <Sidebar clients={clients} />
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} clients={clients} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar onMenuClick={() => setDrawerOpen(true)} />
         <main

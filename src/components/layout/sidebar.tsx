@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { Icon } from "@/components/ui/icon";
 import { Divider } from "@/components/ui/divider";
 import { APP_NAME } from "@/lib/constants";
+import { WorkspaceSwitcher } from "@/components/workspaces/workspace-switcher";
 import type { IconName } from "@/components/ui/icon";
 
 interface NavItem {
@@ -25,7 +26,11 @@ const navItems: NavItem[] = [
   { label: "Coverage", icon: "coverage", href: "/coverage" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  clients: { id: string; name: string; industry: string; colour: string; bgColour: string; initials: string }[];
+}
+
+export function Sidebar({ clients }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
@@ -66,23 +71,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Workspace switcher placeholder */}
-      <div className="px-3 pt-4 pb-1">
-        <div
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 cursor-default"
-          style={{
-            backgroundColor: "var(--hover-bg)",
-          }}
-        >
-          <Icon name="workspace" size={14} color="var(--text-sub)" />
-          <span
-            className="text-[13px] font-medium flex-1"
-            style={{ color: "var(--text-primary)" }}
-          >
-            All clients
-          </span>
-          <Icon name="chevronD" size={12} color="var(--text-muted-custom)" />
-        </div>
+      {/* Workspace switcher */}
+      <div className="pt-4 pb-1">
+        <WorkspaceSwitcher clients={clients} />
       </div>
 
       {/* Nav items */}
