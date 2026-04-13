@@ -220,8 +220,13 @@ model Outreach {
   subject       String
   body          String
   status        String    @default("draft")
-  generatedByAI Boolean   @default(false)
-  sentAt        DateTime?
+  generatedByAI  Boolean   @default(false)
+  followUpNumber Int       @default(0)
+  scheduledAt    DateTime?
+  sentVia        String?
+  messageId      String?
+  conversationId String?
+  sentAt         DateTime?
   createdAt     DateTime  @default(now())
 }
 

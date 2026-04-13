@@ -14,7 +14,7 @@ async function getOrganizationId(): Promise<string> {
 }
 
 const PHASE_TEMPLATES: Record<string, string[]> = {
-  press: ["Research", "Draft Pitches", "Outreach", "Follow-up", "Coverage Tracking"],
+  press: ["Draft Pitches", "Outreach", "Coverage"],
   event: ["Planning", "Invite List", "Send Invitations", "Track RSVPs", "Logistics & Runsheet", "Post-event Follow-up"],
   gifting: ["Select Products", "Build Send List", "Ship & Track", "Follow-up", "Coverage Tracking"],
 };
