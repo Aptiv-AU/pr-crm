@@ -6,7 +6,15 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 interface ContactTabsProps {
   interactions: { id: string; type: string; date: Date | string; summary: string | null }[];
   outreaches: { id: string; subject: string; status: string; createdAt: Date | string }[];
-  coverages: { id: string; publication: string; date: Date | string; type: string; mediaValue: any }[];
+  coverages: {
+    id: string;
+    publication: string;
+    date: Date | string;
+    type: string;
+    mediaValue: any;
+    url?: string | null;
+    attachmentUrl?: string | null;
+  }[];
   notes: string | null;
 }
 
@@ -211,50 +219,85 @@ export function ContactTabs({ interactions, outreaches, coverages, notes }: Cont
               No coverage yet
             </div>
           ) : (
-            coverages.map((coverage) => (
-              <div
-                key={coverage.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 0",
-                }}
-              >
+            coverages.map((coverage) => {
+              const typeLabel = coverage.type.charAt(0).toUpperCase() + coverage.type.slice(1);
+              const typeBadgeVariant: Record<string, BadgeVariant> = {
+                feature: "active",
+                mention: "default",
+                review: "accent",
+                social: "outreach",
+              };
+              const hasImage = coverage.attachmentUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(coverage.attachmentUrl);
+
+              return (
                 <div
+                  key={coverage.id}
                   style={{
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                    flex: 1,
-                    minWidth: 0,
+                    border: "1px solid var(--border-custom)",
+                    borderRadius: 10,
+                    backgroundColor: "var(--card-bg)",
                     overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    flexDirection: hasImage ? "row" : "column",
                   }}
                 >
-                  {coverage.publication}
+                  {/* Clipping image */}
+                  {hasImage && (
+                    <a
+                      href={coverage.attachmentUrl!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        width: 120,
+                        minHeight: 90,
+                        flexShrink: 0,
+                        display: "block",
+                        overflow: "hidden",
+                        backgroundColor: "var(--page-bg)",
+                      }}
+                    >
+                      <img
+                        src={coverage.attachmentUrl!}
+                        alt={`${coverage.publication} clipping`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    </a>
+                  )}
+
+                  {/* Content */}
+                  <div style={{ flex: 1, padding: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {coverage.publication}
+                      </span>
+                      <Badge variant={typeBadgeVariant[coverage.type] ?? "default"}>
+                        {typeLabel}
+                      </Badge>
+                      <span style={{ fontSize: 11, color: "var(--text-muted-custom)", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {formatDate(coverage.date)}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+                      {coverage.mediaValue != null && Number(coverage.mediaValue) > 0 && (
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>
+                          {formatCurrency(coverage.mediaValue)}
+                        </span>
+                      )}
+                      {coverage.url && (
+                        <a
+                          href={coverage.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: 11, color: "var(--accent-custom)", textDecoration: "none" }}
+                        >
+                          View article →
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <Badge variant="default">{coverage.type}</Badge>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-sub)",
-                    flexShrink: 0,
-                  }}
-                >
-                  {formatCurrency(coverage.mediaValue)}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted-custom)",
-                    flexShrink: 0,
-                  }}
-                >
-                  {formatDate(coverage.date)}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

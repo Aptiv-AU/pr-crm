@@ -34,6 +34,8 @@ export async function GET(
           date: true,
           type: true,
           mediaValue: true,
+          url: true,
+          contact: { select: { name: true } },
         },
         orderBy: { date: "desc" },
       },
@@ -71,6 +73,8 @@ export async function GET(
     date: c.date.toISOString(),
     type: c.type,
     mediaValue: c.mediaValue ? Number(c.mediaValue) : null,
+    url: c.url ?? null,
+    contactName: c.contact?.name ?? null,
   }));
 
   const org = campaign.organization;

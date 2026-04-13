@@ -61,6 +61,8 @@ export async function getContactById(contactId: string) {
           date: true,
           type: true,
           mediaValue: true,
+          url: true,
+          attachmentUrl: true,
         },
         orderBy: { date: "desc" },
       },

@@ -23,6 +23,8 @@ interface CampaignReportProps {
     date: string;
     type: string;
     mediaValue: number | null;
+    url: string | null;
+    contactName: string | null;
   }[];
 }
 
@@ -136,10 +138,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#333333",
   },
-  colPublication: { flex: 3 },
-  colDate: { flex: 2 },
-  colType: { flex: 1.5 },
-  colValue: { flex: 2, textAlign: "right" },
+  colPublication: { flex: 2.5 },
+  colContact: { flex: 2 },
+  colDate: { flex: 1.5 },
+  colType: { flex: 1 },
+  colValue: { flex: 1.5, textAlign: "right" as const },
+  colLink: { flex: 2 },
   footer: {
     position: "absolute",
     bottom: 20,
@@ -179,7 +183,7 @@ export function CampaignReport(props: CampaignReportProps) {
           </Text>
           <Text style={styles.campaignName}>{props.campaignName}</Text>
           <Text style={styles.campaignMeta}>
-            Type: {props.campaignType}
+            Type: {props.campaignType.charAt(0).toUpperCase() + props.campaignType.slice(1)}
           </Text>
           <Text style={styles.campaignMeta}>
             {props.startDate || props.dueDate
@@ -218,21 +222,27 @@ export function CampaignReport(props: CampaignReportProps) {
             {/* Header row */}
             <View style={styles.tableHeader}>
               <Text style={[styles.tableHeaderText, styles.colPublication]}>Publication</Text>
+              <Text style={[styles.tableHeaderText, styles.colContact]}>Contact</Text>
               <Text style={[styles.tableHeaderText, styles.colDate]}>Date</Text>
               <Text style={[styles.tableHeaderText, styles.colType]}>Type</Text>
               <Text style={[styles.tableHeaderText, styles.colValue]}>Value</Text>
+              <Text style={[styles.tableHeaderText, styles.colLink]}>Link</Text>
             </View>
 
             {/* Data rows */}
             {props.coverages.map((cov, i) => (
               <View key={i} style={styles.tableRow}>
                 <Text style={[styles.tableCell, styles.colPublication]}>{cov.publication}</Text>
+                <Text style={[styles.tableCell, styles.colContact]}>{cov.contactName ?? "—"}</Text>
                 <Text style={[styles.tableCell, styles.colDate]}>{formatDate(cov.date)}</Text>
                 <Text style={[styles.tableCell, styles.colType]}>
                   {cov.type.charAt(0).toUpperCase() + cov.type.slice(1)}
                 </Text>
                 <Text style={[styles.tableCell, styles.colValue]}>
                   {cov.mediaValue != null ? formatCurrency(cov.mediaValue, props.currency) : "—"}
+                </Text>
+                <Text style={[styles.tableCell, styles.colLink, { color: "#2563EB", fontSize: 8 }]}>
+                  {cov.url ?? "—"}
                 </Text>
               </View>
             ))}
