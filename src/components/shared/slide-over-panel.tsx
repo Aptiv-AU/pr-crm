@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
 
 interface SlideOverPanelProps {
@@ -22,7 +23,9 @@ export function SlideOverPanel({ open, onClose, title, children }: SlideOverPane
     };
   }, [open]);
 
-  return (
+  if (typeof window === "undefined") return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -105,6 +108,7 @@ export function SlideOverPanel({ open, onClose, title, children }: SlideOverPane
           {children}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
