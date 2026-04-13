@@ -145,8 +145,7 @@ export function CampaignHero({ campaign, budgetStats, onEdit }: CampaignHeroProp
           variant="default"
           size="sm"
           icon="campaigns"
-          disabled
-          style={{ opacity: 0.5, cursor: "not-allowed" }}
+          onClick={() => window.open(`/api/reports/${campaign.id}`, "_blank")}
         >
           Export report
         </Button>

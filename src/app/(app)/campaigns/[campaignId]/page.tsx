@@ -112,7 +112,7 @@ export default async function CampaignDetailPage({
     coverages: campaign.coverages.map((cov) => ({
       id: cov.id,
       publication: cov.publication,
-      date: cov.date ? cov.date.toISOString() : null,
+      date: cov.date ? cov.date.toISOString() : new Date().toISOString(),
       type: cov.type,
       url: cov.url,
       mediaValue: cov.mediaValue ? Number(cov.mediaValue) : null,
