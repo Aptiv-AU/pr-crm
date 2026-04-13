@@ -1,5 +1,5 @@
 import React from "react";
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 
 interface CampaignReportProps {
   orgName: string;
@@ -25,6 +25,7 @@ interface CampaignReportProps {
     mediaValue: number | null;
     url: string | null;
     contactName: string | null;
+    attachmentUrl: string | null;
   }[];
 }
 
@@ -164,6 +165,19 @@ const styles = StyleSheet.create({
     color: "#2563EB",
     marginTop: 3,
   },
+  coverageImage: {
+    width: 100,
+    height: 80,
+    objectFit: "cover" as const,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderStyle: "solid" as const,
+  },
+  coverageCardWithImage: {
+    flexDirection: "row" as const,
+    gap: 12,
+  },
   footer: {
     position: "absolute",
     bottom: 20,
@@ -241,31 +255,41 @@ export function CampaignReport(props: CampaignReportProps) {
 
             {props.coverages.map((cov, i) => {
               const typeLabel = cov.type.charAt(0).toUpperCase() + cov.type.slice(1);
-              return (
-                <View key={i} style={styles.coverageCard}>
-                  {/* Row 1: publication + type badge + date */}
-                  <View style={styles.coverageCardRow}>
-                    <Text style={styles.coveragePublication}>{cov.publication}</Text>
-                    <Text style={styles.coverageTypeBadge}>{typeLabel}</Text>
-                    <Text style={styles.coverageDate}>{formatDate(cov.date)}</Text>
-                  </View>
+              const hasImage = cov.attachmentUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(cov.attachmentUrl);
 
-                  {/* Row 2: contact */}
-                  {cov.contactName && (
-                    <Text style={styles.coverageDetail}>Contact: {cov.contactName}</Text>
+              return (
+                <View key={i} style={[styles.coverageCard, hasImage ? styles.coverageCardWithImage : {}]}>
+                  {/* Clipping image */}
+                  {hasImage && (
+                    <Image src={cov.attachmentUrl!} style={styles.coverageImage} />
                   )}
 
-                  {/* Row 3: value + link */}
-                  <View style={[styles.coverageCardRow, { marginTop: 4 }]}>
+                  {/* Content */}
+                  <View style={{ flex: 1 }}>
+                    {/* Row 1: publication + type badge + date */}
+                    <View style={styles.coverageCardRow}>
+                      <Text style={styles.coveragePublication}>{cov.publication}</Text>
+                      <Text style={styles.coverageTypeBadge}>{typeLabel}</Text>
+                      <Text style={styles.coverageDate}>{formatDate(cov.date)}</Text>
+                    </View>
+
+                    {/* Contact */}
+                    {cov.contactName && (
+                      <Text style={styles.coverageDetail}>Contact: {cov.contactName}</Text>
+                    )}
+
+                    {/* Value */}
                     {cov.mediaValue != null && (
                       <Text style={styles.coverageValue}>
                         {formatCurrency(cov.mediaValue, props.currency)}
                       </Text>
                     )}
+
+                    {/* Link */}
+                    {cov.url && (
+                      <Text style={styles.coverageLink}>{cov.url}</Text>
+                    )}
                   </View>
-                  {cov.url && (
-                    <Text style={styles.coverageLink}>{cov.url}</Text>
-                  )}
                 </View>
               );
             })}

@@ -35,6 +35,7 @@ export async function GET(
           type: true,
           mediaValue: true,
           url: true,
+          attachmentUrl: true,
           contact: { select: { name: true } },
         },
         orderBy: { date: "desc" },
@@ -75,6 +76,7 @@ export async function GET(
     mediaValue: c.mediaValue ? Number(c.mediaValue) : null,
     url: c.url ?? null,
     contactName: c.contact?.name ?? null,
+    attachmentUrl: c.attachmentUrl ?? null,
   }));
 
   const org = campaign.organization;
