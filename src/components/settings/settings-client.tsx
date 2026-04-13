@@ -112,7 +112,7 @@ export function SettingsClient({ org, apiKeyStatus }: SettingsClientProps) {
                     className="text-[11px] mt-[2px]"
                     style={{ color: "var(--text-sub)" }}
                   >
-                    {DEFAULT_MODELS[provider]}
+                    {isSelected && model ? model : DEFAULT_MODELS[provider]}
                   </div>
                 </div>
                 <div className="flex items-center gap-[4px] shrink-0 mt-[2px]">
