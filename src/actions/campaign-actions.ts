@@ -1,0 +1,344 @@
+"use server";
+
+import { db } from "@/lib/db";
+import { revalidatePath } from "next/cache";
+
+async function getOrganizationId(): Promise<string> {
+  const org = await db.organization.findFirst();
+
+  if (!org) {
+    throw new Error("Organization not found");
+  }
+
+  return org.id;
+}
+
+const PHASE_TEMPLATES: Record<string, string[]> = {
+  press: ["Research", "Draft Pitches", "Outreach", "Follow-up", "Coverage Tracking"],
+  event: ["Planning", "Invite List", "Send Invitations", "Track RSVPs", "Logistics & Runsheet", "Post-event Follow-up"],
+  gifting: ["Select Products", "Build Send List", "Ship & Track", "Follow-up", "Coverage Tracking"],
+};
+
+export async function createCampaign(formData: FormData) {
+  try {
+    const name = formData.get("name") as string | null;
+    const type = formData.get("type") as string | null;
+    const clientId = formData.get("clientId") as string | null;
+    const budgetStr = formData.get("budget") as string | null;
+    const startDateStr = formData.get("startDate") as string | null;
+    const dueDateStr = formData.get("dueDate") as string | null;
+    const brief = formData.get("brief") as string | null;
+
+    if (!name || !type || !clientId) {
+      return { error: "Name, type, and client are required" };
+    }
+
+    const organizationId = await getOrganizationId();
+
+    const budget = budgetStr ? parseFloat(budgetStr) : null;
+    const startDate = startDateStr ? new Date(startDateStr) : null;
+    const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+
+    const phases = PHASE_TEMPLATES[type] || [];
+    const firstPhaseName = phases[0] || null;
+
+    const campaign = await db.campaign.create({
+      data: {
+        organizationId,
+        clientId,
+        name,
+        type,
+        status: "draft",
+        currentPhase: firstPhaseName,
+        budget: budget !== null && !isNaN(budget) ? budget : null,
+        startDate,
+        dueDate,
+        brief: brief || null,
+        phases: {
+          create: phases.map((phaseName, index) => ({
+            name: phaseName,
+            order: index + 1,
+            status: index === 0 ? "active" : "pending",
+          })),
+        },
+      },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath("/workspaces");
+
+    return { success: true, campaignId: campaign.id };
+  } catch (error) {
+    console.error("createCampaign error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to create campaign",
+    };
+  }
+}
+
+export async function updateCampaign(campaignId: string, formData: FormData) {
+  try {
+    const name = formData.get("name") as string | null;
+    const status = formData.get("status") as string | null;
+    const budgetStr = formData.get("budget") as string | null;
+    const startDateStr = formData.get("startDate") as string | null;
+    const dueDateStr = formData.get("dueDate") as string | null;
+    const brief = formData.get("brief") as string | null;
+
+    const budget = budgetStr ? parseFloat(budgetStr) : null;
+    const startDate = startDateStr ? new Date(startDateStr) : null;
+    const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+
+    await db.campaign.update({
+      where: { id: campaignId },
+      data: {
+        ...(name ? { name } : {}),
+        ...(status ? { status } : {}),
+        budget: budget !== null && !isNaN(budget) ? budget : null,
+        startDate,
+        dueDate,
+        brief: brief || null,
+      },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+    revalidatePath("/workspaces");
+
+    return { success: true };
+  } catch (error) {
+    console.error("updateCampaign error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to update campaign",
+    };
+  }
+}
+
+export async function updatePhaseStatus(phaseId: string, status: string) {
+  try {
+    const phase = await db.campaignPhase.findUnique({
+      where: { id: phaseId },
+      include: { campaign: true },
+    });
+
+    if (!phase) {
+      return { error: "Phase not found" };
+    }
+
+    await db.campaignPhase.update({
+      where: { id: phaseId },
+      data: { status },
+    });
+
+    if (status === "complete") {
+      const nextPhase = await db.campaignPhase.findFirst({
+        where: {
+          campaignId: phase.campaignId,
+          order: { gt: phase.order },
+        },
+        orderBy: { order: "asc" },
+      });
+
+      if (nextPhase) {
+        await db.campaignPhase.update({
+          where: { id: nextPhase.id },
+          data: { status: "active" },
+        });
+
+        await db.campaign.update({
+          where: { id: phase.campaignId },
+          data: { currentPhase: nextPhase.name },
+        });
+      } else {
+        await db.campaign.update({
+          where: { id: phase.campaignId },
+          data: { status: "complete" },
+        });
+      }
+    }
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${phase.campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("updatePhaseStatus error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to update phase status",
+    };
+  }
+}
+
+export async function addContactToCampaign(campaignId: string, contactId: string) {
+  try {
+    await db.campaignContact.create({
+      data: {
+        campaignId,
+        contactId,
+        status: "added",
+      },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("addContactToCampaign error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to add contact to campaign",
+    };
+  }
+}
+
+export async function removeContactFromCampaign(campaignContactId: string) {
+  try {
+    const existing = await db.campaignContact.findUnique({
+      where: { id: campaignContactId },
+      select: { campaignId: true },
+    });
+
+    if (!existing) {
+      return { error: "Campaign contact not found" };
+    }
+
+    await db.campaignContact.delete({
+      where: { id: campaignContactId },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${existing.campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("removeContactFromCampaign error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to remove contact from campaign",
+    };
+  }
+}
+
+export async function addSupplierToCampaign(formData: FormData) {
+  try {
+    const campaignId = formData.get("campaignId") as string | null;
+    const supplierId = formData.get("supplierId") as string | null;
+    const role = formData.get("role") as string | null;
+    const agreedCostStr = formData.get("agreedCost") as string | null;
+
+    if (!campaignId || !supplierId || !role) {
+      return { error: "Campaign, supplier, and role are required" };
+    }
+
+    const agreedCost = agreedCostStr ? parseFloat(agreedCostStr) : null;
+
+    await db.campaignSupplier.create({
+      data: {
+        campaignId,
+        supplierId,
+        role,
+        agreedCost: agreedCost !== null && !isNaN(agreedCost) ? agreedCost : null,
+      },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("addSupplierToCampaign error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to add supplier to campaign",
+    };
+  }
+}
+
+export async function removeSupplierFromCampaign(campaignSupplierId: string) {
+  try {
+    const existing = await db.campaignSupplier.findUnique({
+      where: { id: campaignSupplierId },
+      select: { campaignId: true },
+    });
+
+    if (!existing) {
+      return { error: "Campaign supplier not found" };
+    }
+
+    await db.campaignSupplier.delete({
+      where: { id: campaignSupplierId },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${existing.campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("removeSupplierFromCampaign error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to remove supplier from campaign",
+    };
+  }
+}
+
+export async function addBudgetLineItem(formData: FormData) {
+  try {
+    const campaignId = formData.get("campaignId") as string | null;
+    const description = formData.get("description") as string | null;
+    const amountStr = formData.get("amount") as string | null;
+    const supplierId = formData.get("supplierId") as string | null;
+
+    if (!campaignId || !description || !amountStr) {
+      return { error: "Campaign, description, and amount are required" };
+    }
+
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount)) {
+      return { error: "Amount must be a valid number" };
+    }
+
+    await db.budgetLineItem.create({
+      data: {
+        campaignId,
+        description,
+        amount,
+        supplierId: supplierId || null,
+      },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("addBudgetLineItem error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to add budget line item",
+    };
+  }
+}
+
+export async function deleteBudgetLineItem(lineItemId: string) {
+  try {
+    const existing = await db.budgetLineItem.findUnique({
+      where: { id: lineItemId },
+      select: { campaignId: true },
+    });
+
+    if (!existing) {
+      return { error: "Budget line item not found" };
+    }
+
+    await db.budgetLineItem.delete({
+      where: { id: lineItemId },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${existing.campaignId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("deleteBudgetLineItem error:", error);
+    return {
+      error: error instanceof Error ? error.message : "Failed to delete budget line item",
+    };
+  }
+}
