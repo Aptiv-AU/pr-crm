@@ -194,20 +194,20 @@ export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
                 backgroundColor: "#EC4899",
               }}
             >
-              SR
+              NW
             </div>
             <div>
               <div
                 className="text-[13px] font-medium leading-tight"
                 style={{ color: "var(--text-primary)" }}
               >
-                Sophie R.
+                Natalie White
               </div>
               <div
                 className="text-[11px] leading-tight"
                 style={{ color: "var(--text-muted-custom)" }}
               >
-                Founder
+                NWPR
               </div>
             </div>
           </div>
