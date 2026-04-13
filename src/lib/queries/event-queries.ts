@@ -40,6 +40,15 @@ export async function getEventDetail(campaignId: string) {
   const campaign = await db.campaign.findUnique({
     where: { id: campaignId },
     include: {
+      client: {
+        select: {
+          id: true,
+          name: true,
+          initials: true,
+          colour: true,
+          bgColour: true,
+        },
+      },
       eventDetail: {
         include: {
           runsheetEntries: {
