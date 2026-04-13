@@ -114,6 +114,21 @@ export async function bulkApproveOutreaches(campaignId: string) {
   }
 }
 
+export async function revertOutreachToDraft(outreachId: string) {
+  try {
+    const outreach = await db.outreach.update({
+      where: { id: outreachId },
+      data: { status: "draft" },
+    });
+
+    revalidatePath(`/campaigns/${outreach.campaignId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("revertOutreachToDraft error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to revert outreach to draft" };
+  }
+}
+
 export async function deleteOutreach(outreachId: string) {
   try {
     const outreach = await db.outreach.findUnique({
