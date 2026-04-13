@@ -33,7 +33,7 @@ const paths: Record<IconName, (c: string) => React.ReactNode> = {
   chevronD: (c) => (<path d="M4 6l4 4 4-4" stroke={c} strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />),
   filter: (c) => (<path d="M2 4h12M5 8h6M7 12h2" stroke={c} strokeWidth="1.35" strokeLinecap="round" />),
   sun: (c) => (<><circle cx="8" cy="8" r="2.8" stroke={c} strokeWidth="1.35" fill="none" /><path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.9 3.9l1 1M11.1 11.1l1 1M11.1 3.9l-1 1M4.9 11.1l-1 1" stroke={c} strokeWidth="1.35" strokeLinecap="round" /></>),
-  moon: (c) => (<path d="M13 10A5 5 0 016 3a6 6 0 100 10 5 5 0 007-3z" stroke={c} strokeWidth="1.35" fill="none" />),
+  moon: (c) => (<path d="M13 10A5 5 0 0 1 6 3 6 6 0 1 0 13 10z" stroke={c} strokeWidth="1.35" fill="none" />),
   menu: (c) => (<path d="M3 5h10M3 8h10M3 11h10" stroke={c} strokeWidth="1.5" strokeLinecap="round" />),
   close: (c) => (<path d="M4 4l8 8M12 4l-8 8" stroke={c} strokeWidth="1.5" strokeLinecap="round" />),
   workspace: (c) => (<><rect x="2" y="2" width="5" height="5" rx="1.2" stroke={c} strokeWidth="1.35" fill="none" /><rect x="9" y="2" width="5" height="5" rx="1.2" stroke={c} strokeWidth="1.35" fill="none" /><rect x="2" y="9" width="5" height="5" rx="1.2" stroke={c} strokeWidth="1.35" fill="none" /><rect x="9" y="9" width="5" height="5" rx="1.2" stroke={c} strokeWidth="1.35" fill="none" /></>),
