@@ -77,7 +77,7 @@ export function ContactHero({ contact, stats, onEdit }: ContactHeroProps) {
                 {contact.tier}
               </Badge>
               <Badge variant={healthVariantMap[contact.health] ?? "default"}>
-                {contact.health}
+                {contact.health.charAt(0).toUpperCase() + contact.health.slice(1)}
               </Badge>
             </div>
           </div>
