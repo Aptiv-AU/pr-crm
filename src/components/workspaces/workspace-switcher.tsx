@@ -268,12 +268,14 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
         onClose={() => setSlideOverOpen(false)}
         title="New Client"
       >
-        <ClientForm
-          onSuccess={() => {
-            setSlideOverOpen(false);
-            router.refresh();
-          }}
-        />
+        {slideOverOpen && (
+          <ClientForm
+            onSuccess={() => {
+              setSlideOverOpen(false);
+              router.refresh();
+            }}
+          />
+        )}
       </SlideOverPanel>
     </div>
   );

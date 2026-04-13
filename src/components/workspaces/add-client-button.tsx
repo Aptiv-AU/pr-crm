@@ -50,7 +50,7 @@ export function AddClientButton() {
       </button>
 
       <SlideOverPanel open={open} onClose={() => setOpen(false)} title="New Client">
-        <ClientForm onSuccess={handleSuccess} />
+        {open && <ClientForm onSuccess={handleSuccess} />}
       </SlideOverPanel>
     </>
   );
