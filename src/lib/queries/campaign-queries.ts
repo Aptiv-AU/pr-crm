@@ -99,6 +99,8 @@ export async function getCampaignById(campaignId: string) {
           generatedByAI: true,
           contactId: true,
           createdAt: true,
+          sentAt: true,
+          followUpNumber: true,
           contact: {
             select: {
               id: true,
@@ -106,6 +108,7 @@ export async function getCampaignById(campaignId: string) {
               initials: true,
               avatarBg: true,
               avatarFg: true,
+              email: true,
               publication: true,
             },
           },

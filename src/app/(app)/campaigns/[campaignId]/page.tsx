@@ -19,7 +19,7 @@ export default async function CampaignDetailPage({
     org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
   }
 
-  const [campaign, orgContacts, orgSuppliers, allClients] = await Promise.all([
+  const [campaign, orgContacts, orgSuppliers, allClients, emailAccount] = await Promise.all([
     getCampaignById(campaignId),
     getContacts(org.id),
     getSuppliers(org.id),
@@ -28,6 +28,7 @@ export default async function CampaignDetailPage({
       select: { id: true, name: true, initials: true, colour: true, bgColour: true },
       orderBy: { name: "asc" },
     }),
+    db.emailAccount.findFirst(),
   ]);
 
   if (!campaign) {
@@ -129,6 +130,8 @@ export default async function CampaignDetailPage({
       status: o.status,
       generatedByAI: o.generatedByAI,
       contactId: o.contactId,
+      sentAt: o.sentAt ? o.sentAt.toISOString() : null,
+      followUpNumber: o.followUpNumber,
       contact: o.contact,
     })),
   };
@@ -140,6 +143,7 @@ export default async function CampaignDetailPage({
       availableContacts={availableContacts}
       availableSuppliers={availableSuppliers}
       clients={allClients}
+      emailConnected={!!emailAccount}
     />
   );
 }

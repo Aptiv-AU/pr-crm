@@ -81,12 +81,15 @@ interface CampaignDetailClientProps {
       status: string;
       generatedByAI: boolean;
       contactId: string;
+      sentAt: string | null;
+      followUpNumber: number;
       contact: {
         id: string;
         name: string;
         initials: string;
         avatarBg: string;
         avatarFg: string;
+        email: string | null;
         publication: string | null;
       };
     }[];
@@ -106,6 +109,7 @@ interface CampaignDetailClientProps {
     serviceCategory: string | null;
   }[];
   clients: { id: string; name: string; initials: string; colour: string; bgColour: string }[];
+  emailConnected: boolean;
 }
 
 export function CampaignDetailClient({
@@ -114,6 +118,7 @@ export function CampaignDetailClient({
   availableContacts,
   availableSuppliers,
   clients,
+  emailConnected,
 }: CampaignDetailClientProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -150,6 +155,7 @@ export function CampaignDetailClient({
           outreaches={campaign.outreaches}
           coverages={campaign.coverages}
           campaignName={campaign.name}
+          emailConnected={emailConnected}
         />
       </div>
 

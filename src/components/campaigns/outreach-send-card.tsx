@@ -1,0 +1,276 @@
+"use client";
+
+import { useTransition } from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { sendOutreach, approveOutreach } from "@/actions/outreach-actions";
+
+interface OutreachSendCardProps {
+  outreach: {
+    id: string;
+    subject: string;
+    body: string;
+    status: string;
+    sentAt: string | null;
+    followUpNumber: number;
+    contact: {
+      id: string;
+      name: string;
+      initials: string;
+      avatarBg: string;
+      avatarFg: string;
+      email: string | null;
+      publication: string | null;
+    };
+  };
+  emailConnected: boolean;
+}
+
+export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardProps) {
+  const [isPending, startTransition] = useTransition();
+  const { contact } = outreach;
+
+  function handleSend() {
+    startTransition(async () => {
+      await sendOutreach(outreach.id);
+    });
+  }
+
+  function handleApproveAndSend() {
+    startTransition(async () => {
+      await approveOutreach(outreach.id);
+      await sendOutreach(outreach.id);
+    });
+  }
+
+  const sentDate = outreach.sentAt
+    ? new Date(outreach.sentAt).toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
+  // Follow-up draft
+  if (outreach.followUpNumber > 0 && outreach.status === "draft") {
+    return (
+      <div
+        style={{
+          border: "1px solid var(--border-custom)",
+          borderRadius: 10,
+          padding: 16,
+          backgroundColor: "var(--card-bg)",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--amber)",
+            marginBottom: 8,
+          }}
+        >
+          Follow-up #{outreach.followUpNumber}
+        </div>
+        <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
+          <Avatar
+            initials={contact.initials}
+            bg={contact.avatarBg}
+            fg={contact.avatarFg}
+            size={26}
+          />
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
+              {contact.name}
+            </div>
+            {contact.publication && (
+              <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
+                {contact.publication}
+              </div>
+            )}
+          </div>
+        </div>
+        <div
+          className="text-[13px] font-medium"
+          style={{ color: "var(--text-primary)", marginBottom: 4 }}
+        >
+          {outreach.subject}
+        </div>
+        <div
+          className="text-[13px]"
+          style={{
+            color: "var(--text-sub)",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            marginBottom: 12,
+          }}
+        >
+          {outreach.body}
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          icon="mail"
+          onClick={handleApproveAndSend}
+          disabled={isPending || !contact.email || !emailConnected}
+        >
+          {isPending ? "Sending..." : "Approve & Send"}
+        </Button>
+      </div>
+    );
+  }
+
+  // Approved — ready to send
+  if (outreach.status === "approved") {
+    return (
+      <div
+        style={{
+          border: "1px solid var(--border-custom)",
+          borderRadius: 10,
+          padding: 16,
+          backgroundColor: "var(--card-bg)",
+        }}
+      >
+        <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
+          <Avatar
+            initials={contact.initials}
+            bg={contact.avatarBg}
+            fg={contact.avatarFg}
+            size={26}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
+              {contact.name}
+            </div>
+            {contact.email && (
+              <div className="text-[12px]" style={{ color: "var(--text-sub)" }}>
+                {contact.email}
+              </div>
+            )}
+            {contact.publication && (
+              <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
+                {contact.publication}
+              </div>
+            )}
+          </div>
+        </div>
+        <div
+          className="text-[13px] font-medium"
+          style={{ color: "var(--text-primary)", marginBottom: 12 }}
+        >
+          {outreach.subject}
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          icon="mail"
+          onClick={handleSend}
+          disabled={isPending || !contact.email || !emailConnected}
+        >
+          {isPending ? "Sending..." : "Send"}
+        </Button>
+      </div>
+    );
+  }
+
+  // Sent — awaiting reply
+  if (outreach.status === "sent") {
+    return (
+      <div
+        style={{
+          border: "1px solid var(--border-custom)",
+          borderRadius: 10,
+          padding: 16,
+          backgroundColor: "var(--card-bg)",
+        }}
+      >
+        <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
+          <Avatar
+            initials={contact.initials}
+            bg={contact.avatarBg}
+            fg={contact.avatarFg}
+            size={26}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
+              {contact.name}
+            </div>
+            {contact.publication && (
+              <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
+                {contact.publication}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-[6px] shrink-0">
+            <Badge variant="outreach">Sent</Badge>
+            {sentDate && (
+              <span className="text-[11px]" style={{ color: "var(--text-muted-custom)" }}>
+                {sentDate}
+              </span>
+            )}
+          </div>
+        </div>
+        <div
+          className="text-[13px] font-medium"
+          style={{ color: "var(--text-primary)", marginBottom: 4 }}
+        >
+          {outreach.subject}
+        </div>
+        <div className="text-[12px]" style={{ color: "var(--text-muted-custom)" }}>
+          Awaiting reply
+        </div>
+      </div>
+    );
+  }
+
+  // Replied
+  if (outreach.status === "replied") {
+    return (
+      <div
+        style={{
+          border: "1px solid var(--border-custom)",
+          borderLeft: "3px solid var(--green)",
+          borderRadius: 10,
+          padding: 16,
+          backgroundColor: "var(--card-bg)",
+        }}
+      >
+        <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
+          <Avatar
+            initials={contact.initials}
+            bg={contact.avatarBg}
+            fg={contact.avatarFg}
+            size={26}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
+              {contact.name}
+            </div>
+            {contact.publication && (
+              <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
+                {contact.publication}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-[6px] shrink-0">
+            <Badge variant="active">Replied</Badge>
+            {sentDate && (
+              <span className="text-[11px]" style={{ color: "var(--text-muted-custom)" }}>
+                {sentDate}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
+          {outreach.subject}
+        </div>
+      </div>
+    );
+  }
+
+  // Default fallback (other statuses like "draft" with followUpNumber 0)
+  return null;
+}

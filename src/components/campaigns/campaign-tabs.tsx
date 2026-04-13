@@ -8,6 +8,7 @@ import { CampaignContactsTab } from "./campaign-contacts-tab";
 import { CampaignSuppliersTab } from "./campaign-suppliers-tab";
 import { CampaignBudget } from "./campaign-budget";
 import { DraftPitchesPhase } from "./phase-draft-pitches";
+import { OutreachPhase } from "./phase-outreach";
 import { CampaignCoverageTab } from "./campaign-coverage-tab";
 
 interface CampaignTabsProps {
@@ -80,12 +81,15 @@ interface CampaignTabsProps {
     status: string;
     generatedByAI: boolean;
     contactId: string;
+    sentAt: string | null;
+    followUpNumber: number;
     contact: {
       id: string;
       name: string;
       initials: string;
       avatarBg: string;
       avatarFg: string;
+      email: string | null;
       publication: string | null;
     };
   }[];
@@ -103,6 +107,7 @@ interface CampaignTabsProps {
     contact: { id: string; name: string } | null;
   }[];
   campaignName?: string;
+  emailConnected?: boolean;
 }
 
 const tabs = ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
@@ -122,6 +127,7 @@ export function CampaignTabs({
   outreaches,
   coverages,
   campaignName,
+  emailConnected,
 }: CampaignTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Phases");
   const router = useRouter();
@@ -184,12 +190,25 @@ export function CampaignTabs({
       )}
 
       {activeTab === "Outreach" && campaign && (
-        <DraftPitchesPhase
-          campaign={campaign}
-          campaignContacts={campaignContacts}
-          availableContacts={availableContacts}
-          outreaches={outreaches ?? []}
-        />
+        <div className="flex flex-col gap-[16px]">
+          <DraftPitchesPhase
+            campaign={campaign}
+            campaignContacts={campaignContacts}
+            availableContacts={availableContacts}
+            outreaches={outreaches ?? []}
+          />
+          <div
+            style={{
+              borderTop: "1px solid var(--border-custom)",
+              margin: "8px 0",
+            }}
+          />
+          <OutreachPhase
+            campaignId={campaignId}
+            outreaches={outreaches ?? []}
+            emailConnected={emailConnected ?? false}
+          />
+        </div>
       )}
 
       {activeTab === "Contacts" && (
