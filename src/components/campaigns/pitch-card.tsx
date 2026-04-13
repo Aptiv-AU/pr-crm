@@ -22,7 +22,7 @@ interface PitchCardProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string;
+      publication: string | null;
     };
   };
   onRegenerate: (contactId: string) => void;

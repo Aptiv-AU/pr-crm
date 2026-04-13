@@ -7,6 +7,7 @@ import { CampaignPhaseList } from "./campaign-phase-list";
 import { CampaignContactsTab } from "./campaign-contacts-tab";
 import { CampaignSuppliersTab } from "./campaign-suppliers-tab";
 import { CampaignBudget } from "./campaign-budget";
+import { DraftPitchesPhase } from "./phase-draft-pitches";
 
 interface CampaignTabsProps {
   phases: { id: string; name: string; order: number; status: string }[];
@@ -89,7 +90,7 @@ interface CampaignTabsProps {
   }[];
 }
 
-const tabs = ["Phases", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
+const tabs = ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
 type Tab = (typeof tabs)[number];
 
 export function CampaignTabs({
@@ -160,12 +161,17 @@ export function CampaignTabs({
       {activeTab === "Phases" && (
         <CampaignPhaseList
           phases={phases}
-          campaignType={campaignType}
+          campaignType="simple"
           onUpdatePhase={handleUpdatePhase}
+        />
+      )}
+
+      {activeTab === "Outreach" && campaign && (
+        <DraftPitchesPhase
           campaign={campaign}
           campaignContacts={campaignContacts}
           availableContacts={availableContacts}
-          outreaches={outreaches}
+          outreaches={outreaches ?? []}
         />
       )}
 

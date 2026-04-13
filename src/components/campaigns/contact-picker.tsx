@@ -19,9 +19,9 @@ interface ContactPickerProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string;
-      beat: string;
-      tier: string;
+      publication: string | null;
+      beat?: string | null;
+      tier?: string | null;
     };
   }[];
   availableContacts: {
@@ -30,14 +30,14 @@ interface ContactPickerProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string;
-    beat: string;
-    tier: string;
+    publication: string | null;
+    beat?: string | null;
+    tier?: string | null;
   }[];
   outreaches: { contactId: string; status: string }[];
   brief: string | null;
   clientName: string;
-  industry: string;
+  industry: string | null;
 }
 
 export function ContactPicker({

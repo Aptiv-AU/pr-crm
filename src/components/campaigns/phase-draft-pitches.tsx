@@ -15,7 +15,7 @@ interface DraftPitchesPhaseProps {
     client: {
       id: string;
       name: string;
-      industry: string;
+      industry: string | null;
       initials: string;
       colour: string;
       bgColour: string;
@@ -24,15 +24,17 @@ interface DraftPitchesPhaseProps {
   campaignContacts: {
     id: string;
     contactId: string;
+    status?: string;
     contact: {
       id: string;
       name: string;
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string;
-      beat: string;
-      tier: string;
+      publication: string | null;
+      beat?: string | null;
+      tier?: string | null;
+      health?: string | null;
     };
   }[];
   availableContacts: {
@@ -41,9 +43,9 @@ interface DraftPitchesPhaseProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string;
-    beat: string;
-    tier: string;
+    publication: string | null;
+    beat?: string | null;
+    tier?: string | null;
   }[];
   outreaches: {
     id: string;
@@ -58,7 +60,7 @@ interface DraftPitchesPhaseProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string;
+      publication: string | null;
     };
   }[];
 }
