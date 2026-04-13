@@ -4,6 +4,8 @@ import { StatsBar } from "@/components/workspaces/stats-bar";
 import { ClientCard } from "@/components/workspaces/client-card";
 import { AddClientButton } from "@/components/workspaces/add-client-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function WorkspacesPage() {
   // Get or create default org
   let org = await db.organization.findFirst();

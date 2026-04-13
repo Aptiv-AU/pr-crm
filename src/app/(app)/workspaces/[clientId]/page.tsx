@@ -3,6 +3,8 @@ import { getClientById, getClientStats } from "@/lib/queries/client-queries";
 import { ClientHero } from "@/components/workspaces/client-hero";
 import { WorkspaceTabs } from "@/components/workspaces/workspace-tabs";
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientWorkspacePage({
   params,
 }: {
