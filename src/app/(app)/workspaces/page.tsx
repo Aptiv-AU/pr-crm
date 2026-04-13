@@ -1,11 +1,76 @@
-export default function PageName() {
+import { db } from "@/lib/db";
+import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
+import { StatsBar } from "@/components/workspaces/stats-bar";
+import { ClientCard } from "@/components/workspaces/client-card";
+import { AddClientButton } from "@/components/workspaces/add-client-button";
+
+export default async function WorkspacesPage() {
+  // Get or create default org
+  let org = await db.organization.findFirst();
+  if (!org) {
+    org = await db.organization.create({
+      data: { name: "NWPR", currency: "AUD" },
+    });
+  }
+
+  // Fetch clients and org stats in parallel
+  const [clients, orgStats] = await Promise.all([
+    getClients(org.id),
+    getOrganizationStats(org.id),
+  ]);
+
+  // For each client, count contacts via campaignContacts
+  const clientContactCounts = await Promise.all(
+    clients.map((client) =>
+      db.campaignContact.count({
+        where: { campaign: { clientId: client.id } },
+      })
+    )
+  );
+
+  // Format media value
+  const mv = Number(orgStats.mediaValue);
+  const mediaValueFormatted =
+    mv >= 1000 ? `$${Math.round(mv / 1000)}k` : `$${mv}`;
+
+  const stats = [
+    { value: orgStats.clientCount, label: "Active clients" },
+    { value: orgStats.contactCount, label: "Total contacts" },
+    { value: orgStats.campaignCount, label: "Live campaigns" },
+    { value: mediaValueFormatted, label: "Media value" },
+  ];
+
   return (
-    <div className="flex flex-1 items-center justify-center p-6" style={{ minHeight: "60vh" }}>
-      <div className="text-center">
-        <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Workspaces</h2>
-        <p className="mt-1 text-[13px]" style={{ color: "var(--text-muted-custom)" }}>
-          Coming in Phase 1
-        </p>
+    <div style={{ padding: "16px" }} className="md:p-6">
+      <StatsBar stats={stats} />
+
+      <div style={{ marginTop: 24 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "var(--text-muted-custom)",
+            marginBottom: 10,
+          }}
+        >
+          Client workspaces
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {clients.map((client, idx) => (
+            <ClientCard
+              key={client.id}
+              client={client}
+              contactCount={clientContactCounts[idx]}
+            />
+          ))}
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <AddClientButton />
+        </div>
       </div>
     </div>
   );
