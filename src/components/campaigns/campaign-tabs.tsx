@@ -10,6 +10,8 @@ import { CampaignBudget } from "./campaign-budget";
 import { DraftPitchesPhase } from "./phase-draft-pitches";
 import { OutreachPhase } from "./phase-outreach";
 import { CampaignCoverageTab } from "./campaign-coverage-tab";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 interface CampaignTabsProps {
   phases: { id: string; name: string; order: number; status: string }[];
@@ -108,10 +110,23 @@ interface CampaignTabsProps {
   }[];
   campaignName?: string;
   emailConnected?: boolean;
+  eventDetail?: {
+    id: string;
+    venue: string | null;
+    eventDate: string | null;
+    eventTime: string | null;
+    guestCount: number | null;
+    runsheetEntries: {
+      id: string;
+      time: string;
+      activity: string;
+      order: number;
+    }[];
+  } | null;
 }
 
-const tabs = ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
-type Tab = (typeof tabs)[number];
+const baseTabs = ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
+type Tab = (typeof baseTabs)[number] | "Event";
 
 export function CampaignTabs({
   phases,
@@ -128,7 +143,11 @@ export function CampaignTabs({
   coverages,
   campaignName,
   emailConnected,
+  eventDetail,
 }: CampaignTabsProps) {
+  const tabs: Tab[] = campaignType === "event"
+    ? ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage", "Event"]
+    : ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"];
   const [activeTab, setActiveTab] = useState<Tab>("Phases");
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -245,6 +264,129 @@ export function CampaignTabs({
             name: cc.contact.name,
           }))}
         />
+      )}
+
+      {activeTab === "Event" && (
+        <div>
+          {eventDetail ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Compact summary */}
+              <div
+                style={{
+                  padding: 14,
+                  borderRadius: 8,
+                  border: "1px solid var(--border-custom)",
+                  backgroundColor: "var(--page-bg)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {eventDetail.venue && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Venue</div>
+                      <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
+                        {eventDetail.venue}
+                      </div>
+                    </div>
+                  )}
+                  {eventDetail.eventDate && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Date</div>
+                      <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
+                        {new Date(eventDetail.eventDate).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {eventDetail.eventTime && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Time</div>
+                      <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
+                        {eventDetail.eventTime}
+                      </div>
+                    </div>
+                  )}
+                  {eventDetail.guestCount != null && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Guests</div>
+                      <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
+                        {eventDetail.guestCount}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mini runsheet preview */}
+              {eventDetail.runsheetEntries.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-sub)", marginBottom: 6 }}>
+                    Runsheet Preview
+                  </div>
+                  {eventDetail.runsheetEntries.slice(0, 5).map((entry) => (
+                    <div
+                      key={entry.id}
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        padding: "4px 0",
+                        borderBottom: "1px solid var(--border-custom)",
+                      }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", minWidth: 44 }}>
+                        {entry.time}
+                      </span>
+                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{entry.activity}</span>
+                    </div>
+                  ))}
+                  {eventDetail.runsheetEntries.length > 5 && (
+                    <div style={{ fontSize: 11, color: "var(--text-muted-custom)", marginTop: 4 }}>
+                      +{eventDetail.runsheetEntries.length - 5} more entries
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Link to full event page */}
+              <Link
+                href={`/events/${campaignId}`}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "var(--accent-custom)",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                View full event details →
+              </Link>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "30px 20px" }}>
+              <div style={{ fontSize: 13, color: "var(--text-muted-custom)", marginBottom: 8 }}>
+                No event details configured yet.
+              </div>
+              <Link
+                href={`/events/${campaignId}`}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "var(--accent-custom)",
+                  textDecoration: "none",
+                }}
+              >
+                Set up event details →
+              </Link>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

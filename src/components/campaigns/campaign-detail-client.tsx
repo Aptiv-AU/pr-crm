@@ -110,6 +110,19 @@ interface CampaignDetailClientProps {
   }[];
   clients: { id: string; name: string; initials: string; colour: string; bgColour: string }[];
   emailConnected: boolean;
+  eventDetail?: {
+    id: string;
+    venue: string | null;
+    eventDate: string | null;
+    eventTime: string | null;
+    guestCount: number | null;
+    runsheetEntries: {
+      id: string;
+      time: string;
+      activity: string;
+      order: number;
+    }[];
+  } | null;
 }
 
 export function CampaignDetailClient({
@@ -119,6 +132,7 @@ export function CampaignDetailClient({
   availableSuppliers,
   clients,
   emailConnected,
+  eventDetail,
 }: CampaignDetailClientProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -156,6 +170,7 @@ export function CampaignDetailClient({
           coverages={campaign.coverages}
           campaignName={campaign.name}
           emailConnected={emailConnected}
+          eventDetail={eventDetail}
         />
       </div>
 

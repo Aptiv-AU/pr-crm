@@ -72,6 +72,30 @@ export default async function CampaignDetailPage({
       serviceCategory: s.serviceCategory,
     }));
 
+  // Fetch eventDetail for event-type campaigns
+  let eventDetailData = null;
+  if (campaign.type === "event") {
+    const ed = await db.eventDetail.findUnique({
+      where: { campaignId },
+      include: {
+        runsheetEntries: {
+          orderBy: { order: "asc" },
+          select: { id: true, time: true, activity: true, order: true },
+        },
+      },
+    });
+    if (ed) {
+      eventDetailData = {
+        id: ed.id,
+        venue: ed.venue,
+        eventDate: ed.eventDate ? ed.eventDate.toISOString() : null,
+        eventTime: ed.eventTime,
+        guestCount: ed.guestCount,
+        runsheetEntries: ed.runsheetEntries,
+      };
+    }
+  }
+
   // Serialize campaign data (dates and Decimals)
   const serializedCampaign = {
     id: campaign.id,
@@ -144,6 +168,7 @@ export default async function CampaignDetailPage({
       availableSuppliers={availableSuppliers}
       clients={allClients}
       emailConnected={!!emailAccount}
+      eventDetail={eventDetailData}
     />
   );
 }
