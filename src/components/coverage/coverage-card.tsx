@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CoverageForm } from "./coverage-form";
 import { deleteCoverage } from "@/actions/coverage-actions";
@@ -75,6 +76,8 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
   }
 
   const typeLabel = coverage.type.charAt(0).toUpperCase() + coverage.type.slice(1);
+  const hasImage = coverage.attachmentUrl && isImageUrl(coverage.attachmentUrl);
+  const hasPdf = coverage.attachmentUrl && !hasImage;
 
   const formCoverage = {
     id: coverage.id,
@@ -97,30 +100,56 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
         style={{
           border: "1px solid var(--border-custom)",
           borderRadius: 10,
-          padding: 16,
           backgroundColor: "var(--card-bg)",
           opacity: isPending ? 0.5 : 1,
           transition: "opacity 0.15s",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: hasImage ? "row" : "column",
         }}
       >
-        {/* Top row: publication + type badge + date */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+        {/* Image section — large featured clipping */}
+        {hasImage && (
+          <a
+            href={coverage.attachmentUrl!}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              width: 160,
+              minHeight: 120,
+              flexShrink: 0,
+              display: "block",
+              overflow: "hidden",
+              backgroundColor: "var(--page-bg)",
+            }}
+          >
+            <img
+              src={coverage.attachmentUrl!}
+              alt={`${coverage.publication} clipping`}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </a>
+        )}
+
+        {/* Content section */}
+        <div style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 6 }}>
+          {/* Row 1: publication + type + date */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span
               style={{
                 fontSize: 14,
                 fontWeight: 600,
                 color: "var(--text-primary)",
-                whiteSpace: "nowrap",
+                flex: 1,
+                minWidth: 0,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
               {coverage.publication}
@@ -128,139 +157,124 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
             <Badge variant={typeBadgeVariant[coverage.type] ?? "default"}>
               {typeLabel}
             </Badge>
-          </div>
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--text-muted-custom)",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            {formatDate(coverage.date)}
-          </span>
-        </div>
-
-        {/* Second row: campaign/client + contact */}
-        {(coverage.campaign || coverage.contact) && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 8,
-              fontSize: 12,
-              color: "var(--text-sub)",
-            }}
-          >
-            {coverage.campaign && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: 4,
-                    backgroundColor: coverage.campaign.client.bgColour,
-                    color: coverage.campaign.client.colour,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 7,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {coverage.campaign.client.initials}
-                </span>
-                <span>{coverage.campaign.name}</span>
-              </div>
-            )}
-            {coverage.campaign && coverage.contact && (
-              <span style={{ color: "var(--text-muted-custom)" }}>|</span>
-            )}
-            {coverage.contact && <span>{coverage.contact.name}</span>}
-          </div>
-        )}
-
-        {/* Third row: media value + URL + clipping */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginTop: 10,
-          }}
-        >
-          {coverage.mediaValue != null && Number(coverage.mediaValue) > 0 && (
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>
-              {formatMediaValue(Number(coverage.mediaValue))}
-            </span>
-          )}
-          {coverage.url && (
-            <a
-              href={coverage.url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <span
               style={{
-                fontSize: 12,
-                color: "var(--accent-custom)",
-                textDecoration: "none",
+                fontSize: 11,
+                color: "var(--text-muted-custom)",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
-              View article &rarr;
-            </a>
+              {formatDate(coverage.date)}
+            </span>
+          </div>
+
+          {/* Row 2: campaign + contact */}
+          {(coverage.campaign || coverage.contact) && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                color: "var(--text-sub)",
+              }}
+            >
+              {coverage.campaign && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: 3,
+                      backgroundColor: coverage.campaign.client.bgColour,
+                      color: coverage.campaign.client.colour,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 7,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {coverage.campaign.client.initials}
+                  </span>
+                  <span>{coverage.campaign.name}</span>
+                </div>
+              )}
+              {coverage.campaign && coverage.contact && (
+                <span style={{ color: "var(--text-muted-custom)" }}>·</span>
+              )}
+              {coverage.contact && <span>{coverage.contact.name}</span>}
+            </div>
           )}
-          <div style={{ flex: 1 }} />
-          {coverage.attachmentUrl && (
-            isImageUrl(coverage.attachmentUrl) ? (
-              <img
-                src={coverage.attachmentUrl}
-                alt="Clipping"
+
+          {/* Row 3: media value + URL + PDF indicator + actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+            {coverage.mediaValue != null && Number(coverage.mediaValue) > 0 && (
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>
+                {formatMediaValue(Number(coverage.mediaValue))}
+              </span>
+            )}
+            {coverage.url && (
+              <a
+                href={coverage.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 6,
-                  objectFit: "cover",
-                  border: "1px solid var(--border-custom)",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 6,
-                  border: "1px solid var(--border-custom)",
-                  backgroundColor: "var(--page-bg)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: "var(--text-sub)",
+                  fontSize: 11,
+                  color: "var(--accent-custom)",
+                  textDecoration: "none",
                 }}
               >
+                View article →
+              </a>
+            )}
+            {hasPdf && (
+              <a
+                href={coverage.attachmentUrl!}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                  fontSize: 11,
+                  color: "var(--text-sub)",
+                  textDecoration: "none",
+                }}
+              >
+                <Icon name="campaigns" size={11} color="var(--text-sub)" />
                 PDF
-              </div>
-            )
-          )}
-        </div>
-
-        {/* Actions */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 4,
-            marginTop: 10,
-          }}
-        >
-          <Button variant="ghost" size="xs" icon="edit" onClick={() => setEditOpen(true)}>
-            Edit
-          </Button>
-          <Button variant="ghost" size="xs" icon="close" onClick={handleDelete} disabled={isPending}>
-            Delete
-          </Button>
+              </a>
+            )}
+            <div style={{ flex: 1 }} />
+            <button
+              onClick={() => setEditOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 4,
+                color: "var(--text-muted-custom)",
+              }}
+            >
+              <Icon name="edit" size={13} color="var(--text-muted-custom)" />
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isPending}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 4,
+                color: "var(--text-muted-custom)",
+              }}
+            >
+              <Icon name="close" size={13} color="var(--text-muted-custom)" />
+            </button>
+          </div>
         </div>
       </div>
 
