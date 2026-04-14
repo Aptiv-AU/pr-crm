@@ -47,10 +47,11 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
                   src={client.logo}
                   alt={client.name}
                   style={{
-                    width: 44,
                     height: 44,
-                    borderRadius: 10,
-                    objectFit: "cover",
+                    maxWidth: 140,
+                    width: "auto",
+                    borderRadius: 6,
+                    objectFit: "contain",
                     flexShrink: 0,
                   }}
                 />

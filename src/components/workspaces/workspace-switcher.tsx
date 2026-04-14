@@ -98,10 +98,11 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
               alt={activeClient.name}
               className="shrink-0"
               style={{
-                width: 20,
                 height: 20,
-                borderRadius: 5,
-                objectFit: "cover",
+                maxWidth: 48,
+                width: "auto",
+                borderRadius: 3,
+                objectFit: "contain",
               }}
             />
           ) : (

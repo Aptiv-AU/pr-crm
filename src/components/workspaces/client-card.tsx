@@ -68,10 +68,11 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
             src={client.logo}
             alt={client.name}
             style={{
-              width: 38,
               height: 38,
-              borderRadius: 9,
-              objectFit: "cover",
+              maxWidth: 96,
+              width: "auto",
+              borderRadius: 6,
+              objectFit: "contain",
               flexShrink: 0,
             }}
           />

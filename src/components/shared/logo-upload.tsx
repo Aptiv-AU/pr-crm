@@ -87,11 +87,14 @@ export function LogoUpload({ currentLogo, onUpload, label = "Logo" }: LogoUpload
             src={currentLogo}
             alt="Logo"
             style={{
-              width: 48,
               height: 48,
-              borderRadius: 10,
-              objectFit: "cover",
+              maxWidth: 160,
+              width: "auto",
+              borderRadius: 8,
+              objectFit: "contain",
               border: "1px solid var(--border-custom)",
+              padding: 4,
+              backgroundColor: "var(--card-bg)",
             }}
           />
           <button
