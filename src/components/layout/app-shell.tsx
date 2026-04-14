@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { Topbar } from "@/components/layout/topbar";
+import { GlobalSearch } from "@/components/shared/global-search";
 
 interface ClientOption {
   id: string;
@@ -39,6 +40,7 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
     <div className="flex h-screen" style={{ backgroundColor: "var(--page-bg)" }}>
       <Sidebar clients={clients} badgeCounts={badgeCounts} userData={userData} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} clients={clients} badgeCounts={badgeCounts} userData={userData} />
+      <GlobalSearch />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar onMenuClick={() => setDrawerOpen(true)} />
         <main

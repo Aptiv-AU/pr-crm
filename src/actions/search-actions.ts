@@ -1,0 +1,119 @@
+"use server";
+
+import { db } from "@/lib/db";
+
+interface SearchResult {
+  type: "client" | "contact" | "campaign" | "supplier";
+  id: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  initials?: string;
+  colour?: string;
+  bgColour?: string;
+}
+
+export async function globalSearch(query: string): Promise<SearchResult[]> {
+  if (!query || query.length < 2) return [];
+  const org = await db.organization.findFirst();
+  if (!org) return [];
+
+  const results: SearchResult[] = [];
+
+  const [clients, contacts, campaigns, suppliers] = await Promise.all([
+    db.client.findMany({
+      where: {
+        organizationId: org.id,
+        name: { contains: query, mode: "insensitive" },
+      },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        industry: true,
+        initials: true,
+        colour: true,
+        bgColour: true,
+      },
+    }),
+    db.contact.findMany({
+      where: {
+        organizationId: org.id,
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { publication: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        publication: true,
+        initials: true,
+        avatarBg: true,
+        avatarFg: true,
+      },
+    }),
+    db.campaign.findMany({
+      where: {
+        organizationId: org.id,
+        name: { contains: query, mode: "insensitive" },
+      },
+      take: 5,
+      include: { client: { select: { name: true } } },
+    }),
+    db.supplier.findMany({
+      where: {
+        organizationId: org.id,
+        name: { contains: query, mode: "insensitive" },
+      },
+      take: 5,
+      select: { id: true, name: true, serviceCategory: true },
+    }),
+  ]);
+
+  clients.forEach((c) =>
+    results.push({
+      type: "client",
+      id: c.id,
+      title: c.name,
+      subtitle: c.industry,
+      href: `/workspaces/${c.id}`,
+      initials: c.initials,
+      colour: c.colour,
+      bgColour: c.bgColour,
+    })
+  );
+  contacts.forEach((c) =>
+    results.push({
+      type: "contact",
+      id: c.id,
+      title: c.name,
+      subtitle: c.publication,
+      href: `/contacts/${c.id}`,
+      initials: c.initials,
+      colour: c.avatarFg,
+      bgColour: c.avatarBg,
+    })
+  );
+  campaigns.forEach((c) =>
+    results.push({
+      type: "campaign",
+      id: c.id,
+      title: c.name,
+      subtitle: c.client.name,
+      href: `/campaigns/${c.id}`,
+    })
+  );
+  suppliers.forEach((s) =>
+    results.push({
+      type: "supplier",
+      id: s.id,
+      title: s.name,
+      subtitle: s.serviceCategory,
+      href: `/suppliers/${s.id}`,
+    })
+  );
+
+  return results.slice(0, 15);
+}

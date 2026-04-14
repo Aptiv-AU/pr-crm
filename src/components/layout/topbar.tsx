@@ -64,8 +64,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         </div>
 
         {/* Search placeholder */}
-        <div
-          className="flex items-center gap-2 rounded-md px-3 py-1.5 cursor-pointer"
+        <button
+          onClick={() => window.dispatchEvent(new Event("open-search"))}
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 cursor-pointer border-none"
           style={{
             backgroundColor: "var(--card-bg)",
             border: "1px solid var(--border-custom)",
@@ -87,7 +88,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           >
             ⌘K
           </span>
-        </div>
+        </button>
       </header>
 
       {/* Mobile topbar */}
@@ -130,6 +131,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             />
           </button>
           <button
+            onClick={() => window.dispatchEvent(new Event("open-search"))}
             className="flex items-center justify-center rounded-md p-1.5 border-none cursor-pointer"
             style={{ backgroundColor: "transparent" }}
           >
