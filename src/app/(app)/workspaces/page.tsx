@@ -3,6 +3,7 @@ import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
 import { StatsBar } from "@/components/shared/stats-bar";
 import { ClientCard } from "@/components/workspaces/client-card";
 import { AddClientButton } from "@/components/workspaces/add-client-button";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -60,15 +61,23 @@ export default async function WorkspacesPage() {
           Client workspaces
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {clients.map((client, idx) => (
-            <ClientCard
-              key={client.id}
-              client={client}
-              contactCount={clientContactCounts[idx]}
-            />
-          ))}
-        </div>
+        {clients.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {clients.map((client, idx) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                contactCount={clientContactCounts[idx]}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon="workspace"
+            title="Welcome to Pressroom"
+            description="Add your first client workspace to start managing campaigns, contacts, and coverage."
+          />
+        )}
 
         <div style={{ marginTop: 12 }}>
           <AddClientButton />

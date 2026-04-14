@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { StatsBar } from "@/components/shared/stats-bar";
 import { FilterPills } from "@/components/shared/filter-pills";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
+import { EmptyState } from "@/components/shared/empty-state";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
 
 interface CampaignRow {
@@ -230,16 +231,11 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
       </div>
 
       {filtered.length === 0 && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px 20px",
-            color: "var(--text-muted-custom)",
-            fontSize: 13,
-          }}
-        >
-          No campaigns found
-        </div>
+        campaigns.length > 0 ? (
+          <EmptyState icon="campaigns" title="No campaigns match these filters" description="Try adjusting the type or client filter." />
+        ) : (
+          <EmptyState icon="campaigns" title="No campaigns yet" description="Create your first campaign to start tracking work." />
+        )
       )}
 
       {/* Add campaign slide-over */}

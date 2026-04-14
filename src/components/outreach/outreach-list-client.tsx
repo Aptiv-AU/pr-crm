@@ -6,6 +6,7 @@ import { StatsBar } from "@/components/shared/stats-bar";
 import { FilterPills } from "@/components/shared/filter-pills";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { EmptyState } from "@/components/shared/empty-state";
 
 interface OutreachContact {
   id: string;
@@ -90,13 +91,11 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
 
       {/* Outreach list */}
       {filtered.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center" style={{ minHeight: "40vh" }}>
-          <div className="text-center">
-            <p className="text-[13px]" style={{ color: "var(--text-muted-custom)" }}>
-              No pitches drafted yet. Create a press campaign to get started.
-            </p>
-          </div>
-        </div>
+        outreaches.length > 0 ? (
+          <EmptyState icon="outreach" title="No pitches match this filter" description="Try selecting a different status." />
+        ) : (
+          <EmptyState icon="outreach" title="No pitches drafted yet" description="Create a campaign and generate AI pitches to get started." />
+        )
       ) : (
         <div className="flex flex-col gap-[8px]">
           {filtered.map((outreach) => (

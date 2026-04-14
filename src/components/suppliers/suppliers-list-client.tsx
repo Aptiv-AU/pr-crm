@@ -8,6 +8,7 @@ import { FilterPills } from "@/components/shared/filter-pills";
 import { SupplierTable } from "@/components/suppliers/supplier-table";
 import { SupplierCardList } from "@/components/suppliers/supplier-card-list";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
+import { EmptyState } from "@/components/shared/empty-state";
 import { SupplierForm } from "@/components/suppliers/supplier-form";
 
 interface SupplierRow {
@@ -68,12 +69,24 @@ export function SuppliersListClient({ suppliers, stats, categories }: SuppliersL
 
       {/* Table — desktop */}
       <div className="hidden md:block">
-        <SupplierTable suppliers={filtered} />
+        {filtered.length > 0 ? (
+          <SupplierTable suppliers={filtered} />
+        ) : suppliers.length > 0 ? (
+          <EmptyState icon="suppliers" title="No suppliers match this filter" description="Try selecting a different category." />
+        ) : (
+          <EmptyState icon="suppliers" title="No suppliers yet" description="Add your first supplier to get started." />
+        )}
       </div>
 
       {/* Card list — mobile */}
       <div className="md:hidden">
-        <SupplierCardList suppliers={filtered} />
+        {filtered.length > 0 ? (
+          <SupplierCardList suppliers={filtered} />
+        ) : suppliers.length > 0 ? (
+          <EmptyState icon="suppliers" title="No suppliers match this filter" description="Try selecting a different category." />
+        ) : (
+          <EmptyState icon="suppliers" title="No suppliers yet" description="Add your first supplier to get started." />
+        )}
       </div>
 
       {/* Add supplier slide-over */}

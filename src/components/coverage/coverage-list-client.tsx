@@ -8,6 +8,7 @@ import { FilterPills } from "@/components/shared/filter-pills";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CoverageForm } from "./coverage-form";
 import { CoverageCard } from "./coverage-card";
+import { EmptyState } from "@/components/shared/empty-state";
 
 interface CoverageListClientProps {
   coverages: {
@@ -156,17 +157,10 @@ export function CoverageListClient({
             />
           ))}
         </div>
+      ) : coverages.length === 0 ? (
+        <EmptyState icon="coverage" title="No coverage logged yet" description="Log your first media hit to start tracking coverage." />
       ) : (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px 20px",
-            color: "var(--text-muted-custom)",
-            fontSize: 13,
-          }}
-        >
-          {coverages.length === 0 ? "No coverage logged yet" : "No coverage matches the current filters"}
-        </div>
+        <EmptyState icon="coverage" title="No coverage matches these filters" description="Try adjusting the type or campaign filter." />
       )}
 
       {/* Add coverage panel */}

@@ -8,6 +8,7 @@ import { FilterPills } from "@/components/shared/filter-pills";
 import { ContactTable } from "@/components/contacts/contact-table";
 import { ContactCardList } from "@/components/contacts/contact-card-list";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
+import { EmptyState } from "@/components/shared/empty-state";
 import { ContactForm } from "@/components/contacts/contact-form";
 
 interface ContactRow {
@@ -73,12 +74,24 @@ export function ContactsListClient({ contacts, stats, beats }: ContactsListClien
 
       {/* Table — desktop */}
       <div className="hidden md:block">
-        <ContactTable contacts={filtered} />
+        {filtered.length > 0 ? (
+          <ContactTable contacts={filtered} />
+        ) : contacts.length > 0 ? (
+          <EmptyState icon="contacts" title="No contacts match this filter" description="Try selecting a different beat." />
+        ) : (
+          <EmptyState icon="contacts" title="No contacts yet" description="Add your first media contact to get started." />
+        )}
       </div>
 
       {/* Card list — mobile */}
       <div className="md:hidden">
-        <ContactCardList contacts={filtered} />
+        {filtered.length > 0 ? (
+          <ContactCardList contacts={filtered} />
+        ) : contacts.length > 0 ? (
+          <EmptyState icon="contacts" title="No contacts match this filter" description="Try selecting a different beat." />
+        ) : (
+          <EmptyState icon="contacts" title="No contacts yet" description="Add your first media contact to get started." />
+        )}
       </div>
 
       {/* Add contact slide-over */}
