@@ -21,7 +21,7 @@ export function CoveragePhase() {
           Coverage Tracking
         </div>
         <div style={{ fontSize: 13, color: "var(--text-muted-custom)", maxWidth: 340 }}>
-          Log coverage results and track media value. Coming in Phase 5C.
+          Log coverage results and track media value. Coming soon.
         </div>
       </div>
     </Card>

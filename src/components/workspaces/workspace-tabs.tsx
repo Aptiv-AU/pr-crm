@@ -203,31 +203,73 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
         </div>
       )}
 
-      {activeTab === "Outreach" && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px 20px",
-            color: "var(--text-muted-custom)",
-            fontSize: 13,
-          }}
-        >
-          Coming in Phase 5
-        </div>
-      )}
+      {activeTab === "Outreach" && (() => {
+        const totalOutreaches = campaigns.reduce((sum, c) => sum + c.outreaches.length, 0);
+        const sentCount = campaigns.reduce(
+          (sum, c) => sum + c.outreaches.filter((o) => o.status === "sent" || o.status === "replied").length,
+          0,
+        );
+        if (totalOutreaches === 0) {
+          return (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 20px",
+                color: "var(--text-muted-custom)",
+                fontSize: 13,
+              }}
+            >
+              No outreach yet. View and send outreach in each campaign's Outreach tab.
+            </div>
+          );
+        }
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Total</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{totalOutreaches}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Sent</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{sentCount}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-muted-custom)" }}>
+              View and send outreach in each campaign's Outreach tab.
+            </div>
+          </div>
+        );
+      })()}
 
-      {activeTab === "Coverage" && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px 20px",
-            color: "var(--text-muted-custom)",
-            fontSize: 13,
-          }}
-        >
-          Coming in Phase 6
-        </div>
-      )}
+      {activeTab === "Coverage" && (() => {
+        const totalCoverages = campaigns.reduce((sum, c) => sum + c.coverages.length, 0);
+        if (totalCoverages === 0) {
+          return (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 20px",
+                color: "var(--text-muted-custom)",
+                fontSize: 13,
+              }}
+            >
+              No coverage yet. Log coverage in each campaign's Coverage tab.
+            </div>
+          );
+        }
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Total Coverage Entries</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{totalCoverages}</div>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-muted-custom)" }}>
+              View and log coverage in each campaign's Coverage tab.
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
