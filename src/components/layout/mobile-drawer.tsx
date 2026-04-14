@@ -17,28 +17,56 @@ interface NavItem {
   badge?: string;
 }
 
-const globalItems: NavItem[] = [
-  { label: "Workspaces", icon: "workspace", href: "/workspaces" },
-  { label: "Contacts", icon: "contacts", href: "/contacts" },
-  { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
-  { label: "Coverage", icon: "coverage", href: "/coverage" },
-];
+interface BadgeCounts {
+  contacts: number;
+  campaigns: number;
+  outreach: number;
+}
 
-const workspaceItems: NavItem[] = [
-  { label: "Campaigns", icon: "campaigns", href: "/campaigns" },
-  { label: "Outreach", icon: "outreach", href: "/outreach" },
-  { label: "Events", icon: "events", href: "/events" },
-];
+interface UserData {
+  name: string;
+  orgName: string;
+}
+
+function buildGlobalItems(badgeCounts: BadgeCounts): NavItem[] {
+  return [
+    { label: "Workspaces", icon: "workspace", href: "/workspaces" },
+    { label: "Contacts", icon: "contacts", href: "/contacts", badge: badgeCounts.contacts > 0 ? String(badgeCounts.contacts) : undefined },
+    { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
+    { label: "Coverage", icon: "coverage", href: "/coverage" },
+  ];
+}
+
+function buildWorkspaceItems(badgeCounts: BadgeCounts): NavItem[] {
+  return [
+    { label: "Campaigns", icon: "campaigns", href: "/campaigns", badge: badgeCounts.campaigns > 0 ? String(badgeCounts.campaigns) : undefined },
+    { label: "Outreach", icon: "outreach", href: "/outreach", badge: badgeCounts.outreach > 0 ? String(badgeCounts.outreach) : undefined },
+    { label: "Events", icon: "events", href: "/events" },
+  ];
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase())
+    .slice(0, 2)
+    .join("");
+}
 
 interface MobileDrawerProps {
   open: boolean;
   onClose: () => void;
   clients: { id: string; name: string; industry: string; colour: string; bgColour: string; initials: string }[];
+  badgeCounts: BadgeCounts;
+  userData: UserData;
 }
 
-export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
+export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: MobileDrawerProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const globalItems = buildGlobalItems(badgeCounts);
+  const workspaceItems = buildWorkspaceItems(badgeCounts);
 
   // Close on route change
   useEffect(() => {
@@ -154,6 +182,9 @@ export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
               >
                 <Icon name={item.icon} size={14} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
                 <span className="flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className="text-[11px] font-normal" style={{ color: "var(--text-muted-custom)" }}>{item.badge}</span>
+                )}
               </Link>
             );
           })}
@@ -179,6 +210,9 @@ export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
               >
                 <Icon name={item.icon} size={14} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
                 <span className="flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className="text-[11px] font-normal" style={{ color: "var(--text-muted-custom)" }}>{item.badge}</span>
+                )}
               </Link>
             );
           })}
@@ -213,20 +247,20 @@ export function MobileDrawer({ open, onClose, clients }: MobileDrawerProps) {
                 backgroundColor: "#EC4899",
               }}
             >
-              NW
+              {getInitials(userData.name)}
             </div>
             <div>
               <div
                 className="text-[13px] font-medium leading-tight"
                 style={{ color: "var(--text-primary)" }}
               >
-                Natalie White
+                {userData.name}
               </div>
               <div
                 className="text-[11px] leading-tight"
                 style={{ color: "var(--text-muted-custom)" }}
               >
-                NWPR
+                {userData.orgName}
               </div>
             </div>
           </div>
