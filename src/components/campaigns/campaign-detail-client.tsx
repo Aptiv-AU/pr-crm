@@ -59,6 +59,7 @@ interface CampaignDetailClientProps {
       id: string;
       description: string;
       amount: number;
+      confirmed: boolean;
       supplier: { id: string; name: string } | null;
     }[];
     coverages: {

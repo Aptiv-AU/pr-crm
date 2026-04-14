@@ -132,6 +132,7 @@ export default async function CampaignDetailPage({
       id: item.id,
       description: item.description,
       amount: Number(item.amount),
+      confirmed: item.confirmed,
       supplier: item.supplier,
     })),
     coverages: campaign.coverages.map((cov) => ({

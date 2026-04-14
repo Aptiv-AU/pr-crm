@@ -186,6 +186,7 @@ model BudgetLineItem {
   campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   description String
   amount      Decimal
+  confirmed   Boolean   @default(false)
   supplierId  String?
   supplier    Supplier? @relation(fields: [supplierId], references: [id])
 }

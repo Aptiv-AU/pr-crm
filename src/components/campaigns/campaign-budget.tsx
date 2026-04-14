@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addBudgetLineItem, deleteBudgetLineItem } from "@/actions/campaign-actions";
+import { addBudgetLineItem, deleteBudgetLineItem, confirmBudgetLineItem } from "@/actions/campaign-actions";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 
@@ -10,6 +10,7 @@ interface LineItem {
   id: string;
   description: string;
   amount: number;
+  confirmed: boolean;
   supplier: { id: string; name: string } | null;
 }
 
@@ -118,8 +119,38 @@ export function CampaignBudget({ lineItems, campaignId, totalBudget }: CampaignB
               gap: 10,
               padding: "8px 0",
               borderBottom: "1px solid var(--border-custom)",
+              borderLeft: item.confirmed ? "3px solid var(--green)" : "3px solid transparent",
+              paddingLeft: 8,
             }}
           >
+            {/* Confirm checkbox */}
+            <button
+              onClick={() => {
+                if (!item.confirmed) {
+                  startTransition(async () => {
+                    await confirmBudgetLineItem(item.id);
+                    router.refresh();
+                  });
+                }
+              }}
+              disabled={isPending || item.confirmed}
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 4,
+                border: item.confirmed ? "none" : "2px solid var(--border-custom)",
+                backgroundColor: item.confirmed ? "var(--green)" : "transparent",
+                cursor: item.confirmed ? "default" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                padding: 0,
+              }}
+            >
+              {item.confirmed && <Icon name="check" size={11} color="#fff" />}
+            </button>
+
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
@@ -131,12 +162,17 @@ export function CampaignBudget({ lineItems, campaignId, totalBudget }: CampaignB
                 }}
               >
                 {item.description}
+                {!item.confirmed && (
+                  <span style={{ fontSize: 10, color: "var(--amber)", marginLeft: 6 }}>
+                    Estimated
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: 12, color: "var(--text-sub)" }}>
                 {item.supplier?.name || "\u2014"}
               </div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", flexShrink: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: item.confirmed ? "var(--green)" : "var(--text-primary)", flexShrink: 0 }}>
               {formatCurrency(item.amount)}
             </div>
             <button

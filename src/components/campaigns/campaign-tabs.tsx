@@ -61,6 +61,7 @@ interface CampaignTabsProps {
     id: string;
     description: string;
     amount: number;
+    confirmed: boolean;
     supplier: { id: string; name: string } | null;
   }[];
   totalBudget: number | null;

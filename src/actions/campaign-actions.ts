@@ -231,6 +231,12 @@ export async function addSupplierToCampaign(formData: FormData) {
 
     const agreedCost = agreedCostStr ? parseFloat(agreedCostStr) : null;
 
+    // Fetch supplier name for budget description
+    const supplier = await db.supplier.findUnique({
+      where: { id: supplierId },
+      select: { name: true },
+    });
+
     await db.campaignSupplier.create({
       data: {
         campaignId,
@@ -239,6 +245,19 @@ export async function addSupplierToCampaign(formData: FormData) {
         agreedCost: agreedCost !== null && !isNaN(agreedCost) ? agreedCost : null,
       },
     });
+
+    // Auto-create a budget line item linked to this supplier
+    if (agreedCost !== null && !isNaN(agreedCost) && agreedCost > 0) {
+      await db.budgetLineItem.create({
+        data: {
+          campaignId,
+          description: `${supplier?.name ?? "Supplier"} — ${role}`,
+          amount: agreedCost,
+          confirmed: false,
+          supplierId,
+        },
+      });
+    }
 
     revalidatePath("/campaigns");
     revalidatePath(`/campaigns/${campaignId}`);
@@ -261,6 +280,17 @@ export async function removeSupplierFromCampaign(campaignSupplierId: string) {
 
     if (!existing) {
       return { error: "Campaign supplier not found" };
+    }
+
+    // Delete linked budget line items for this supplier+campaign
+    const cs = await db.campaignSupplier.findUnique({
+      where: { id: campaignSupplierId },
+      select: { supplierId: true },
+    });
+    if (cs) {
+      await db.budgetLineItem.deleteMany({
+        where: { campaignId: existing.campaignId, supplierId: cs.supplierId },
+      });
     }
 
     await db.campaignSupplier.delete({
@@ -340,5 +370,30 @@ export async function deleteBudgetLineItem(lineItemId: string) {
     return {
       error: error instanceof Error ? error.message : "Failed to delete budget line item",
     };
+  }
+}
+
+export async function confirmBudgetLineItem(lineItemId: string, amount?: number) {
+  try {
+    const existing = await db.budgetLineItem.findUnique({
+      where: { id: lineItemId },
+      select: { campaignId: true },
+    });
+    if (!existing) return { error: "Budget line item not found" };
+
+    await db.budgetLineItem.update({
+      where: { id: lineItemId },
+      data: {
+        confirmed: true,
+        ...(amount !== undefined ? { amount } : {}),
+      },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${existing.campaignId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("confirmBudgetLineItem error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to confirm" };
   }
 }
