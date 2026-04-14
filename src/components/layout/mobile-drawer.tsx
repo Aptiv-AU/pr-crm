@@ -220,6 +220,18 @@ export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: 
 
         {/* Footer */}
         <div className="px-3 pb-3">
+          <Link
+            href="/settings"
+            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 w-full text-[13px] font-medium no-underline"
+            style={{
+              backgroundColor: pathname.startsWith("/settings") ? "var(--active-bg)" : "transparent",
+              color: pathname.startsWith("/settings") ? "var(--accent-text)" : "var(--text-sub)",
+            }}
+          >
+            <Icon name="settings" size={14} color={pathname.startsWith("/settings") ? "var(--accent-custom)" : "var(--text-sub)"} />
+            <span>Settings</span>
+          </Link>
+
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="flex items-center gap-2.5 rounded-md px-2 py-1.5 w-full text-[13px] font-medium cursor-pointer border-none"

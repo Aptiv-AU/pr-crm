@@ -172,6 +172,21 @@ export function Sidebar({ clients, badgeCounts, userData }: SidebarProps) {
 
       {/* Footer */}
       <div className="px-3 pb-3">
+        {/* Settings */}
+        <Link
+          href="/settings"
+          className="flex items-center gap-2.5 rounded-md px-2 py-1.5 w-full text-[13px] font-medium no-underline"
+          style={{
+            backgroundColor: pathname.startsWith("/settings") ? "var(--active-bg)" : "transparent",
+            color: pathname.startsWith("/settings") ? "var(--accent-text)" : "var(--text-sub)",
+          }}
+          onMouseEnter={(e) => { if (!pathname.startsWith("/settings")) e.currentTarget.style.backgroundColor = "var(--hover-bg)"; }}
+          onMouseLeave={(e) => { if (!pathname.startsWith("/settings")) e.currentTarget.style.backgroundColor = "transparent"; }}
+        >
+          <Icon name="settings" size={14} color={pathname.startsWith("/settings") ? "var(--accent-custom)" : "var(--text-sub)"} />
+          <span>Settings</span>
+        </Link>
+
         {/* Theme toggle */}
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
