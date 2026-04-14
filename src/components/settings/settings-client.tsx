@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { updateAISettings, updateOrganizationSettings } from "@/actions/settings-actions";
+import { updateAISettings, updateOrganizationSettings, updateUserProfile } from "@/actions/settings-actions";
 import { type AIProvider, PROVIDER_INFO, DEFAULT_MODELS } from "@/lib/ai/provider";
 
 interface SettingsClientProps {
@@ -21,6 +21,18 @@ interface SettingsClientProps {
     openrouter: boolean;
     minimax: boolean;
   };
+  currentUser: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  } | null;
+  users: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    role: string;
+    createdAt: string;
+  }[];
   emailAccount?: {
     id: string;
     email: string;
@@ -31,8 +43,11 @@ interface SettingsClientProps {
 
 const PROVIDERS: AIProvider[] = ["anthropic", "openai", "openrouter", "minimax"];
 
-export function SettingsClient({ org, apiKeyStatus, emailAccount }: SettingsClientProps) {
+export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAccount }: SettingsClientProps) {
   const router = useRouter();
+  const [profileName, setProfileName] = useState(currentUser?.name ?? "");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>(
     (org.aiProvider as AIProvider) ?? "anthropic"
   );
@@ -49,6 +64,18 @@ export function SettingsClient({ org, apiKeyStatus, emailAccount }: SettingsClie
     setSelectedProvider(provider);
     setModel(DEFAULT_MODELS[provider]);
     setAiSaved(false);
+  }
+
+  async function handleSaveProfile() {
+    if (!currentUser) return;
+    setProfileSaving(true);
+    setProfileSaved(false);
+    const formData = new FormData();
+    formData.set("name", profileName);
+    await updateUserProfile(currentUser.id, formData);
+    setProfileSaving(false);
+    setProfileSaved(true);
+    router.refresh();
   }
 
   async function handleSaveAI() {
@@ -77,6 +104,118 @@ export function SettingsClient({ org, apiKeyStatus, emailAccount }: SettingsClie
 
   return (
     <div className="p-4 md:p-6">
+      {/* Profile section */}
+      {currentUser && (
+        <Card style={{ padding: 20, marginBottom: 16 }}>
+          <h2
+            className="text-[16px] font-bold"
+            style={{ color: "var(--text-primary)", marginBottom: 4 }}
+          >
+            Your Profile
+          </h2>
+          <p className="text-[12px]" style={{ color: "var(--text-sub)", marginBottom: 16 }}>
+            {currentUser.email}
+          </p>
+          <div style={{ marginBottom: 16 }}>
+            <label
+              className="block text-[12px] font-medium"
+              style={{ color: "var(--text-sub)", marginBottom: 4 }}
+            >
+              Display name
+            </label>
+            <input
+              type="text"
+              value={profileName}
+              onChange={(e) => { setProfileName(e.target.value); setProfileSaved(false); }}
+              placeholder="Your name"
+              className="w-full rounded-[7px] px-[10px] py-[6px] text-[13px] outline-none"
+              style={{
+                border: "1px solid var(--border-custom)",
+                backgroundColor: "var(--page-bg)",
+                color: "var(--text-primary)",
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-[8px]">
+            <Button variant="primary" size="sm" onClick={handleSaveProfile} disabled={profileSaving}>
+              {profileSaving ? "Saving..." : "Save"}
+            </Button>
+            {profileSaved && (
+              <span className="text-[12px]" style={{ color: "var(--green)" }}>Saved</span>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Users section */}
+      <Card style={{ padding: 20, marginBottom: 16 }}>
+        <h2
+          className="text-[16px] font-bold"
+          style={{ color: "var(--text-primary)", marginBottom: 4 }}
+        >
+          Team Members
+        </h2>
+        <p className="text-[12px]" style={{ color: "var(--text-sub)", marginBottom: 16 }}>
+          People with access to this organization
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {users.map((u) => (
+            <div
+              key={u.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--border-custom)",
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  backgroundColor: "#EC4899",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
+              >
+                {(u.name || u.email || "?").split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
+                  {u.name || u.email?.split("@")[0] || "Unknown"}
+                  {u.id === currentUser?.id && (
+                    <span style={{ fontSize: 11, color: "var(--text-muted-custom)", marginLeft: 6 }}>you</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-sub)" }}>{u.email}</div>
+              </div>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 500,
+                  color: "var(--text-muted-custom)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {u.role}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px]" style={{ color: "var(--text-muted-custom)", marginTop: 12 }}>
+          Anyone who signs in with a magic link is automatically added to this organization.
+        </p>
+      </Card>
+
       {/* AI Provider section */}
       <Card style={{ padding: 20, marginBottom: 16 }}>
         <h2

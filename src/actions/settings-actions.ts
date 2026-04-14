@@ -25,6 +25,20 @@ export async function updateAISettings(formData: FormData) {
   revalidatePath("/settings");
 }
 
+export async function updateUserProfile(userId: string, formData: FormData) {
+  const name = formData.get("name") as string | null;
+  if (!name) return { error: "Name is required" };
+
+  await db.user.update({
+    where: { id: userId },
+    data: { name },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/");
+  return { success: true };
+}
+
 export async function updateOrganizationSettings(formData: FormData) {
   const organizationId = await getOrganizationId();
   const name = formData.get("name") as string | null;

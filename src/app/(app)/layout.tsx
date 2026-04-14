@@ -58,7 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       clients={clients}
       badgeCounts={{ contacts: contactCount, campaigns: activeCampaignCount, outreach: draftOutreachCount }}
       userData={{
-        name: user?.name ?? org.name,
+        name: user?.name ?? session.user.email?.split("@")[0] ?? "User",
         orgName: org.name,
       }}
     >
