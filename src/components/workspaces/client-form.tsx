@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { createClient, updateClient } from "@/actions/client-actions";
 import { Button } from "@/components/ui/button";
+import { LogoUpload } from "@/components/shared/logo-upload";
 
 const COLOR_PRESETS = [
   { colour: "#92400E", bgColour: "#FEF3C7", label: "Amber" },
@@ -24,7 +25,7 @@ function generateInitials(name: string): string {
 }
 
 interface ClientFormProps {
-  client?: { id: string; name: string; industry: string; colour: string; bgColour: string; initials: string } | null;
+  client?: { id: string; name: string; industry: string; colour: string; bgColour: string; initials: string; logo?: string | null } | null;
   onSuccess: () => void;
 }
 
@@ -33,6 +34,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
   const [name, setName] = useState(client?.name ?? "");
   const [industry, setIndustry] = useState(client?.industry ?? "");
   const [initials, setInitials] = useState(client?.initials ?? "");
+  const [logo, setLogo] = useState<string | null>(client?.logo ?? null);
   const [colour, setColour] = useState(client?.colour ?? COLOR_PRESETS[0].colour);
   const [bgColour, setBgColour] = useState(client?.bgColour ?? COLOR_PRESETS[0].bgColour);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
       formData.set("colour", colour);
       formData.set("bgColour", bgColour);
       formData.set("initials", initials);
+      formData.set("logo", logo ?? "");
 
       const result = isEdit
         ? await updateClient(client!.id, formData)
@@ -127,6 +130,12 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
           </div>
         </div>
       </div>
+
+      {/* Logo */}
+      <LogoUpload
+        currentLogo={logo}
+        onUpload={(url) => setLogo(url || null)}
+      />
 
       {/* Name */}
       <div>

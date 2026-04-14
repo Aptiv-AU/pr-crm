@@ -39,6 +39,7 @@ export default async function SettingsPage() {
       org={{
         name: org.name,
         currency: org.currency,
+        logo: org.logo,
         aiProvider: org.aiProvider,
         aiModel: org.aiModel,
       }}

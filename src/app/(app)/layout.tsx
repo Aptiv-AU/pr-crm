@@ -45,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         colour: true,
         bgColour: true,
         initials: true,
+        logo: true,
       },
       orderBy: { name: "asc" },
     }),

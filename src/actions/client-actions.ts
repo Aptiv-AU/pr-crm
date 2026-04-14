@@ -25,6 +25,7 @@ export async function createClient(formData: FormData) {
     const colour = formData.get("colour") as string | null;
     const bgColour = formData.get("bgColour") as string | null;
     const initials = formData.get("initials") as string | null;
+    const logo = formData.get("logo") as string | null;
 
     if (!name || !industry || !colour || !bgColour || !initials) {
       return { error: "All fields are required" };
@@ -40,6 +41,7 @@ export async function createClient(formData: FormData) {
         colour,
         bgColour,
         initials: initials.toUpperCase().slice(0, 2),
+        logo: logo || null,
       },
     });
 
@@ -59,6 +61,7 @@ export async function updateClient(clientId: string, formData: FormData) {
     const colour = formData.get("colour") as string | null;
     const bgColour = formData.get("bgColour") as string | null;
     const initials = formData.get("initials") as string | null;
+    const logo = formData.get("logo") as string | null;
 
     if (!name || !industry || !colour || !bgColour || !initials) {
       return { error: "All fields are required" };
@@ -72,6 +75,7 @@ export async function updateClient(clientId: string, formData: FormData) {
         colour,
         bgColour,
         initials: initials.toUpperCase().slice(0, 2),
+        logo: logo || null,
       },
     });
 

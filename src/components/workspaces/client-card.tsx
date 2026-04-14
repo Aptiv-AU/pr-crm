@@ -18,6 +18,7 @@ interface ClientCardProps {
     colour: string;
     bgColour: string;
     initials: string;
+    logo?: string | null;
     campaigns: Campaign[];
     _count: { campaigns: number };
   };
@@ -61,24 +62,38 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
           padding: "14px 16px",
         }}
       >
-        {/* Initials Badge */}
-        <div
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 9,
-            backgroundColor: client.bgColour,
-            color: client.colour,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 13,
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
-          {client.initials}
-        </div>
+        {/* Logo or Initials Badge */}
+        {client.logo ? (
+          <img
+            src={client.logo}
+            alt={client.name}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 9,
+              objectFit: "cover",
+              flexShrink: 0,
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 9,
+              backgroundColor: client.bgColour,
+              color: client.colour,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 13,
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            {client.initials}
+          </div>
+        )}
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div

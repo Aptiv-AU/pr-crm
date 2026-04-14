@@ -31,6 +31,7 @@ export default async function ClientWorkspacePage({
           colour: client.colour,
           bgColour: client.bgColour,
           initials: client.initials,
+          logo: client.logo,
         }}
         stats={stats}
       />

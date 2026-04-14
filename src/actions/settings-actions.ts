@@ -43,12 +43,14 @@ export async function updateOrganizationSettings(formData: FormData) {
   const organizationId = await getOrganizationId();
   const name = formData.get("name") as string | null;
   const currency = formData.get("currency") as string | null;
+  const logo = formData.get("logo") as string | null;
 
   await db.organization.update({
     where: { id: organizationId },
     data: {
       ...(name ? { name } : {}),
       ...(currency ? { currency } : {}),
+      logo: logo || null,
     },
   });
 

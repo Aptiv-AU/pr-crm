@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { updateAISettings, updateOrganizationSettings, updateUserProfile } from "@/actions/settings-actions";
 import { type AIProvider, PROVIDER_INFO, DEFAULT_MODELS } from "@/lib/ai/provider";
+import { LogoUpload } from "@/components/shared/logo-upload";
 
 interface SettingsClientProps {
   org: {
     name: string;
     currency: string;
+    logo: string | null;
     aiProvider: string | null;
     aiModel: string | null;
   };
@@ -56,6 +58,7 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
   const [aiSaved, setAiSaved] = useState(false);
 
   const [orgName, setOrgName] = useState(org.name);
+  const [orgLogo, setOrgLogo] = useState<string | null>(org.logo ?? null);
   const [currency, setCurrency] = useState(org.currency);
   const [orgSaving, setOrgSaving] = useState(false);
   const [orgSaved, setOrgSaved] = useState(false);
@@ -96,6 +99,7 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
     const formData = new FormData();
     formData.set("name", orgName);
     formData.set("currency", currency);
+    formData.set("logo", orgLogo ?? "");
     await updateOrganizationSettings(formData);
     setOrgSaving(false);
     setOrgSaved(true);
@@ -392,6 +396,14 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
         >
           Organization
         </h2>
+
+        <div style={{ marginBottom: 16 }}>
+          <LogoUpload
+            currentLogo={orgLogo}
+            onUpload={(url) => { setOrgLogo(url || null); setOrgSaved(false); }}
+            label="Organization logo"
+          />
+        </div>
 
         <div className="flex flex-col gap-[12px]" style={{ marginBottom: 16 }}>
           <div>

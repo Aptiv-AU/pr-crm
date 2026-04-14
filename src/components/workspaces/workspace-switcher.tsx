@@ -13,6 +13,7 @@ interface ClientOption {
   colour: string;
   bgColour: string;
   initials: string;
+  logo?: string | null;
 }
 
 interface WorkspaceSwitcherProps {
@@ -91,18 +92,32 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
         }}
       >
         {activeClient ? (
-          <div
-            className="flex items-center justify-center shrink-0 text-[9px] font-semibold"
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 5,
-              backgroundColor: activeClient.bgColour,
-              color: activeClient.colour,
-            }}
-          >
-            {activeClient.initials}
-          </div>
+          activeClient.logo ? (
+            <img
+              src={activeClient.logo}
+              alt={activeClient.name}
+              className="shrink-0"
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 5,
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <div
+              className="flex items-center justify-center shrink-0 text-[9px] font-semibold"
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 5,
+                backgroundColor: activeClient.bgColour,
+                color: activeClient.colour,
+              }}
+            >
+              {activeClient.initials}
+            </div>
+          )
         ) : (
           <Icon name="workspace" size={14} color="var(--text-sub)" />
         )}
@@ -200,18 +215,32 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
                   }
                 }}
               >
-                <div
-                  className="flex items-center justify-center shrink-0 text-[9px] font-semibold"
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 5,
-                    backgroundColor: client.bgColour,
-                    color: client.colour,
-                  }}
-                >
-                  {client.initials}
-                </div>
+                {client.logo ? (
+                  <img
+                    src={client.logo}
+                    alt={client.name}
+                    className="shrink-0"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 5,
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center shrink-0 text-[9px] font-semibold"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 5,
+                      backgroundColor: client.bgColour,
+                      color: client.colour,
+                    }}
+                  >
+                    {client.initials}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate">
                     {client.name}

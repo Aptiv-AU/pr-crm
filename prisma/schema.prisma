@@ -89,6 +89,7 @@ model Client {
   colour         String
   bgColour       String
   initials       String
+  logo           String?
   currency       String?
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]

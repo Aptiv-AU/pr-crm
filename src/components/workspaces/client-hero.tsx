@@ -15,6 +15,7 @@ interface ClientHeroProps {
     colour: string;
     bgColour: string;
     initials: string;
+    logo?: string | null;
   };
   stats: {
     contactCount: number;
@@ -40,24 +41,38 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
           {/* Header row */}
           <div className="flex flex-col md:flex-row md:items-center gap-3">
             <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-              {/* Initials badge */}
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  backgroundColor: client.bgColour,
-                  color: client.colour,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}
-              >
-                {client.initials}
-              </div>
+              {/* Logo or Initials badge */}
+              {client.logo ? (
+                <img
+                  src={client.logo}
+                  alt={client.name}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    objectFit: "cover",
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    backgroundColor: client.bgColour,
+                    color: client.colour,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}
+                >
+                  {client.initials}
+                </div>
+              )}
               <div style={{ minWidth: 0 }}>
                 <div
                   style={{
