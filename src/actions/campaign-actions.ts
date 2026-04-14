@@ -373,7 +373,7 @@ export async function deleteBudgetLineItem(lineItemId: string) {
   }
 }
 
-export async function confirmBudgetLineItem(lineItemId: string, amount?: number) {
+export async function confirmBudgetLineItem(lineItemId: string, amount?: number, confirmed?: boolean) {
   try {
     const existing = await db.budgetLineItem.findUnique({
       where: { id: lineItemId },
@@ -384,7 +384,7 @@ export async function confirmBudgetLineItem(lineItemId: string, amount?: number)
     await db.budgetLineItem.update({
       where: { id: lineItemId },
       data: {
-        confirmed: true,
+        confirmed: confirmed ?? true,
         ...(amount !== undefined ? { amount } : {}),
       },
     });

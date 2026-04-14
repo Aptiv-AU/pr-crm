@@ -126,21 +126,19 @@ export function CampaignBudget({ lineItems, campaignId, totalBudget }: CampaignB
             {/* Confirm checkbox */}
             <button
               onClick={() => {
-                if (!item.confirmed) {
-                  startTransition(async () => {
-                    await confirmBudgetLineItem(item.id);
-                    router.refresh();
-                  });
-                }
+                startTransition(async () => {
+                  await confirmBudgetLineItem(item.id, undefined, !item.confirmed);
+                  router.refresh();
+                });
               }}
-              disabled={isPending || item.confirmed}
+              disabled={isPending}
               style={{
                 width: 18,
                 height: 18,
                 borderRadius: 4,
                 border: item.confirmed ? "none" : "2px solid var(--border-custom)",
                 backgroundColor: item.confirmed ? "var(--green)" : "transparent",
-                cursor: item.confirmed ? "default" : "pointer",
+                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
