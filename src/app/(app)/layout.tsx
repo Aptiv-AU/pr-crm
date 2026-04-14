@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { db } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30; // revalidate layout data every 30 seconds (badge counts, client list)
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const org = await db.organization.findFirst();
