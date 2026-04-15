@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar } from "@/components/ui/avatar";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 
@@ -11,6 +11,7 @@ interface ContactRow {
   initials: string;
   avatarBg: string;
   avatarFg: string;
+  photo?: string | null;
   publication: string;
   beat: string;
   tier: string;
@@ -101,12 +102,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
                   color: "inherit",
                 }}
               >
-                <Avatar
-                  initials={contact.initials}
-                  bg={contact.avatarBg}
-                  fg={contact.avatarFg}
-                  size={26}
-                />
+                <ContactAvatar contact={contact} size={30} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
                   {contact.name}
                 </span>

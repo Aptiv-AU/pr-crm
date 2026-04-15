@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar } from "@/components/ui/avatar";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,7 @@ interface ContactHeroProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
+    photo?: string | null;
   };
   stats: {
     coverageCount: number;
@@ -44,12 +45,7 @@ export function ContactHero({ contact, stats, onEdit }: ContactHeroProps) {
         {/* Header row */}
         <div className="flex flex-col md:flex-row md:items-start gap-3">
           <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
-            <Avatar
-              initials={contact.initials}
-              bg={contact.avatarBg}
-              fg={contact.avatarFg}
-              size={44}
-            />
+            <ContactAvatar contact={contact} size={44} />
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
