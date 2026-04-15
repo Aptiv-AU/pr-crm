@@ -4,8 +4,9 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { StatsBar } from "@/components/shared/stats-bar";
 import { FilterPills } from "@/components/shared/filter-pills";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { ClientBadge } from "@/components/shared/client-badge";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { EmptyState } from "@/components/shared/empty-state";
 
 interface OutreachContact {
@@ -14,7 +15,8 @@ interface OutreachContact {
   initials: string;
   avatarBg: string;
   avatarFg: string;
-  publication: string;
+  photo?: string | null;
+  publication: string | null;
 }
 
 interface OutreachClient {
@@ -23,6 +25,7 @@ interface OutreachClient {
   initials: string;
   colour: string;
   bgColour: string;
+  logo?: string | null;
 }
 
 interface OutreachCampaign {
@@ -101,7 +104,7 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
           {filtered.map((outreach) => (
             <Link
               key={outreach.id}
-              href={`/campaigns/${outreach.campaign.id}`}
+              href={`/campaigns/${outreach.campaign.id}?tab=outreach`}
               className="block rounded-[10px] p-3 transition-colors"
               style={{
                 border: "1px solid var(--border-custom)",
@@ -116,12 +119,7 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
             >
               {/* Row 1: Contact info + status */}
               <div className="flex items-center gap-[8px]">
-                <Avatar
-                  initials={outreach.contact.initials}
-                  bg={outreach.contact.avatarBg}
-                  fg={outreach.contact.avatarFg}
-                  size={22}
-                />
+                <ContactAvatar contact={outreach.contact} size={28} />
                 <span
                   className="text-[13px] font-medium truncate"
                   style={{ color: "var(--text-primary)" }}
@@ -143,18 +141,7 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
 
               {/* Row 2: Campaign + subject */}
               <div className="flex items-center gap-[8px] mt-[6px]">
-                <span
-                  className="inline-flex items-center justify-center rounded-[4px] text-[10px] font-semibold shrink-0"
-                  style={{
-                    width: 16,
-                    height: 16,
-                    backgroundColor: outreach.campaign.client.bgColour,
-                    color: outreach.campaign.client.colour,
-                    lineHeight: 1,
-                  }}
-                >
-                  {outreach.campaign.client.initials}
-                </span>
+                <ClientBadge client={outreach.campaign.client} size={24} />
                 <span
                   className="text-[12px] shrink-0"
                   style={{ color: "var(--text-sub)" }}
