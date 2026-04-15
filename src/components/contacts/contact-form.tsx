@@ -40,6 +40,7 @@ interface ContactFormProps {
     twitter: string | null;
     linkedin: string | null;
     notes: string | null;
+    photo?: string | null;
   } | null;
   onSuccess: () => void;
 }
@@ -60,8 +61,27 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
   const [linkedin, setLinkedin] = useState(contact?.linkedin ?? "");
   const [notes, setNotes] = useState(contact?.notes ?? "");
   const [health, setHealth] = useState(contact?.health ?? "warm");
+  const [photo, setPhoto] = useState<string | null>(contact?.photo ?? null);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  async function handlePhotoFile(file: File) {
+    setPhotoUploading(true);
+    const formData = new FormData();
+    formData.set("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.url) setPhoto(data.url);
+    setPhotoUploading(false);
+  }
+
+  async function handlePhotoUrl() {
+    if (!photoUrl.trim()) return;
+    setPhoto(photoUrl.trim());
+    setPhotoUrl("");
+  }
 
   function handleNameChange(value: string) {
     setName(value);
@@ -87,6 +107,7 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
       formData.set("twitter", twitter);
       formData.set("linkedin", linkedin);
       formData.set("notes", notes);
+      formData.set("photo", photo ?? "");
       if (isEdit) {
         formData.set("health", health);
       }
@@ -235,6 +256,61 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Profile Photo */}
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", marginBottom: 6, display: "block" }}>
+          Profile Photo
+        </label>
+        {photo ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <img src={photo} alt="Preview" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover" }} />
+            <button type="button" onClick={() => setPhoto(null)} style={{ fontSize: 12, color: "var(--text-muted-custom)", background: "none", border: "none", cursor: "pointer" }}>
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+              border: "1px dashed var(--border-custom)", borderRadius: 8, cursor: "pointer",
+              fontSize: 13, color: "var(--text-sub)",
+            }}>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoFile(f); e.target.value = ""; }}
+              />
+              {photoUploading ? "Uploading..." : "Upload photo"}
+            </label>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                type="url"
+                placeholder="Or paste an image URL"
+                value={photoUrl}
+                onChange={(e) => setPhotoUrl(e.target.value)}
+                style={{
+                  flex: 1, padding: "8px 10px", fontSize: 13, borderRadius: 8,
+                  border: "1px solid var(--border-custom)", backgroundColor: "var(--card-bg)",
+                  color: "var(--text-primary)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={handlePhotoUrl}
+                style={{
+                  padding: "8px 12px", fontSize: 12, fontWeight: 500, borderRadius: 8,
+                  border: "1px solid var(--border-custom)", backgroundColor: "var(--hover-bg)",
+                  color: "var(--text-sub)", cursor: "pointer",
+                }}
+              >
+                Use
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Initials */}
