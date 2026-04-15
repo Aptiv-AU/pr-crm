@@ -1,18 +1,24 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Lora, IBM_Plex_Mono } from "next/font/google";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const jakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const lora = Lora({
+  variable: "--font-serif",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
+const ibmMono = IBM_Plex_Mono({
   variable: "--font-geist-mono",
+  weight: ["400", "500"],
   subsets: ["latin"],
 });
 
@@ -30,7 +36,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${dmSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${lora.variable} ${ibmMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>
