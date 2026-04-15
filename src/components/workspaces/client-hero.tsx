@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { ClientForm } from "@/components/workspaces/client-form";
+import { archiveClient } from "@/actions/client-actions";
 
 interface ClientHeroProps {
   client: {
@@ -27,11 +28,17 @@ interface ClientHeroProps {
 
 export function ClientHero({ client, stats }: ClientHeroProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const router = useRouter();
 
   function handleSuccess() {
     setSettingsOpen(false);
     router.refresh();
+  }
+
+  async function handleArchiveConfirm() {
+    await archiveClient(client.id);
+    router.push("/workspaces");
   }
 
   return (
@@ -99,6 +106,9 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
 
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 8 }} className="ml-0 md:ml-auto">
+              <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(true)}>
+                Archive
+              </Button>
               <Button variant="default" size="sm" icon="settings" onClick={() => setSettingsOpen(true)}>
                 Settings
               </Button>
@@ -149,6 +159,36 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
           </div>
         </div>
       </Card>
+
+      {showArchiveConfirm && (
+        <div
+          style={{
+            position: "fixed", inset: 0, backgroundColor: "var(--overlay)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
+          }}
+          onClick={() => setShowArchiveConfirm(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--card-bg)", borderRadius: 12, padding: 24,
+              maxWidth: 380, width: "100%", margin: "0 16px",
+              border: "1px solid var(--border-custom)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
+              Archive {client.name}?
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-sub)", marginBottom: 20 }}>
+              This client and all their campaigns will be hidden. You can restore them later.
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={handleArchiveConfirm}>Archive</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SlideOverPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Edit Client">
         <ClientForm client={client} onSuccess={handleSuccess} />
