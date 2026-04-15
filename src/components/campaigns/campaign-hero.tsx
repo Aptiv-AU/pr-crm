@@ -31,6 +31,7 @@ interface CampaignHeroProps {
   onComplete: () => void;
   onReopen: () => void;
   onArchive: () => void;
+  isPending?: boolean;
 }
 
 const statusVariantMap: Record<string, BadgeVariant> = {
@@ -54,7 +55,7 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, onRevertPhase, onComplete, onReopen, onArchive }: CampaignHeroProps) {
+export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, onRevertPhase, onComplete, onReopen, onArchive, isPending }: CampaignHeroProps) {
   const startFormatted = formatDate(campaign.startDate);
   const dueFormatted = formatDate(campaign.dueDate);
 
@@ -159,6 +160,7 @@ export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, on
         <div style={{ marginTop: 16, borderTop: "1px solid var(--border-custom)", paddingTop: 14 }}>
           <CampaignPhaseStepper
             phases={campaign.phases}
+            isPending={isPending}
             onAdvance={onAdvancePhase}
             onRevert={onRevertPhase}
           />

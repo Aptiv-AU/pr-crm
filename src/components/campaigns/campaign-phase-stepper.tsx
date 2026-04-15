@@ -1,29 +1,26 @@
 "use client";
 
-import { useTransition } from "react";
-
 interface Phase {
   id: string;
   name: string;
   order: number;
-  status: string; // "pending" | "active" | "complete"
+  status: string;
 }
 
 interface CampaignPhaseStepperProps {
   phases: Phase[];
+  isPending?: boolean;
   onAdvance: (phaseId: string) => void;
   onRevert: (phaseId: string) => void;
 }
 
-export function CampaignPhaseStepper({ phases, onAdvance, onRevert }: CampaignPhaseStepperProps) {
-  const [isPending, startTransition] = useTransition();
-
+export function CampaignPhaseStepper({ phases, isPending = false, onAdvance, onRevert }: CampaignPhaseStepperProps) {
   function handleClick(phase: Phase) {
     if (isPending) return;
     if (phase.status === "complete") {
-      startTransition(() => onRevert(phase.id));
+      onRevert(phase.id);
     } else {
-      startTransition(() => onAdvance(phase.id));
+      onAdvance(phase.id);
     }
   }
 
@@ -40,7 +37,6 @@ export function CampaignPhaseStepper({ phases, onAdvance, onRevert }: CampaignPh
     >
       {phases.map((phase, index) => (
         <div key={phase.id} style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
-          {/* Step */}
           <button
             type="button"
             onClick={() => handleClick(phase)}
@@ -64,7 +60,6 @@ export function CampaignPhaseStepper({ phases, onAdvance, onRevert }: CampaignPh
               minWidth: 60,
             }}
           >
-            {/* Indicator dot */}
             <div
               style={{
                 width: 10,
@@ -79,7 +74,6 @@ export function CampaignPhaseStepper({ phases, onAdvance, onRevert }: CampaignPh
                 flexShrink: 0,
               }}
             />
-            {/* Label */}
             <div
               style={{
                 fontSize: 10,
@@ -102,7 +96,6 @@ export function CampaignPhaseStepper({ phases, onAdvance, onRevert }: CampaignPh
             </div>
           </button>
 
-          {/* Connector line */}
           {index < phases.length - 1 && (
             <div
               style={{

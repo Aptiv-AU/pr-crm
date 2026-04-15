@@ -30,6 +30,8 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
 
     const res = await fetch(url);
     if (!res.ok) return null;
+    const length = Number(res.headers.get("content-length") ?? 0);
+    if (length > 5 * 1024 * 1024) return null;
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(contentType)) return null;
@@ -41,6 +43,12 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+async function resolvePhoto(photoInput: string | null): Promise<string | null> {
+  if (!photoInput) return null;
+  if (photoInput.startsWith("https://")) return downloadAndStorePhoto(photoInput);
+  return photoInput; // already a Vercel Blob URL from file upload
 }
 
 async function getOrganizationId(): Promise<string> {
@@ -68,15 +76,7 @@ export async function createContact(formData: FormData) {
     const twitter = formData.get("twitter") as string | null;
     const linkedin = formData.get("linkedin") as string | null;
     const notes = formData.get("notes") as string | null;
-    const photoInput = formData.get("photo") as string | null;
-    let photo: string | null = null;
-    if (photoInput) {
-      if (photoInput.startsWith("http")) {
-        photo = await downloadAndStorePhoto(photoInput);
-      } else {
-        photo = photoInput; // already a blob URL from file upload
-      }
-    }
+    const photo = await resolvePhoto(formData.get("photo") as string | null);
 
     if (
       !name ||
@@ -140,15 +140,7 @@ export async function updateContact(contactId: string, formData: FormData) {
     const twitter = formData.get("twitter") as string | null;
     const linkedin = formData.get("linkedin") as string | null;
     const notes = formData.get("notes") as string | null;
-    const photoInput = formData.get("photo") as string | null;
-    let photo: string | null = null;
-    if (photoInput) {
-      if (photoInput.startsWith("http")) {
-        photo = await downloadAndStorePhoto(photoInput);
-      } else {
-        photo = photoInput; // already a blob URL from file upload
-      }
-    }
+    const photo = await resolvePhoto(formData.get("photo") as string | null);
 
     if (
       !name ||

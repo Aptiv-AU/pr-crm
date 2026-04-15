@@ -8,6 +8,7 @@ import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { ClientForm } from "@/components/workspaces/client-form";
 import { archiveClient } from "@/actions/client-actions";
 import { ClientBadge } from "@/components/shared/client-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 interface ClientHeroProps {
   client: {
@@ -131,33 +132,13 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
       </Card>
 
       {showArchiveConfirm && (
-        <div
-          style={{
-            position: "fixed", inset: 0, backgroundColor: "var(--overlay)",
-            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
-          }}
-          onClick={() => setShowArchiveConfirm(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--card-bg)", borderRadius: 12, padding: 24,
-              maxWidth: 380, width: "100%", margin: "0 16px",
-              border: "1px solid var(--border-custom)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
-              Archive {client.name}?
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-sub)", marginBottom: 20 }}>
-              This client and all their campaigns will be hidden. You can restore them later.
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(false)}>Cancel</Button>
-              <Button variant="primary" size="sm" onClick={handleArchiveConfirm}>Archive</Button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={`Archive ${client.name}?`}
+          body="This client and all their campaigns will be hidden. You can restore them later."
+          confirmLabel="Archive"
+          onConfirm={handleArchiveConfirm}
+          onCancel={() => setShowArchiveConfirm(false)}
+        />
       )}
 
       <SlideOverPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Edit Client">

@@ -40,6 +40,17 @@ const statusVariantMap: Record<string, BadgeVariant> = {
   complete: "default",
 };
 
+const STATUS_LABELS: Record<"active" | "complete" | "all", string> = {
+  active: "In Progress",
+  complete: "Completed",
+  all: "All",
+};
+const LABEL_TO_STATUS: Record<string, "active" | "complete" | "all"> = {
+  "In Progress": "active",
+  "Completed": "complete",
+  "All": "all",
+};
+
 function formatBudget(budget: number | null): string {
   if (budget == null) return "\u2014";
   return `$${budget.toLocaleString()} budget`;
@@ -98,26 +109,12 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
       </div>
 
       {/* Status filter chips */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-        {(["active", "complete", "all"] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setStatusFilter(s)}
-            style={{
-              padding: "4px 12px",
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 500,
-              border: "1px solid var(--border-custom)",
-              backgroundColor: statusFilter === s ? "var(--accent-custom)" : "transparent",
-              color: statusFilter === s ? "#fff" : "var(--text-sub)",
-              cursor: "pointer",
-            }}
-          >
-            {s === "active" ? "In Progress" : s === "complete" ? "Completed" : "All"}
-          </button>
-        ))}
+      <div style={{ marginBottom: 16 }}>
+        <FilterPills
+          options={["In Progress", "Completed", "All"]}
+          selected={STATUS_LABELS[statusFilter]}
+          onChange={(v) => setStatusFilter(LABEL_TO_STATUS[v] ?? "active")}
+        />
       </div>
 
       {/* Filter row */}

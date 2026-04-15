@@ -77,7 +77,7 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
     setPhotoUploading(false);
   }
 
-  async function handlePhotoUrl() {
+  function handlePhotoUrl() {
     if (!photoUrl.trim()) return;
     setPhoto(photoUrl.trim());
     setPhotoUrl("");

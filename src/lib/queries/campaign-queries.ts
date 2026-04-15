@@ -159,13 +159,13 @@ export async function getCampaignStats(organizationId: string) {
 export async function getCampaignFilters(organizationId: string) {
   const [typesRaw, clients] = await Promise.all([
     db.campaign.findMany({
-      where: { organizationId },
+      where: { organizationId, archivedAt: null },
       select: { type: true },
       distinct: ["type"],
       orderBy: { type: "asc" },
     }),
     db.client.findMany({
-      where: { organizationId },
+      where: { organizationId, archivedAt: null },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

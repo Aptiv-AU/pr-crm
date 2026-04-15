@@ -1,3 +1,5 @@
+import { Avatar } from "@/components/ui/avatar";
+
 interface ContactAvatarProps {
   contact: {
     name: string;
@@ -25,25 +27,5 @@ export function ContactAvatar({ contact, size = 30 }: ContactAvatarProps) {
       />
     );
   }
-
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        backgroundColor: contact.avatarBg,
-        color: contact.avatarFg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: size * 0.32,
-        fontWeight: 600,
-        flexShrink: 0,
-        lineHeight: 1,
-      }}
-    >
-      {contact.initials}
-    </div>
-  );
+  return <Avatar initials={contact.initials} bg={contact.avatarBg} fg={contact.avatarFg} size={size} />;
 }

@@ -6,7 +6,7 @@ import { CampaignHero } from "@/components/campaigns/campaign-hero";
 import { CampaignTabs } from "@/components/campaigns/campaign-tabs";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
-import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { updatePhaseStatus, revertToPhase, completeCampaign, reopenCampaign, archiveCampaign } from "@/actions/campaign-actions";
 
 interface CampaignDetailClientProps {
@@ -141,8 +141,7 @@ export function CampaignDetailClient({
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [, startTransition] = useTransition();
-  const [isArchiving, setIsArchiving] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   function handleEditSuccess() {
     setEditOpen(false);
@@ -177,10 +176,11 @@ export function CampaignDetailClient({
     });
   }
 
-  async function confirmArchive() {
-    setIsArchiving(true);
-    await archiveCampaign(campaign.id);
-    router.push("/campaigns");
+  function confirmArchive() {
+    startTransition(async () => {
+      await archiveCampaign(campaign.id);
+      router.push("/campaigns");
+    });
   }
 
   return (
@@ -194,38 +194,18 @@ export function CampaignDetailClient({
         onComplete={handleComplete}
         onReopen={handleReopen}
         onArchive={() => setShowArchiveConfirm(true)}
+        isPending={isPending}
       />
 
       {showArchiveConfirm && (
-        <div
-          style={{
-            position: "fixed", inset: 0, backgroundColor: "var(--overlay)",
-            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
-          }}
-          onClick={() => setShowArchiveConfirm(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--card-bg)", borderRadius: 12, padding: 24,
-              maxWidth: 380, width: "100%", margin: "0 16px",
-              border: "1px solid var(--border-custom)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
-              Archive campaign?
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-sub)", marginBottom: 20 }}>
-              This campaign will be hidden from the campaigns list. You can restore it from the archived view.
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(false)}>Cancel</Button>
-              <Button variant="primary" size="sm" onClick={confirmArchive} disabled={isArchiving}>
-                {isArchiving ? "Archiving..." : "Archive"}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Archive campaign?"
+          body="This campaign will be hidden from the campaigns list. You can restore it from the archived view."
+          confirmLabel="Archive"
+          isPending={isPending}
+          onConfirm={confirmArchive}
+          onCancel={() => setShowArchiveConfirm(false)}
+        />
       )}
 
       <div style={{ marginTop: 16 }}>
