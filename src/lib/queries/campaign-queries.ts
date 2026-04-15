@@ -7,6 +7,7 @@ export async function getCampaigns(
   const campaigns = await db.campaign.findMany({
     where: {
       organizationId,
+      archivedAt: null,
       ...(filters?.type && filters.type !== "All" ? { type: filters.type } : {}),
       ...(filters?.status && filters.status !== "All" ? { status: filters.status } : {}),
       ...(filters?.clientId && filters.clientId !== "All" ? { clientId: filters.clientId } : {}),
@@ -19,6 +20,7 @@ export async function getCampaigns(
           initials: true,
           colour: true,
           bgColour: true,
+          logo: true,
         },
       },
       _count: {
@@ -47,6 +49,7 @@ export async function getCampaignById(campaignId: string) {
           initials: true,
           colour: true,
           bgColour: true,
+          logo: true,
         },
       },
       phases: {
@@ -61,6 +64,7 @@ export async function getCampaignById(campaignId: string) {
               initials: true,
               avatarBg: true,
               avatarFg: true,
+              photo: true,
               publication: true,
               beat: true,
               tier: true,
@@ -143,10 +147,10 @@ export async function getCampaignById(campaignId: string) {
 
 export async function getCampaignStats(organizationId: string) {
   const [total, active, draft, complete] = await Promise.all([
-    db.campaign.count({ where: { organizationId } }),
-    db.campaign.count({ where: { organizationId, status: "active" } }),
-    db.campaign.count({ where: { organizationId, status: "draft" } }),
-    db.campaign.count({ where: { organizationId, status: "complete" } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: "active" } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: "draft" } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: "complete" } }),
   ]);
 
   return { total, active, draft, complete };

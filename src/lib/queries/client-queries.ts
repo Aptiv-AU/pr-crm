@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 
 export async function getClients(organizationId: string) {
   const clients = await db.client.findMany({
-    where: { organizationId },
+    where: { organizationId, archivedAt: null },
     include: {
       campaigns: {
         select: {
