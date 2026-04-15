@@ -226,7 +226,6 @@ export function CampaignDetailClient({
 
       <div style={{ marginTop: 16 }}>
         <CampaignTabs
-          phases={campaign.phases}
           campaignContacts={campaign.campaignContacts}
           campaignId={campaign.id}
           campaignType={campaign.type}

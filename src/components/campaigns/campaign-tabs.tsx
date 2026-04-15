@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { updatePhaseStatus } from "@/actions/campaign-actions";
-import { useRouter } from "next/navigation";
-import { CampaignPhaseList } from "./campaign-phase-list";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CampaignContactsTab } from "./campaign-contacts-tab";
 import { CampaignSuppliersTab } from "./campaign-suppliers-tab";
 import { CampaignBudget } from "./campaign-budget";
@@ -14,7 +12,6 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
 interface CampaignTabsProps {
-  phases: { id: string; name: string; order: number; status: string }[];
   campaignContacts: {
     id: string;
     contactId: string;
@@ -126,11 +123,10 @@ interface CampaignTabsProps {
   } | null;
 }
 
-const baseTabs = ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
+const baseTabs = ["Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
 type Tab = (typeof baseTabs)[number] | "Event";
 
 export function CampaignTabs({
-  phases,
   campaignContacts,
   campaignId,
   campaignType,
@@ -147,18 +143,12 @@ export function CampaignTabs({
   eventDetail,
 }: CampaignTabsProps) {
   const tabs: Tab[] = campaignType === "event"
-    ? ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage", "Event"]
-    : ["Phases", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"];
-  const [activeTab, setActiveTab] = useState<Tab>("Phases");
-  const router = useRouter();
-  const [, startTransition] = useTransition();
-
-  function handleUpdatePhase(phaseId: string, status: string) {
-    startTransition(async () => {
-      await updatePhaseStatus(phaseId, status);
-      router.refresh();
-    });
-  }
+    ? ["Outreach", "Contacts", "Suppliers", "Budget", "Coverage", "Event"]
+    : ["Outreach", "Contacts", "Suppliers", "Budget", "Coverage"];
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const validInitialTab = (tabs as readonly string[]).includes(initialTab ?? "") ? (initialTab as Tab) : tabs[0];
+  const [activeTab, setActiveTab] = useState<Tab>(validInitialTab);
 
   return (
     <div>
@@ -201,14 +191,6 @@ export function CampaignTabs({
       </div>
 
       {/* Tab content */}
-      {activeTab === "Phases" && (
-        <CampaignPhaseList
-          phases={phases}
-          campaignType="simple"
-          onUpdatePhase={handleUpdatePhase}
-        />
-      )}
-
       {activeTab === "Outreach" && campaign && (
         <div className="flex flex-col gap-[16px]">
           <DraftPitchesPhase
