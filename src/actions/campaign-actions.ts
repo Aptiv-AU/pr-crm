@@ -397,3 +397,96 @@ export async function confirmBudgetLineItem(lineItemId: string, amount?: number,
     return { error: error instanceof Error ? error.message : "Failed to confirm" };
   }
 }
+
+export async function revertToPhase(phaseId: string) {
+  try {
+    const phase = await db.campaignPhase.findUnique({
+      where: { id: phaseId },
+    });
+    if (!phase) return { error: "Phase not found" };
+
+    // Set this phase to active, all phases with higher order to pending
+    await db.$transaction([
+      db.campaignPhase.update({
+        where: { id: phaseId },
+        data: { status: "active" },
+      }),
+      db.campaignPhase.updateMany({
+        where: {
+          campaignId: phase.campaignId,
+          order: { gt: phase.order },
+        },
+        data: { status: "pending" },
+      }),
+      db.campaign.update({
+        where: { id: phase.campaignId },
+        data: { currentPhase: phase.name, status: "active" },
+      }),
+    ]);
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${phase.campaignId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("revertToPhase error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to revert phase" };
+  }
+}
+
+export async function completeCampaign(campaignId: string) {
+  try {
+    await db.campaign.update({
+      where: { id: campaignId },
+      data: { status: "complete" },
+    });
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("completeCampaign error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to complete campaign" };
+  }
+}
+
+export async function reopenCampaign(campaignId: string) {
+  try {
+    await db.campaign.update({
+      where: { id: campaignId },
+      data: { status: "active" },
+    });
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("reopenCampaign error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to reopen campaign" };
+  }
+}
+
+export async function archiveCampaign(campaignId: string) {
+  try {
+    await db.campaign.update({
+      where: { id: campaignId },
+      data: { archivedAt: new Date() },
+    });
+    revalidatePath("/campaigns");
+    return { success: true };
+  } catch (error) {
+    console.error("archiveCampaign error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to archive campaign" };
+  }
+}
+
+export async function restoreCampaign(campaignId: string) {
+  try {
+    await db.campaign.update({
+      where: { id: campaignId },
+      data: { archivedAt: null },
+    });
+    revalidatePath("/campaigns");
+    return { success: true };
+  } catch (error) {
+    console.error("restoreCampaign error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to restore campaign" };
+  }
+}
