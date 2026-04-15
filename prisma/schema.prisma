@@ -90,6 +90,7 @@ model Client {
   bgColour       String
   initials       String
   logo           String?
+  archivedAt     DateTime?
   currency       String?
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]
@@ -109,6 +110,7 @@ model Contact {
   initials         String
   avatarBg         String
   avatarFg         String
+  photo            String?
   instagram        String?
   twitter          String?
   linkedin         String?
@@ -161,6 +163,7 @@ model Campaign {
   startDate         DateTime?
   dueDate           DateTime?
   brief             String?
+  archivedAt        DateTime?
   createdAt         DateTime           @default(now())
   phases            CampaignPhase[]
   campaignContacts  CampaignContact[]
