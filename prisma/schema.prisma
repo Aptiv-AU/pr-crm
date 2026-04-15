@@ -94,6 +94,8 @@ model Client {
   currency       String?
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]
+
+  @@index([archivedAt])
 }
 
 model Contact {
@@ -173,6 +175,8 @@ model Campaign {
   coverages         Coverage[]
   interactions      Interaction[]
   eventDetail       EventDetail?
+
+  @@index([archivedAt])
 }
 
 model CampaignPhase {
