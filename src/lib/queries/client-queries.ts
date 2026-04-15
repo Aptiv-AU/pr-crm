@@ -46,7 +46,24 @@ export async function getClientById(clientId: string) {
             },
           },
           outreaches: {
-            select: { status: true },
+            select: {
+              id: true,
+              subject: true,
+              status: true,
+              createdAt: true,
+              contact: {
+                select: {
+                  id: true,
+                  name: true,
+                  initials: true,
+                  avatarBg: true,
+                  avatarFg: true,
+                  photo: true,
+                  publication: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
           },
           coverages: {
             select: { id: true },

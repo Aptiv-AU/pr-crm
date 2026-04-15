@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { CampaignCard } from "@/components/workspaces/campaign-card";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 
 interface Contact {
   id: string;
@@ -23,6 +25,22 @@ interface CampaignContact {
   contact: Contact;
 }
 
+interface WorkspaceOutreach {
+  id: string;
+  subject: string;
+  status: string;
+  createdAt: Date;
+  contact: {
+    id: string;
+    name: string;
+    initials: string;
+    avatarBg: string;
+    avatarFg: string;
+    photo: string | null;
+    publication: string | null;
+  };
+}
+
 interface Campaign {
   id: string;
   name: string;
@@ -30,9 +48,16 @@ interface Campaign {
   status: string;
   dueDate: Date | null;
   campaignContacts: CampaignContact[];
-  outreaches: { status: string }[];
+  outreaches: WorkspaceOutreach[];
   coverages: { id: string }[];
 }
+
+const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
+  draft: "draft",
+  approved: "outreach",
+  sent: "active",
+  replied: "warm",
+};
 
 interface WorkspaceTabsProps {
   campaigns: Campaign[];
@@ -204,12 +229,11 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
       )}
 
       {activeTab === "Outreach" && (() => {
-        const totalOutreaches = campaigns.reduce((sum, c) => sum + c.outreaches.length, 0);
-        const sentCount = campaigns.reduce(
-          (sum, c) => sum + c.outreaches.filter((o) => o.status === "sent" || o.status === "replied").length,
-          0,
-        );
-        if (totalOutreaches === 0) {
+        const rows = campaigns.flatMap((c) =>
+          c.outreaches.map((o) => ({ ...o, campaign: { id: c.id, name: c.name } })),
+        ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        if (rows.length === 0) {
           return (
             <div
               style={{
@@ -224,20 +248,47 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
           );
         }
         return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-              <div>
-                <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Total</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{totalOutreaches}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>Sent</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{sentCount}</div>
-              </div>
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted-custom)" }}>
-              View and send outreach in each campaign's Outreach tab.
-            </div>
+          <div className="flex flex-col gap-[8px]">
+            {rows.map((o) => (
+              <Link
+                key={o.id}
+                href={`/campaigns/${o.campaign.id}?tab=outreach`}
+                className="block rounded-[10px] p-3 transition-colors"
+                style={{
+                  border: "1px solid var(--border-custom)",
+                  backgroundColor: "var(--card-bg)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-mid)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-custom)";
+                }}
+              >
+                <div className="flex items-center gap-[8px]">
+                  <ContactAvatar contact={o.contact} size={28} />
+                  <span className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                    {o.contact.name}
+                  </span>
+                  {o.contact.publication && (
+                    <span className="text-[12px] truncate shrink-0" style={{ color: "var(--text-sub)" }}>
+                      {o.contact.publication}
+                    </span>
+                  )}
+                  <div className="ml-auto shrink-0">
+                    <Badge variant={STATUS_BADGE_VARIANT[o.status] ?? "default"}>{o.status}</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-[8px] mt-[6px]">
+                  <span className="text-[12px] shrink-0" style={{ color: "var(--text-sub)" }}>
+                    {o.campaign.name}
+                  </span>
+                  <span className="text-[13px] truncate" style={{ color: "var(--text-primary)" }}>
+                    {o.subject}
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
         );
       })()}
