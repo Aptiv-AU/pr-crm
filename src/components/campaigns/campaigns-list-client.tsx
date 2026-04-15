@@ -11,6 +11,7 @@ import { FilterPills } from "@/components/shared/filter-pills";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
+import { ClientBadge } from "@/components/shared/client-badge";
 
 interface CampaignRow {
   id: string;
@@ -19,7 +20,7 @@ interface CampaignRow {
   status: string;
   budget: number | null;
   dueDate: string | null;
-  client: { id: string; name: string; initials: string; colour: string; bgColour: string };
+  client: { id: string; name: string; initials: string; colour: string; bgColour: string; logo?: string | null };
   contactCount: number;
   outreachCount: number;
   coverageCount: number;
@@ -54,10 +55,13 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
   const router = useRouter();
   const [selectedType, setSelectedType] = useState("All");
   const [selectedClientId, setSelectedClientId] = useState("All");
+  const [statusFilter, setStatusFilter] = useState<"active" | "complete" | "all">("active");
   const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     let result = campaigns;
+    if (statusFilter === "active") result = result.filter((c) => c.status !== "complete");
+    else if (statusFilter === "complete") result = result.filter((c) => c.status === "complete");
     if (selectedType !== "All") {
       result = result.filter((c) => c.type === selectedType);
     }
@@ -65,7 +69,7 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
       result = result.filter((c) => c.client.id === selectedClientId);
     }
     return result;
-  }, [campaigns, selectedType, selectedClientId]);
+  }, [campaigns, selectedType, selectedClientId, statusFilter]);
 
   function handleSuccess() {
     setAddOpen(false);
@@ -91,6 +95,29 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
             { value: stats.complete, label: "Complete" },
           ]}
         />
+      </div>
+
+      {/* Status filter chips */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {(["active", "complete", "all"] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setStatusFilter(s)}
+            style={{
+              padding: "4px 12px",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 500,
+              border: "1px solid var(--border-custom)",
+              backgroundColor: statusFilter === s ? "var(--accent-custom)" : "transparent",
+              color: statusFilter === s ? "#fff" : "var(--text-sub)",
+              cursor: "pointer",
+            }}
+          >
+            {s === "active" ? "Active" : s === "complete" ? "Completed" : "All"}
+          </button>
+        ))}
       </div>
 
       {/* Filter row */}
@@ -149,23 +176,7 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
               >
                 {/* Top row: client badge + name + type */}
                 <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 5,
-                      backgroundColor: campaign.client.bgColour,
-                      color: campaign.client.colour,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 8,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {campaign.client.initials}
-                  </div>
+                  <ClientBadge client={campaign.client} size={28} />
                   <span
                     style={{
                       fontSize: 14,
