@@ -115,7 +115,7 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
               cursor: "pointer",
             }}
           >
-            {s === "active" ? "Active" : s === "complete" ? "Completed" : "All"}
+            {s === "active" ? "In Progress" : s === "complete" ? "Completed" : "All"}
           </button>
         ))}
       </div>

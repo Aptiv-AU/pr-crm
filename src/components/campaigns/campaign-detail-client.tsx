@@ -142,6 +142,7 @@ export function CampaignDetailClient({
   const [editOpen, setEditOpen] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [, startTransition] = useTransition();
+  const [isArchiving, setIsArchiving] = useState(false);
 
   function handleEditSuccess() {
     setEditOpen(false);
@@ -177,6 +178,7 @@ export function CampaignDetailClient({
   }
 
   async function confirmArchive() {
+    setIsArchiving(true);
     await archiveCampaign(campaign.id);
     router.push("/campaigns");
   }
@@ -218,7 +220,9 @@ export function CampaignDetailClient({
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(false)}>Cancel</Button>
-              <Button variant="primary" size="sm" onClick={confirmArchive}>Archive</Button>
+              <Button variant="primary" size="sm" onClick={confirmArchive} disabled={isArchiving}>
+                {isArchiving ? "Archiving..." : "Archive"}
+              </Button>
             </div>
           </div>
         </div>

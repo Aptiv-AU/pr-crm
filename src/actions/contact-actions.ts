@@ -5,6 +5,29 @@ import { revalidatePath } from "next/cache";
 
 async function downloadAndStorePhoto(url: string): Promise<string | null> {
   try {
+    // Validate URL is a safe external HTTPS URL (prevent SSRF)
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return null;
+    }
+    if (parsed.protocol !== "https:") return null;
+    const hostname = parsed.hostname.toLowerCase();
+    // Block private/local network ranges
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("172.16.") ||
+      hostname.startsWith("169.254.") || // link-local
+      hostname.endsWith(".local") ||
+      hostname.endsWith(".internal")
+    ) {
+      return null;
+    }
+
     const res = await fetch(url);
     if (!res.ok) return null;
     const contentType = res.headers.get("content-type") ?? "image/jpeg";

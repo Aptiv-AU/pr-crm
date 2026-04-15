@@ -113,11 +113,18 @@ export async function archiveClient(clientId: string) {
 
 export async function restoreClient(clientId: string) {
   try {
-    await db.client.update({
-      where: { id: clientId },
-      data: { archivedAt: null },
-    });
+    await db.$transaction([
+      db.client.update({
+        where: { id: clientId },
+        data: { archivedAt: null },
+      }),
+      db.campaign.updateMany({
+        where: { clientId },
+        data: { archivedAt: null },
+      }),
+    ]);
     revalidatePath("/workspaces");
+    revalidatePath("/campaigns");
     return { success: true };
   } catch (error) {
     console.error("restoreClient error:", error);
