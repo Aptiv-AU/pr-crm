@@ -88,3 +88,39 @@ export async function updateClient(clientId: string, formData: FormData) {
     return { error: error instanceof Error ? error.message : "Failed to update client" };
   }
 }
+
+export async function archiveClient(clientId: string) {
+  try {
+    await db.$transaction([
+      db.client.update({
+        where: { id: clientId },
+        data: { archivedAt: new Date() },
+      }),
+      db.campaign.updateMany({
+        where: { clientId },
+        data: { archivedAt: new Date() },
+      }),
+    ]);
+
+    revalidatePath("/workspaces");
+    revalidatePath("/campaigns");
+    return { success: true };
+  } catch (error) {
+    console.error("archiveClient error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to archive client" };
+  }
+}
+
+export async function restoreClient(clientId: string) {
+  try {
+    await db.client.update({
+      where: { id: clientId },
+      data: { archivedAt: null },
+    });
+    revalidatePath("/workspaces");
+    return { success: true };
+  } catch (error) {
+    console.error("restoreClient error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to restore client" };
+  }
+}
