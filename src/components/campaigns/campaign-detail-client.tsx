@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CampaignHero } from "@/components/campaigns/campaign-hero";
 import { CampaignTabs } from "@/components/campaigns/campaign-tabs";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
+import { Button } from "@/components/ui/button";
+import { updatePhaseStatus, revertToPhase, completeCampaign, reopenCampaign, archiveCampaign } from "@/actions/campaign-actions";
 
 interface CampaignDetailClientProps {
   campaign: {
@@ -25,6 +27,7 @@ interface CampaignDetailClientProps {
       initials: string;
       colour: string;
       bgColour: string;
+      logo?: string | null;
     };
     phases: { id: string; name: string; order: number; status: string }[];
     campaignContacts: {
@@ -137,10 +140,45 @@ export function CampaignDetailClient({
 }: CampaignDetailClientProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [, startTransition] = useTransition();
 
   function handleEditSuccess() {
     setEditOpen(false);
     router.refresh();
+  }
+
+  function handleAdvancePhase(phaseId: string) {
+    startTransition(async () => {
+      await updatePhaseStatus(phaseId, "complete");
+      router.refresh();
+    });
+  }
+
+  function handleRevertPhase(phaseId: string) {
+    startTransition(async () => {
+      await revertToPhase(phaseId);
+      router.refresh();
+    });
+  }
+
+  function handleComplete() {
+    startTransition(async () => {
+      await completeCampaign(campaign.id);
+      router.refresh();
+    });
+  }
+
+  function handleReopen() {
+    startTransition(async () => {
+      await reopenCampaign(campaign.id);
+      router.refresh();
+    });
+  }
+
+  async function confirmArchive() {
+    await archiveCampaign(campaign.id);
+    router.push("/campaigns");
   }
 
   return (
@@ -149,7 +187,42 @@ export function CampaignDetailClient({
         campaign={campaign}
         budgetStats={budgetStats}
         onEdit={() => setEditOpen(true)}
+        onAdvancePhase={handleAdvancePhase}
+        onRevertPhase={handleRevertPhase}
+        onComplete={handleComplete}
+        onReopen={handleReopen}
+        onArchive={() => setShowArchiveConfirm(true)}
       />
+
+      {showArchiveConfirm && (
+        <div
+          style={{
+            position: "fixed", inset: 0, backgroundColor: "var(--overlay)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
+          }}
+          onClick={() => setShowArchiveConfirm(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--card-bg)", borderRadius: 12, padding: 24,
+              maxWidth: 380, width: "100%", margin: "0 16px",
+              border: "1px solid var(--border-custom)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
+              Archive campaign?
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-sub)", marginBottom: 20 }}>
+              This campaign will be hidden from the campaigns list. You can restore it from the archived view.
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={confirmArchive}>Archive</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: 16 }}>
         <CampaignTabs

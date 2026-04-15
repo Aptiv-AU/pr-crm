@@ -3,6 +3,8 @@
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ClientBadge } from "@/components/shared/client-badge";
+import { CampaignPhaseStepper } from "@/components/campaigns/campaign-phase-stepper";
 
 interface CampaignHeroProps {
   campaign: {
@@ -18,10 +20,17 @@ interface CampaignHeroProps {
       initials: string;
       colour: string;
       bgColour: string;
+      logo?: string | null;
     };
+    phases: { id: string; name: string; order: number; status: string }[];
   };
   budgetStats: { spent: number; total: number | null };
   onEdit: () => void;
+  onAdvancePhase: (phaseId: string) => void;
+  onRevertPhase: (phaseId: string) => void;
+  onComplete: () => void;
+  onReopen: () => void;
+  onArchive: () => void;
 }
 
 const statusVariantMap: Record<string, BadgeVariant> = {
@@ -45,7 +54,7 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-export function CampaignHero({ campaign, budgetStats, onEdit }: CampaignHeroProps) {
+export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, onRevertPhase, onComplete, onReopen, onArchive }: CampaignHeroProps) {
   const startFormatted = formatDate(campaign.startDate);
   const dueFormatted = formatDate(campaign.dueDate);
 
@@ -63,23 +72,7 @@ export function CampaignHero({ campaign, budgetStats, onEdit }: CampaignHeroProp
     <Card style={{ padding: 20 }}>
       {/* Top row */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <div
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: 5,
-            backgroundColor: campaign.client.bgColour,
-            color: campaign.client.colour,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 9,
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
-          {campaign.client.initials}
-        </div>
+        <ClientBadge client={campaign.client} size={36} />
         <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
           {campaign.name}
         </span>
@@ -149,7 +142,28 @@ export function CampaignHero({ campaign, budgetStats, onEdit }: CampaignHeroProp
         >
           Export report
         </Button>
+        {campaign.status !== "complete" ? (
+          <Button variant="default" size="sm" onClick={onComplete}>
+            Complete
+          </Button>
+        ) : (
+          <Button variant="default" size="sm" onClick={onReopen}>
+            Re-open
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" onClick={onArchive}>
+          Archive
+        </Button>
       </div>
+      {campaign.phases.length > 0 && (
+        <div style={{ marginTop: 16, borderTop: "1px solid var(--border-custom)", paddingTop: 14 }}>
+          <CampaignPhaseStepper
+            phases={campaign.phases}
+            onAdvance={onAdvancePhase}
+            onRevert={onRevertPhase}
+          />
+        </div>
+      )}
     </Card>
   );
 }
