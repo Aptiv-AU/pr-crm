@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { ClientForm } from "@/components/workspaces/client-form";
 import { archiveClient } from "@/actions/client-actions";
+import { ClientBadge } from "@/components/shared/client-badge";
 
 interface ClientHeroProps {
   client: {
@@ -49,38 +50,7 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
           <div className="flex flex-col md:flex-row md:items-center gap-3">
             <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
               {/* Logo or Initials badge */}
-              {client.logo ? (
-                <img
-                  src={client.logo}
-                  alt={client.name}
-                  style={{
-                    height: 44,
-                    maxWidth: 140,
-                    width: "auto",
-                    borderRadius: 6,
-                    objectFit: "contain",
-                    flexShrink: 0,
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    backgroundColor: client.bgColour,
-                    color: client.colour,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    flexShrink: 0,
-                  }}
-                >
-                  {client.initials}
-                </div>
-              )}
+              <ClientBadge client={client} size={44} />
               <div style={{ minWidth: 0 }}>
                 <div
                   style={{

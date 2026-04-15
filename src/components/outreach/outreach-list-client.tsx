@@ -126,12 +126,14 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
                 >
                   {outreach.contact.name}
                 </span>
-                <span
-                  className="text-[12px] truncate shrink-0"
-                  style={{ color: "var(--text-sub)" }}
-                >
-                  {outreach.contact.publication}
-                </span>
+                {outreach.contact.publication && (
+                  <span
+                    className="text-[12px] truncate shrink-0"
+                    style={{ color: "var(--text-sub)" }}
+                  >
+                    {outreach.contact.publication}
+                  </span>
+                )}
                 <div className="ml-auto shrink-0">
                   <Badge variant={STATUS_BADGE_VARIANT[outreach.status] ?? "default"}>
                     {outreach.status}
