@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getValidGoogleToken } from "@/lib/email/gmail";
 import { getValidToken as getValidMicrosoftToken } from "@/lib/email/microsoft-graph";
 import { extractSignature, extractFontStyle } from "./extract-signature";
+import { sanitizeSignatureHtml } from "./sanitize-html";
 
 const GMAIL_DEFAULT_FONT = "Arial, Helvetica, sans-serif";
 const GMAIL_DEFAULT_SIZE = "13px";
@@ -76,10 +77,13 @@ async function resolveGoogle(acct: { id: string; email: string }) {
       : "scraped"
     : "default";
 
+  // Sanitise scraped/API-returned HTML before it lands in the DB.
+  const safeSignatureHtml = signatureHtml ? sanitizeSignatureHtml(signatureHtml) : null;
+
   await db.emailAccount.update({
     where: { id: acct.id },
     data: {
-      signatureHtml,
+      signatureHtml: safeSignatureHtml,
       signatureSource: source,
       fontFamily: fontFamily ?? GMAIL_DEFAULT_FONT,
       fontSize: fontSize ?? GMAIL_DEFAULT_SIZE,
@@ -106,11 +110,13 @@ async function resolveMicrosoft(acct: { id: string; email: string }) {
       fontSize: null,
     };
 
+  const safeSignatureHtml = signatureHtml ? sanitizeSignatureHtml(signatureHtml) : null;
+
   await db.emailAccount.update({
     where: { id: acct.id },
     data: {
-      signatureHtml,
-      signatureSource: signatureHtml ? "scraped" : "default",
+      signatureHtml: safeSignatureHtml,
+      signatureSource: safeSignatureHtml ? "scraped" : "default",
       fontFamily: style.fontFamily ?? OUTLOOK_DEFAULT_FONT,
       fontSize: style.fontSize ?? OUTLOOK_DEFAULT_SIZE,
       styleResolvedAt: new Date(),

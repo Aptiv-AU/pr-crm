@@ -11,6 +11,7 @@ import {
   sendMail as sendViaMicrosoft,
 } from "@/lib/email/microsoft-graph";
 import { getValidGoogleToken, sendGmail } from "@/lib/email/gmail";
+import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 
 async function loadOutreachInOrg<T extends object = {}>(
   outreachId: string,
@@ -318,7 +319,7 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
   const fontSize =
     emailAccount.fontSize ??
     (emailAccount.provider === "google" ? "13px" : "11pt");
-  const signature = emailAccount.signatureHtml ?? "";
+  const signature = sanitizeSignatureHtml(emailAccount.signatureHtml);
 
   let bodyHtml = `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${paragraphHtml}</div>`;
   if (signature) {

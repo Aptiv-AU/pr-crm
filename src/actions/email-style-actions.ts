@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { action } from "@/lib/server/action";
 import { resolveStyle } from "@/lib/compose/resolve-style";
+import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 
 async function assertAccountOwnedBySessionUser(accountId: string): Promise<void> {
   const session = await auth();
@@ -28,10 +29,12 @@ export const setManualSignature = action(
   "setManualSignature",
   async (accountId: string, html: string, fontFamily: string, fontSize: string) => {
     await assertAccountOwnedBySessionUser(accountId);
+    // User paste may contain script tags — sanitise before persisting.
+    const sanitized = html ? sanitizeSignatureHtml(html) : "";
     await db.emailAccount.update({
       where: { id: accountId },
       data: {
-        signatureHtml: html || null,
+        signatureHtml: sanitized || null,
         signatureSource: "manual",
         fontFamily: fontFamily || null,
         fontSize: fontSize || null,

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   refreshEmailStyle,
   setManualSignature,
 } from "@/actions/email-style-actions";
+import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 
 interface Props {
   accountId: string;
@@ -40,6 +41,13 @@ export function EmailStyleManager({
   const [size, setSize] = useState(fontSize ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Defence-in-depth: re-sanitise at render time. DB write already sanitises,
+  // but rendering untrusted HTML cheaply earns a second pass.
+  const safeSignatureHtml = useMemo(
+    () => (signatureHtml ? sanitizeSignatureHtml(signatureHtml) : ""),
+    [signatureHtml]
+  );
 
   function handleRefresh() {
     setError(null);
@@ -84,13 +92,13 @@ export function EmailStyleManager({
           background: "var(--bg-panel, #fff)",
         }}
       >
-        {signatureHtml ? (
+        {safeSignatureHtml ? (
           <div
             style={{
               fontFamily: fontFamily ?? "inherit",
               fontSize: fontSize ?? "inherit",
             }}
-            dangerouslySetInnerHTML={{ __html: signatureHtml }}
+            dangerouslySetInnerHTML={{ __html: safeSignatureHtml }}
           />
         ) : (
           <div
