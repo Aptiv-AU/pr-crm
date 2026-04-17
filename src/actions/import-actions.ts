@@ -9,6 +9,11 @@ import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 export const importContacts = action(
   "importContacts",
   async (contacts: MappedContact[]) => {
+    const MAX_IMPORT_ROWS = 5000;
+    if (contacts.length > MAX_IMPORT_ROWS) {
+      throw new Error(`Import capped at ${MAX_IMPORT_ROWS} rows. Split large files.`);
+    }
+
     const session = await auth();
     if (!session?.user?.id) throw new Error("Not authenticated");
 
