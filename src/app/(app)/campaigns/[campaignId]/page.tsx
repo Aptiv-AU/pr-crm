@@ -4,6 +4,7 @@ import { getCampaignById } from "@/lib/queries/campaign-queries";
 import { getContacts } from "@/lib/queries/contact-queries";
 import { getSuppliers } from "@/lib/queries/supplier-queries";
 import { CampaignDetailClient } from "@/components/campaigns/campaign-detail-client";
+import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,27 @@ export default async function CampaignDetailPage({
 }: {
   params: Promise<{ campaignId: string }>;
 }) {
-  const { campaignId } = await params;
+  const { campaignId: handle } = await params;
 
   let org = await db.organization.findFirst();
   if (!org) {
     org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
+  }
+
+  // Resolve handle (cuid or slug) → cuid
+  let campaignId: string | null = null;
+  if (isCuid(handle)) {
+    campaignId = handle;
+  } else {
+    const found = await db.campaign.findFirst({
+      where: { organizationId: org.id, slug: handle },
+      select: { id: true },
+    });
+    campaignId = found?.id ?? null;
+  }
+
+  if (!campaignId) {
+    notFound();
   }
 
   const [campaign, orgContacts, orgSuppliers, allClients, emailAccount, suppressions] = await Promise.all([

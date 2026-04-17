@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getContactById, getContactDetailStats } from "@/lib/queries/contact-queries";
 import { ContactDetailClient } from "@/components/contacts/contact-detail-client";
+import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,26 @@ export default async function ContactDetailPage({
 }: {
   params: Promise<{ contactId: string }>;
 }) {
-  const { contactId } = await params;
+  const { contactId: handle } = await params;
+
+  // Resolve handle (cuid or slug) → cuid
+  let contactId: string | null = null;
+  if (isCuid(handle)) {
+    contactId = handle;
+  } else {
+    const org = await db.organization.findFirst({ select: { id: true } });
+    if (org) {
+      const found = await db.contact.findFirst({
+        where: { organizationId: org.id, slug: handle },
+        select: { id: true },
+      });
+      contactId = found?.id ?? null;
+    }
+  }
+
+  if (!contactId) {
+    notFound();
+  }
 
   const [contact, stats] = await Promise.all([
     getContactById(contactId),
