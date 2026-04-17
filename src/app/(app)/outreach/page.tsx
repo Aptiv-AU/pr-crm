@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAllOutreaches, getOutreachStats } from "@/lib/queries/outreach-queries";
+import { getAllOutreaches, getOutreachStatsCached } from "@/lib/queries/outreach-queries";
 import { OutreachListClient } from "@/components/outreach/outreach-list-client";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function OutreachPage() {
 
   const [outreaches, stats] = await Promise.all([
     getAllOutreaches(org.id),
-    getOutreachStats(org.id),
+    getOutreachStatsCached(org.id),
   ]);
 
   const serializedOutreaches = outreaches.map((o) => ({

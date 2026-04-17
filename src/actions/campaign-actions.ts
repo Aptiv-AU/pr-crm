@@ -77,6 +77,7 @@ export const createCampaign = action("createCampaign", async (formData: FormData
   return {
     data: { campaignId: campaign.id },
     revalidate: ["/campaigns", "/workspaces"],
+    revalidateTags: [`campaigns:${organizationId}`, `stats:${organizationId}`],
   };
 });
 
@@ -115,6 +116,11 @@ export const updateCampaign = action(
 
     return {
       revalidate: ["/campaigns", `/campaigns/${campaignId}`, "/workspaces"],
+      revalidateTags: [
+        `campaign:${campaignId}`,
+        `campaigns:${orgId}`,
+        `stats:${orgId}`,
+      ],
     };
   }
 );
@@ -145,7 +151,10 @@ export const addContactToCampaign = action(
       },
     });
 
-    return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
+    return {
+      revalidate: ["/campaigns", `/campaigns/${campaignId}`],
+      revalidateTags: [`campaign:${campaignId}`, `contact:${contactId}`],
+    };
   }
 );
 
@@ -155,7 +164,7 @@ export const removeContactFromCampaign = action(
     const orgId = await requireOrgId();
     const existing = await db.campaignContact.findFirst({
       where: { id: campaignContactId, campaign: { organizationId: orgId } },
-      select: { campaignId: true },
+      select: { campaignId: true, contactId: true },
     });
 
     if (!existing) {
@@ -168,6 +177,10 @@ export const removeContactFromCampaign = action(
 
     return {
       revalidate: ["/campaigns", `/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+      ],
     };
   }
 );
@@ -179,7 +192,10 @@ export const completeCampaign = action("completeCampaign", async (campaignId: st
     where: { id: campaignId },
     data: { status: CampaignStatus.complete },
   });
-  return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
+  return {
+    revalidate: ["/campaigns", `/campaigns/${campaignId}`],
+    revalidateTags: [`campaign:${campaignId}`, `stats:${orgId}`],
+  };
 });
 
 export const reopenCampaign = action("reopenCampaign", async (campaignId: string) => {
@@ -189,7 +205,10 @@ export const reopenCampaign = action("reopenCampaign", async (campaignId: string
     where: { id: campaignId },
     data: { status: CampaignStatus.active },
   });
-  return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
+  return {
+    revalidate: ["/campaigns", `/campaigns/${campaignId}`],
+    revalidateTags: [`campaign:${campaignId}`, `stats:${orgId}`],
+  };
 });
 
 export const archiveCampaign = action("archiveCampaign", async (campaignId: string) => {
@@ -199,7 +218,14 @@ export const archiveCampaign = action("archiveCampaign", async (campaignId: stri
     where: { id: campaignId },
     data: { archivedAt: new Date() },
   });
-  return { revalidate: ["/campaigns"] };
+  return {
+    revalidate: ["/campaigns"],
+    revalidateTags: [
+      `campaign:${campaignId}`,
+      `campaigns:${orgId}`,
+      `stats:${orgId}`,
+    ],
+  };
 });
 
 export const restoreCampaign = action("restoreCampaign", async (campaignId: string) => {
@@ -209,5 +235,12 @@ export const restoreCampaign = action("restoreCampaign", async (campaignId: stri
     where: { id: campaignId },
     data: { archivedAt: null },
   });
-  return { revalidate: ["/campaigns"] };
+  return {
+    revalidate: ["/campaigns"],
+    revalidateTags: [
+      `campaign:${campaignId}`,
+      `campaigns:${orgId}`,
+      `stats:${orgId}`,
+    ],
+  };
 });

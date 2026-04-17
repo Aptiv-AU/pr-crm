@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { OutreachStatus } from "@prisma/client";
 
@@ -31,3 +32,10 @@ export async function getOutreachStats(organizationId: string) {
   ]);
   return { total, draft, approved, sent, replied };
 }
+
+export const getOutreachStatsCached = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => getOutreachStats(id),
+    ["outreach-stats", organizationId],
+    { tags: [`stats:${organizationId}`], revalidate: 60 },
+  )(organizationId);

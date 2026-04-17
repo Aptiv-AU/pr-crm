@@ -31,7 +31,10 @@ export const saveBrief = action("saveBrief", async (campaignId: string, brief: s
     data: { brief },
   });
 
-  return { revalidate: [`/campaigns/${campaignId}`] };
+  return {
+    revalidate: [`/campaigns/${campaignId}`],
+    revalidateTags: [`campaign:${campaignId}`],
+  };
 });
 
 export const createOutreachDraft = action(
@@ -85,7 +88,14 @@ export const createOutreachDraft = action(
       });
     }
 
-    return { revalidate: [`/campaigns/${campaignId}`] };
+    return {
+      revalidate: [`/campaigns/${campaignId}`],
+      revalidateTags: [
+        `campaign:${campaignId}`,
+        `contact:${contactId}`,
+        `stats:${orgId}`,
+      ],
+    };
   }
 );
 
@@ -95,7 +105,7 @@ export const updateOutreachDraft = action(
     const orgId = await requireOrgId();
     const existing = await db.outreach.findFirst({
       where: { id: outreachId, campaign: { organizationId: orgId } },
-      select: { campaignId: true },
+      select: { campaignId: true, contactId: true },
     });
     if (!existing) throw new Error("Outreach not found");
 
@@ -104,7 +114,13 @@ export const updateOutreachDraft = action(
       data: { subject, body },
     });
 
-    return { revalidate: [`/campaigns/${existing.campaignId}`] };
+    return {
+      revalidate: [`/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+      ],
+    };
   }
 );
 
@@ -112,7 +128,7 @@ export const approveOutreach = action("approveOutreach", async (outreachId: stri
   const orgId = await requireOrgId();
   const existing = await db.outreach.findFirst({
     where: { id: outreachId, campaign: { organizationId: orgId } },
-    select: { campaignId: true },
+    select: { campaignId: true, contactId: true },
   });
   if (!existing) throw new Error("Outreach not found");
 
@@ -121,7 +137,14 @@ export const approveOutreach = action("approveOutreach", async (outreachId: stri
     data: { status: OutreachStatus.approved },
   });
 
-  return { revalidate: [`/campaigns/${existing.campaignId}`] };
+  return {
+    revalidate: [`/campaigns/${existing.campaignId}`],
+    revalidateTags: [
+      `campaign:${existing.campaignId}`,
+      `contact:${existing.contactId}`,
+      `stats:${orgId}`,
+    ],
+  };
 });
 
 export const bulkApproveOutreaches = action(
@@ -143,7 +166,10 @@ export const bulkApproveOutreaches = action(
       data: { status: OutreachStatus.approved },
     });
 
-    return { revalidate: [`/campaigns/${campaignId}`] };
+    return {
+      revalidate: [`/campaigns/${campaignId}`],
+      revalidateTags: [`campaign:${campaignId}`, `stats:${orgId}`],
+    };
   }
 );
 
@@ -153,7 +179,7 @@ export const revertOutreachToDraft = action(
     const orgId = await requireOrgId();
     const existing = await db.outreach.findFirst({
       where: { id: outreachId, campaign: { organizationId: orgId } },
-      select: { campaignId: true },
+      select: { campaignId: true, contactId: true },
     });
     if (!existing) throw new Error("Outreach not found");
 
@@ -162,7 +188,14 @@ export const revertOutreachToDraft = action(
       data: { status: OutreachStatus.draft },
     });
 
-    return { revalidate: [`/campaigns/${existing.campaignId}`] };
+    return {
+      revalidate: [`/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+        `stats:${orgId}`,
+      ],
+    };
   }
 );
 
@@ -170,7 +203,7 @@ export const deleteOutreach = action("deleteOutreach", async (outreachId: string
   const orgId = await requireOrgId();
   const outreach = await db.outreach.findFirst({
     where: { id: outreachId, campaign: { organizationId: orgId } },
-    select: { campaignId: true },
+    select: { campaignId: true, contactId: true },
   });
 
   if (!outreach) {
@@ -181,7 +214,14 @@ export const deleteOutreach = action("deleteOutreach", async (outreachId: string
     where: { id: outreachId },
   });
 
-  return { revalidate: [`/campaigns/${outreach.campaignId}`] };
+  return {
+    revalidate: [`/campaigns/${outreach.campaignId}`],
+    revalidateTags: [
+      `campaign:${outreach.campaignId}`,
+      `contact:${outreach.contactId}`,
+      `stats:${orgId}`,
+    ],
+  };
 });
 
 export const suggestContacts = action("suggestContacts", async (campaignId: string) => {
@@ -271,6 +311,11 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
 
   return {
     revalidate: [`/campaigns/${outreach.campaignId}`, "/outreach"],
+    revalidateTags: [
+      `campaign:${outreach.campaignId}`,
+      `contact:${outreach.contactId}`,
+      `stats:${orgId}`,
+    ],
   };
 });
 
