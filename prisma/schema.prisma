@@ -312,6 +312,7 @@ model Outreach {
   messageId      String?
   conversationId String?
   sentAt         DateTime?
+  lastCheckedForReplyAt DateTime?
   createdAt     DateTime  @default(now())
 
   @@index([campaignId, status])
