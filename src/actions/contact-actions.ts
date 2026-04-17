@@ -142,7 +142,11 @@ export const createContact = action("createContact", async (formData: FormData) 
     },
   });
 
-  return { data: { contactId: contact.id }, revalidate: ["/contacts"] };
+  return {
+    data: { contactId: contact.id },
+    revalidate: ["/contacts"],
+    revalidateTags: [`contacts:${organizationId}`, `stats:${organizationId}`],
+  };
 });
 
 export const updateContact = action(
@@ -205,6 +209,13 @@ export const updateContact = action(
       },
     });
 
-    return { revalidate: ["/contacts", `/contacts/${contactId}`] };
+    return {
+      revalidate: ["/contacts", `/contacts/${contactId}`],
+      revalidateTags: [
+        `contact:${contactId}`,
+        `contacts:${organizationId}`,
+        `stats:${organizationId}`,
+      ],
+    };
   }
 );

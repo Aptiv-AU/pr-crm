@@ -190,6 +190,10 @@ export const importContacts = action(
     return {
       data: { created, updated, skipped },
       revalidate: ["/contacts"],
+      revalidateTags: [
+        `contacts:${organizationId}`,
+        `stats:${organizationId}`,
+      ],
     };
   }
 );

@@ -1,5 +1,9 @@
 import { db } from "@/lib/db";
-import { getContacts, getContactStats, getContactBeats } from "@/lib/queries/contact-queries";
+import {
+  getContacts,
+  getContactStatsCached,
+  getContactFilterFacets,
+} from "@/lib/queries/contact-queries";
 import { ContactsListClient } from "@/components/contacts/contacts-list-client";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +14,10 @@ export default async function ContactsPage() {
     org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
   }
 
-  const [contacts, stats, beats, tags, segments, outletRows, tierRows] = await Promise.all([
+  const [contacts, stats, facets, tags, segments] = await Promise.all([
     getContacts(org.id),
-    getContactStats(org.id),
-    getContactBeats(org.id),
+    getContactStatsCached(org.id),
+    getContactFilterFacets(org.id),
     db.contactTag.findMany({
       where: { organizationId: org.id },
       orderBy: { label: "asc" },
@@ -21,16 +25,6 @@ export default async function ContactsPage() {
     db.contactSegment.findMany({
       where: { organizationId: org.id },
       orderBy: { createdAt: "desc" },
-    }),
-    db.contact.findMany({
-      where: { organizationId: org.id },
-      select: { outlet: true },
-      distinct: ["outlet"],
-    }),
-    db.contact.findMany({
-      where: { organizationId: org.id },
-      select: { tier: true },
-      distinct: ["tier"],
     }),
   ]);
 
@@ -72,15 +66,15 @@ export default async function ContactsPage() {
     <ContactsListClient
       contacts={serializedContacts}
       stats={stats}
-      beats={["All", ...beats.filter((b): b is string => !!b)]}
+      beats={["All", ...facets.beats]}
       tags={tags.map((t) => ({
         id: t.id,
         label: t.label,
         colorBg: t.colorBg,
         colorFg: t.colorFg,
       }))}
-      outlets={outletRows.map((o) => o.outlet).filter((o): o is string => !!o)}
-      tiers={tierRows.map((t) => t.tier).filter((t): t is string => !!t)}
+      outlets={facets.outlets}
+      tiers={facets.tiers}
       segments={segments.map((s) => ({
         id: s.id,
         name: s.name,

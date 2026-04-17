@@ -34,7 +34,14 @@ export const createClient = action("createClient", async (formData: FormData) =>
     },
   });
 
-  return { data: { clientId: client.id }, revalidate: ["/workspaces"] };
+  return {
+    data: { clientId: client.id },
+    revalidate: ["/workspaces"],
+    revalidateTags: [
+      `clients:${organizationId}`,
+      `campaigns:${organizationId}`,
+    ],
+  };
 });
 
 async function assertClientInOrg(clientId: string, orgId: string): Promise<void> {
@@ -74,7 +81,13 @@ export const updateClient = action(
       },
     });
 
-    return { revalidate: ["/workspaces", `/workspaces/${clientId}`] };
+    return {
+      revalidate: ["/workspaces", `/workspaces/${clientId}`],
+      revalidateTags: [
+        `clients:${organizationId}`,
+        `campaigns:${organizationId}`,
+      ],
+    };
   }
 );
 
@@ -93,7 +106,14 @@ export const archiveClient = action("archiveClient", async (clientId: string) =>
     }),
   ]);
 
-  return { revalidate: ["/workspaces", "/campaigns"] };
+  return {
+    revalidate: ["/workspaces", "/campaigns"],
+    revalidateTags: [
+      `clients:${organizationId}`,
+      `campaigns:${organizationId}`,
+      `stats:${organizationId}`,
+    ],
+  };
 });
 
 export const restoreClient = action("restoreClient", async (clientId: string) => {
@@ -110,5 +130,12 @@ export const restoreClient = action("restoreClient", async (clientId: string) =>
       data: { archivedAt: null },
     }),
   ]);
-  return { revalidate: ["/workspaces", "/campaigns"] };
+  return {
+    revalidate: ["/workspaces", "/campaigns"],
+    revalidateTags: [
+      `clients:${organizationId}`,
+      `campaigns:${organizationId}`,
+      `stats:${organizationId}`,
+    ],
+  };
 });

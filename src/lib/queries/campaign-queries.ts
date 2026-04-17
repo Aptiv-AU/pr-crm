@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { CampaignStatus } from "@prisma/client";
 
@@ -147,6 +148,18 @@ export async function getCampaignById(campaignId: string) {
   return campaign;
 }
 
+/**
+ * Tag-scoped cached detail fetch. Busted by any mutation on the
+ * campaign or its joined children (phases, contacts, suppliers,
+ * budget line items, outreach, coverage).
+ */
+export const getCampaignByIdCached = (campaignId: string) =>
+  unstable_cache(
+    async (id: string) => getCampaignById(id),
+    ["campaign-detail", campaignId],
+    { tags: [`campaign:${campaignId}`], revalidate: 3600 },
+  )(campaignId);
+
 export async function getCampaignStats(organizationId: string) {
   const [total, active, draft, complete] = await Promise.all([
     db.campaign.count({ where: { organizationId, archivedAt: null } }),
@@ -157,6 +170,13 @@ export async function getCampaignStats(organizationId: string) {
 
   return { total, active, draft, complete };
 }
+
+export const getCampaignStatsCached = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => getCampaignStats(id),
+    ["campaign-stats", organizationId],
+    { tags: [`stats:${organizationId}`], revalidate: 60 },
+  )(organizationId);
 
 export async function getCampaignFilters(organizationId: string) {
   const [typesRaw, clients] = await Promise.all([
@@ -178,3 +198,10 @@ export async function getCampaignFilters(organizationId: string) {
     clients,
   };
 }
+
+export const getCampaignFiltersCached = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => getCampaignFilters(id),
+    ["campaign-filters", organizationId],
+    { tags: [`campaigns:${organizationId}`], revalidate: 300 },
+  )(organizationId);
