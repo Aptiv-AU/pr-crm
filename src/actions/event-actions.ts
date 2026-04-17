@@ -62,6 +62,7 @@ export const createOrUpdateEventDetail = action(
         `/events/${campaignId}`,
         `/campaigns/${campaignId}`,
       ],
+      revalidateTags: [`campaign:${campaignId}`],
     };
   }
 );
@@ -108,6 +109,7 @@ export const addRunsheetEntry = action("addRunsheetEntry", async (formData: Form
       `/events/${campaignId}`,
       `/campaigns/${campaignId}`,
     ],
+    revalidateTags: [`campaign:${campaignId}`],
   };
 });
 
@@ -146,6 +148,7 @@ export const updateRunsheetEntry = action(
         `/events/${entry.eventDetail.campaignId}`,
         `/campaigns/${entry.eventDetail.campaignId}`,
       ],
+      revalidateTags: [`campaign:${entry.eventDetail.campaignId}`],
     };
   }
 );
@@ -168,6 +171,7 @@ export const deleteRunsheetEntry = action("deleteRunsheetEntry", async (entryId:
       `/events/${entry.eventDetail.campaignId}`,
       `/campaigns/${entry.eventDetail.campaignId}`,
     ],
+    revalidateTags: [`campaign:${entry.eventDetail.campaignId}`],
   };
 });
 
@@ -201,14 +205,16 @@ export const reorderRunsheetEntries = action(
     });
 
     const revalidate: string[] = [];
+    const revalidateTags: string[] = [];
     if (first) {
       revalidate.push(
         "/events",
         `/events/${first.eventDetail.campaignId}`,
         `/campaigns/${first.eventDetail.campaignId}`
       );
+      revalidateTags.push(`campaign:${first.eventDetail.campaignId}`);
     }
-    return { revalidate };
+    return { revalidate, revalidateTags };
   }
 );
 
@@ -239,6 +245,7 @@ export const updateGuestRsvp = action(
         `/events/${campaignContact.campaignId}`,
         `/campaigns/${campaignContact.campaignId}`,
       ],
+      revalidateTags: [`campaign:${campaignContact.campaignId}`],
     };
   }
 );

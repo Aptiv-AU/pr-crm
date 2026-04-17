@@ -73,7 +73,15 @@ export const createCoverage = action("createCoverage", async (formData: FormData
   const revalidate = ["/coverage"];
   if (campaignId) revalidate.push(`/campaigns/${campaignId}`);
 
-  return { data: { coverageId: coverage.id }, revalidate };
+  const revalidateTags: string[] = [];
+  if (campaignId) revalidateTags.push(`campaign:${campaignId}`);
+  if (contactId) revalidateTags.push(`contact:${contactId}`);
+
+  return {
+    data: { coverageId: coverage.id },
+    revalidate,
+    revalidateTags,
+  };
 });
 
 export const updateCoverage = action(
@@ -97,7 +105,7 @@ export const updateCoverage = action(
 
     const existing = await db.coverage.findFirst({
       where: { id: coverageId, organizationId },
-      select: { id: true },
+      select: { id: true, campaignId: true, contactId: true },
     });
     if (!existing) throw new Error("Coverage not found");
 
@@ -126,7 +134,13 @@ export const updateCoverage = action(
     const revalidate = ["/coverage"];
     if (campaignId) revalidate.push(`/campaigns/${campaignId}`);
 
-    return { revalidate };
+    const revalidateTags = new Set<string>();
+    if (existing.campaignId) revalidateTags.add(`campaign:${existing.campaignId}`);
+    if (campaignId) revalidateTags.add(`campaign:${campaignId}`);
+    if (existing.contactId) revalidateTags.add(`contact:${existing.contactId}`);
+    if (contactId) revalidateTags.add(`contact:${contactId}`);
+
+    return { revalidate, revalidateTags: Array.from(revalidateTags) };
   }
 );
 
@@ -134,7 +148,7 @@ export const deleteCoverage = action("deleteCoverage", async (coverageId: string
   const organizationId = await requireOrgId();
   const existing = await db.coverage.findFirst({
     where: { id: coverageId, organizationId },
-    select: { campaignId: true },
+    select: { campaignId: true, contactId: true },
   });
 
   if (!existing) {
@@ -148,5 +162,9 @@ export const deleteCoverage = action("deleteCoverage", async (coverageId: string
   const revalidate = ["/coverage"];
   if (existing.campaignId) revalidate.push(`/campaigns/${existing.campaignId}`);
 
-  return { revalidate };
+  const revalidateTags: string[] = [];
+  if (existing.campaignId) revalidateTags.push(`campaign:${existing.campaignId}`);
+  if (existing.contactId) revalidateTags.push(`contact:${existing.contactId}`);
+
+  return { revalidate, revalidateTags };
 });

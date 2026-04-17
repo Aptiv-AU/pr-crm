@@ -53,7 +53,10 @@ export const assignTag = action("assignTag", async (contactId: string, tagId: st
     create: { contactId, tagId },
     update: {},
   });
-  return { revalidate: [`/contacts/${contactId}`] };
+  return {
+    revalidate: [`/contacts/${contactId}`],
+    revalidateTags: [`contact:${contactId}`],
+  };
 });
 
 export const removeTag = action("removeTag", async (contactId: string, tagId: string) => {
@@ -61,5 +64,8 @@ export const removeTag = action("removeTag", async (contactId: string, tagId: st
   await assertContactAndTagInOrg(contactId, tagId, organizationId);
 
   await db.contactTagAssignment.deleteMany({ where: { contactId, tagId } });
-  return { revalidate: [`/contacts/${contactId}`] };
+  return {
+    revalidate: [`/contacts/${contactId}`],
+    revalidateTags: [`contact:${contactId}`],
+  };
 });

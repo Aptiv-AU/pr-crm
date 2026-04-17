@@ -50,7 +50,10 @@ export const updatePhaseStatus = action(
       }
     }
 
-    return { revalidate: ["/campaigns", `/campaigns/${phase.campaignId}`] };
+    return {
+      revalidate: ["/campaigns", `/campaigns/${phase.campaignId}`],
+      revalidateTags: [`campaign:${phase.campaignId}`, `stats:${orgId}`],
+    };
   }
 );
 
@@ -80,5 +83,8 @@ export const revertToPhase = action("revertToPhase", async (phaseId: string) => 
     }),
   ]);
 
-  return { revalidate: ["/campaigns", `/campaigns/${phase.campaignId}`] };
+  return {
+    revalidate: ["/campaigns", `/campaigns/${phase.campaignId}`],
+    revalidateTags: [`campaign:${phase.campaignId}`, `stats:${orgId}`],
+  };
 });

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getCampaignById } from "@/lib/queries/campaign-queries";
+import { getCampaignByIdCached } from "@/lib/queries/campaign-queries";
 import { getContacts } from "@/lib/queries/contact-queries";
 import { getSuppliers } from "@/lib/queries/supplier-queries";
 import { CampaignDetailClient } from "@/components/campaigns/campaign-detail-client";
@@ -37,7 +37,7 @@ export default async function CampaignDetailPage({
   }
 
   const [campaign, orgContacts, orgSuppliers, allClients, emailAccount, suppressions] = await Promise.all([
-    getCampaignById(campaignId),
+    getCampaignByIdCached(campaignId),
     getContacts(org.id),
     getSuppliers(org.id),
     db.client.findMany({

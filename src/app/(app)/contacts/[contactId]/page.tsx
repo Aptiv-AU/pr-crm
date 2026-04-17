@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getContactById, getContactDetailStats } from "@/lib/queries/contact-queries";
+import { getContactByIdCached, getContactDetailStats } from "@/lib/queries/contact-queries";
 import { ContactDetailClient } from "@/components/contacts/contact-detail-client";
 import { isCuid } from "@/lib/slug/resolve";
 
@@ -34,7 +34,7 @@ export default async function ContactDetailPage({
   }
 
   const [contact, stats] = await Promise.all([
-    getContactById(contactId),
+    getContactByIdCached(contactId),
     getContactDetailStats(contactId),
   ]);
 

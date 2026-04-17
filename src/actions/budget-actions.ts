@@ -62,7 +62,10 @@ export const addSupplierToCampaign = action(
       });
     }
 
-    return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
+    return {
+      revalidate: ["/campaigns", `/campaigns/${campaignId}`],
+      revalidateTags: [`campaign:${campaignId}`],
+    };
   }
 );
 
@@ -90,6 +93,7 @@ export const removeSupplierFromCampaign = action(
 
     return {
       revalidate: ["/campaigns", `/campaigns/${existing.campaignId}`],
+      revalidateTags: [`campaign:${existing.campaignId}`],
     };
   }
 );
@@ -131,7 +135,10 @@ export const addBudgetLineItem = action(
       },
     });
 
-    return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
+    return {
+      revalidate: ["/campaigns", `/campaigns/${campaignId}`],
+      revalidateTags: [`campaign:${campaignId}`],
+    };
   }
 );
 
@@ -154,6 +161,7 @@ export const deleteBudgetLineItem = action(
 
     return {
       revalidate: ["/campaigns", `/campaigns/${existing.campaignId}`],
+      revalidateTags: [`campaign:${existing.campaignId}`],
     };
   }
 );
@@ -178,6 +186,7 @@ export const confirmBudgetLineItem = action(
 
     return {
       revalidate: ["/campaigns", `/campaigns/${existing.campaignId}`],
+      revalidateTags: [`campaign:${existing.campaignId}`],
     };
   }
 );
