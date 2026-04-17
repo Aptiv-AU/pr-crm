@@ -31,7 +31,7 @@ interface ContactFormProps {
     name: string;
     email: string | null;
     phone: string | null;
-    publication: string;
+    outlet: string;
     beat: string;
     tier: string;
     health: string;
@@ -50,7 +50,7 @@ interface ContactFormProps {
 export function ContactForm({ contact, onSuccess }: ContactFormProps) {
   const isEdit = !!contact;
   const [name, setName] = useState(contact?.name ?? "");
-  const [publication, setPublication] = useState(contact?.publication ?? "");
+  const [outlet, setOutlet] = useState(contact?.outlet ?? "");
   const [beat, setBeat] = useState(contact?.beat ?? "");
   const [tier, setTier] = useState(contact?.tier ?? "A");
   const [initials, setInitials] = useState(contact?.initials ?? "");
@@ -97,7 +97,7 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
     startTransition(async () => {
       const formData = new FormData();
       formData.set("name", name);
-      formData.set("publication", publication);
+      formData.set("outlet", outlet);
       formData.set("beat", beat);
       formData.set("tier", tier);
       formData.set("initials", initials);
@@ -182,7 +182,7 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
             {name || "Contact Name"}
           </div>
           <div style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>
-            {publication || "Publication"}
+            {outlet || "Publication"}
           </div>
         </div>
       </div>
@@ -197,8 +197,8 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
 
       <Field label="Publication">
         <TextInput
-          value={publication}
-          onChange={(e) => setPublication(e.target.value)}
+          value={outlet}
+          onChange={(e) => setOutlet(e.target.value)}
           placeholder="e.g., Vogue Beauty"
         />
       </Field>

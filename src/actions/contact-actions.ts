@@ -92,7 +92,7 @@ export const createContact = action("createContact", async (formData: FormData) 
   const name = formData.get("name") as string | null;
   const email = formData.get("email") as string | null;
   const phone = formData.get("phone") as string | null;
-  const publication = formData.get("publication") as string | null;
+  const outlet = formData.get("outlet") as string | null;
   const beat = formData.get("beat") as string | null;
   const tier = formData.get("tier") as string | null;
   const initials = formData.get("initials") as string | null;
@@ -106,7 +106,7 @@ export const createContact = action("createContact", async (formData: FormData) 
 
   if (
     !name ||
-    !publication ||
+    !outlet ||
     !beat ||
     !tier ||
     !initials ||
@@ -133,7 +133,7 @@ export const createContact = action("createContact", async (formData: FormData) 
       slug,
       email: email || null,
       phone: phone || null,
-      outlet: publication,
+      outlet,
       beat,
       tier,
       health: "warm",
@@ -164,7 +164,7 @@ export const updateContact = action(
     const name = formData.get("name") as string | null;
     const email = formData.get("email") as string | null;
     const phone = formData.get("phone") as string | null;
-    const publication = formData.get("publication") as string | null;
+    const outlet = formData.get("outlet") as string | null;
     const beat = formData.get("beat") as string | null;
     const tier = formData.get("tier") as string | null;
     const health = formData.get("health") as string | null;
@@ -179,7 +179,7 @@ export const updateContact = action(
 
     if (
       !name ||
-      !publication ||
+      !outlet ||
       !beat ||
       !tier ||
       !health ||
@@ -196,7 +196,7 @@ export const updateContact = action(
         name,
         email: email || null,
         phone: phone || null,
-        outlet: publication,
+        outlet,
         beat,
         tier,
         health,
