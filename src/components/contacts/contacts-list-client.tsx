@@ -10,6 +10,7 @@ import { ContactCardList } from "@/components/contacts/contact-card-list";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ContactForm } from "@/components/contacts/contact-form";
+import { ImportContactsModal } from "@/components/contacts/import-contacts-modal";
 
 interface ContactRow {
   id: string;
@@ -36,6 +37,7 @@ export function ContactsListClient({ contacts, stats, beats }: ContactsListClien
   const router = useRouter();
   const [selectedBeat, setSelectedBeat] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     if (selectedBeat === "All") return contacts;
@@ -50,7 +52,10 @@ export function ContactsListClient({ contacts, stats, beats }: ContactsListClien
   return (
     <div className="p-4 md:p-6">
       {/* Header row */}
-      <div className="flex items-center justify-end" style={{ marginBottom: 16 }}>
+      <div className="flex items-center justify-end gap-2" style={{ marginBottom: 16 }}>
+        <Button variant="default" size="sm" onClick={() => setImportOpen(true)}>
+          Import
+        </Button>
         <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
           Add contact
         </Button>
@@ -99,6 +104,12 @@ export function ContactsListClient({ contacts, stats, beats }: ContactsListClien
       <SlideOverPanel open={addOpen} onClose={() => setAddOpen(false)} title="Add Contact">
         {addOpen && <ContactForm onSuccess={handleSuccess} />}
       </SlideOverPanel>
+
+      <ImportContactsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => router.refresh()}
+      />
     </div>
   );
 }
