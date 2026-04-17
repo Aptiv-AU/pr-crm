@@ -21,7 +21,7 @@ export function buildPitchUserPrompt(
   brief: string,
   clientName: string,
   industry: string,
-  contact: { name: string; publication: string; beat: string; tier: string }
+  contact: { name: string; outlet: string; beat: string; tier: string }
 ): string {
   return `Write a media pitch email for the following campaign.
 
@@ -33,7 +33,7 @@ ${brief}
 
 JOURNALIST DETAILS:
 - Name: ${contact.name}
-- Publication: ${contact.publication}
+- Publication: ${contact.outlet}
 - Beat: ${contact.beat}
 - Tier: ${contact.tier}
 
@@ -49,10 +49,10 @@ export function buildContactSuggestionPrompt(
   brief: string,
   clientName: string,
   industry: string,
-  contacts: { id: string; name: string; publication: string; beat: string; tier: string }[]
+  contacts: { id: string; name: string; outlet: string; beat: string; tier: string }[]
 ): string {
   const contactList = contacts
-    .map((c) => `- ID: ${c.id} | ${c.name} | ${c.publication} | Beat: ${c.beat} | Tier: ${c.tier}`)
+    .map((c) => `- ID: ${c.id} | ${c.name} | ${c.outlet} | Beat: ${c.beat} | Tier: ${c.tier}`)
     .join("\n");
 
   return `You are a PR strategist selecting the best media contacts for a campaign.
