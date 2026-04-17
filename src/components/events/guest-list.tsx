@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addContactToCampaign, removeContactFromCampaign } from "@/actions/campaign-actions";
 import { updateGuestRsvp } from "@/actions/event-actions";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 
@@ -19,6 +19,7 @@ interface CampaignContact {
     initials: string;
     avatarBg: string;
     avatarFg: string;
+    photo?: string | null;
     publication: string | null;
     email: string | null;
   };
@@ -30,6 +31,7 @@ interface AvailableContact {
   initials: string;
   avatarBg: string;
   avatarFg: string;
+  photo?: string | null;
   publication: string | null;
 }
 
@@ -158,7 +160,7 @@ export function GuestList({ campaignId, campaignContacts, availableContacts }: G
                   (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
                 }}
               >
-                <Avatar initials={contact.initials} bg={contact.avatarBg} fg={contact.avatarFg} size={22} />
+                <ContactAvatar contact={contact} size={22} />
                 <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{contact.name}</span>
                 <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication || ""}</span>
               </div>
@@ -218,12 +220,7 @@ export function GuestList({ campaignId, campaignContacts, availableContacts }: G
                 opacity: isPending ? 0.6 : 1,
               }}
             >
-              <Avatar
-                initials={cc.contact.initials}
-                bg={cc.contact.avatarBg}
-                fg={cc.contact.avatarFg}
-                size={26}
-              />
+              <ContactAvatar contact={cc.contact} size={26} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar } from "@/components/ui/avatar";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 
@@ -11,6 +11,7 @@ interface ContactRow {
   initials: string;
   avatarBg: string;
   avatarFg: string;
+  photo?: string | null;
   publication: string;
   beat: string;
   tier: string;
@@ -60,12 +61,7 @@ export function ContactCardList({ contacts }: ContactCardListProps) {
             (e.currentTarget as HTMLElement).style.borderColor = "var(--border-custom)";
           }}
         >
-          <Avatar
-            initials={contact.initials}
-            bg={contact.avatarBg}
-            fg={contact.avatarFg}
-            size={36}
-          />
+          <ContactAvatar contact={contact} size={36} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
               {contact.name}

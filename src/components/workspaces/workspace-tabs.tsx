@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { CampaignCard } from "@/components/workspaces/campaign-card";
@@ -14,6 +13,7 @@ interface Contact {
   initials: string;
   avatarBg: string;
   avatarFg: string;
+  photo?: string | null;
   publication: string;
   beat: string;
   tier: string;
@@ -188,12 +188,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                     "transparent";
                 }}
               >
-                <Avatar
-                  initials={contact.initials}
-                  bg={contact.avatarBg}
-                  fg={contact.avatarFg}
-                  size={30}
-                />
+                <ContactAvatar contact={contact} size={30} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{

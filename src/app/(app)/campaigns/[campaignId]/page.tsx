@@ -57,6 +57,7 @@ export default async function CampaignDetailPage({
       initials: c.initials,
       avatarBg: c.avatarBg,
       avatarFg: c.avatarFg,
+      photo: c.photo,
       publication: c.publication,
     }));
 

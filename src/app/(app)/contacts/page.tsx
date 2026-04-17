@@ -22,6 +22,7 @@ export default async function ContactsPage() {
     initials: c.initials,
     avatarBg: c.avatarBg,
     avatarFg: c.avatarFg,
+    photo: c.photo,
     publication: c.publication,
     beat: c.beat,
     tier: c.tier,

@@ -15,6 +15,7 @@ interface SearchResult {
   initials?: string;
   colour?: string;
   bgColour?: string;
+  photo?: string | null;
 }
 
 const typeLabels: Record<string, string> = {
@@ -310,7 +311,19 @@ export function GlobalSearch() {
                     }}
                   >
                     {/* Avatar / Icon */}
-                    {item.initials ? (
+                    {item.photo ? (
+                      <img
+                        src={item.photo}
+                        alt=""
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : item.initials ? (
                       <div
                         style={{
                           width: 22,

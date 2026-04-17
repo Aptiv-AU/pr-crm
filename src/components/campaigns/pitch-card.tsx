@@ -3,8 +3,8 @@
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { updateOutreachDraft, approveOutreach, revertOutreachToDraft, deleteOutreach } from "@/actions/outreach-actions";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
@@ -22,6 +22,7 @@ interface PitchCardProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
+      photo?: string | null;
       publication: string | null;
     };
   };
@@ -80,12 +81,7 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
     >
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Avatar
-          initials={outreach.contact.initials}
-          bg={outreach.contact.avatarBg}
-          fg={outreach.contact.avatarFg}
-          size={26}
-        />
+        <ContactAvatar contact={outreach.contact} size={26} />
         <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
           {outreach.contact.name}
         </span>

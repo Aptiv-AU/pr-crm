@@ -11,6 +11,7 @@ interface SearchResult {
   initials?: string;
   colour?: string;
   bgColour?: string;
+  photo?: string | null;
 }
 
 export async function globalSearch(query: string): Promise<SearchResult[]> {
@@ -52,6 +53,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
         initials: true,
         avatarBg: true,
         avatarFg: true,
+        photo: true,
       },
     }),
     db.campaign.findMany({
@@ -94,6 +96,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       initials: c.initials,
       colour: c.avatarFg,
       bgColour: c.avatarBg,
+      photo: c.photo,
     })
   );
   campaigns.forEach((c) =>

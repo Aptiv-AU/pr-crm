@@ -53,6 +53,7 @@ export default async function EventDetailPage({
       initials: c.initials,
       avatarBg: c.avatarBg,
       avatarFg: c.avatarFg,
+      photo: c.photo,
       publication: c.publication,
     }));
 
@@ -106,6 +107,7 @@ export default async function EventDetailPage({
       initials: cc.contact.initials,
       avatarBg: cc.contact.avatarBg,
       avatarFg: cc.contact.avatarFg,
+      photo: cc.contact.photo,
       publication: cc.contact.publication,
       email: cc.contact.email,
     },

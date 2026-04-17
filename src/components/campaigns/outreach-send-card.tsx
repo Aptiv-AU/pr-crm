@@ -1,8 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
 import { sendOutreach, approveOutreach } from "@/actions/outreach-actions";
 
@@ -20,6 +20,7 @@ interface OutreachSendCardProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
+      photo?: string | null;
       email: string | null;
       publication: string | null;
     };
@@ -74,12 +75,7 @@ export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardP
           Follow-up #{outreach.followUpNumber}
         </div>
         <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
-          <Avatar
-            initials={contact.initials}
-            bg={contact.avatarBg}
-            fg={contact.avatarFg}
-            size={26}
-          />
+          <ContactAvatar contact={contact} size={26} />
           <div className="min-w-0">
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}
@@ -135,12 +131,7 @@ export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardP
         }}
       >
         <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
-          <Avatar
-            initials={contact.initials}
-            bg={contact.avatarBg}
-            fg={contact.avatarFg}
-            size={26}
-          />
+          <ContactAvatar contact={contact} size={26} />
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}
@@ -188,12 +179,7 @@ export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardP
         }}
       >
         <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
-          <Avatar
-            initials={contact.initials}
-            bg={contact.avatarBg}
-            fg={contact.avatarFg}
-            size={26}
-          />
+          <ContactAvatar contact={contact} size={26} />
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}
@@ -239,12 +225,7 @@ export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardP
         }}
       >
         <div className="flex items-center gap-[8px]" style={{ marginBottom: 8 }}>
-          <Avatar
-            initials={contact.initials}
-            bg={contact.avatarBg}
-            fg={contact.avatarFg}
-            size={26}
-          />
+          <ContactAvatar contact={contact} size={26} />
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}

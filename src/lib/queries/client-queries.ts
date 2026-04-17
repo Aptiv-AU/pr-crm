@@ -37,6 +37,7 @@ export async function getClientById(clientId: string) {
                   initials: true,
                   avatarBg: true,
                   avatarFg: true,
+                  photo: true,
                   publication: true,
                   beat: true,
                   tier: true,

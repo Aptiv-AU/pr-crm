@@ -17,6 +17,7 @@ interface ContactRow {
   initials: string;
   avatarBg: string;
   avatarFg: string;
+  photo?: string | null;
   publication: string;
   beat: string;
   tier: string;

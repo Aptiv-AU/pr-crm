@@ -112,6 +112,7 @@ export async function getCampaignById(campaignId: string) {
               initials: true,
               avatarBg: true,
               avatarFg: true,
+              photo: true,
               email: true,
               publication: true,
             },
