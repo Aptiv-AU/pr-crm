@@ -3,6 +3,8 @@
 import { useState, useTransition, useRef } from "react";
 import { createCoverage, updateCoverage } from "@/actions/coverage-actions";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { TextInput, Textarea, textInputBaseStyle } from "@/components/ui/text-input";
 
 interface CoverageFormProps {
   coverage?: {
@@ -91,26 +93,6 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
     });
   }
 
-  const inputStyle = {
-    width: "100%",
-    height: 34,
-    padding: "0 10px",
-    fontSize: 13,
-    borderRadius: 7,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
-    color: "var(--text-primary)",
-    outline: "none",
-  } as const;
-
-  const labelStyle = {
-    fontSize: 12,
-    fontWeight: 500 as const,
-    color: "var(--text-sub)",
-    marginBottom: 6,
-    display: "block" as const,
-  };
-
   const toggleBtnBase = {
     height: 30,
     padding: "0 14px",
@@ -132,7 +114,7 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
   };
 
   const selectStyle = {
-    ...inputStyle,
+    ...textInputBaseStyle,
     appearance: "none" as const,
     backgroundImage:
       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
@@ -145,32 +127,34 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
 
   return (
     <div style={{ display: "flex", flexDirection: "column" as const, gap: 20 }}>
-      {/* Publication */}
-      <div>
-        <label style={labelStyle}>Publication</label>
-        <input
-          type="text"
+      <Field label="Publication">
+        <TextInput
           value={publication}
           onChange={(e) => setPublication(e.target.value)}
           placeholder="e.g., Vogue Australia"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Date */}
-      <div>
-        <label style={labelStyle}>Date</label>
-        <input
+      <Field label="Date">
+        <TextInput
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
       {/* Type */}
       <div>
-        <label style={labelStyle}>Type</label>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-sub)",
+            marginBottom: 6,
+          }}
+        >
+          Type
+        </div>
         <div style={{ display: "flex", gap: 8 }}>
           {COVERAGE_TYPES.map((t) => (
             <button
@@ -185,9 +169,7 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
         </div>
       </div>
 
-      {/* Campaign */}
-      <div>
-        <label style={labelStyle}>Campaign</label>
+      <Field label="Campaign">
         <select
           value={campaignId}
           onChange={(e) => setCampaignId(e.target.value)}
@@ -200,11 +182,9 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
             </option>
           ))}
         </select>
-      </div>
+      </Field>
 
-      {/* Contact */}
-      <div>
-        <label style={labelStyle}>Contact</label>
+      <Field label="Contact">
         <select
           value={contactId}
           onChange={(e) => setContactId(e.target.value)}
@@ -217,23 +197,17 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
             </option>
           ))}
         </select>
-      </div>
+      </Field>
 
-      {/* URL */}
-      <div>
-        <label style={labelStyle}>URL</label>
-        <input
-          type="text"
+      <Field label="URL">
+        <TextInput
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://..."
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Media Value */}
-      <div>
-        <label style={labelStyle}>Media Value</label>
+      <Field label="Media Value">
         <div style={{ position: "relative" }}>
           <span
             style={{
@@ -248,21 +222,30 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
           >
             $
           </span>
-          <input
+          <TextInput
             type="number"
             value={mediaValue}
             onChange={(e) => setMediaValue(e.target.value)}
             placeholder="0.00"
             step="0.01"
             min="0"
-            style={{ ...inputStyle, paddingLeft: 22 }}
+            style={{ paddingLeft: 22 }}
           />
         </div>
-      </div>
+      </Field>
 
       {/* Clipping Upload */}
       <div>
-        <label style={labelStyle}>Clipping</label>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-sub)",
+            marginBottom: 6,
+          }}
+        >
+          Clipping
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -278,7 +261,7 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           style={{
-            ...inputStyle,
+            ...textInputBaseStyle,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -350,22 +333,14 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
         )}
       </div>
 
-      {/* Notes */}
-      <div>
-        <label style={labelStyle}>Notes</label>
-        <textarea
+      <Field label="Notes">
+        <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Additional notes..."
           rows={3}
-          style={{
-            ...inputStyle,
-            height: "auto",
-            padding: "8px 10px",
-            resize: "vertical" as const,
-          }}
         />
-      </div>
+      </Field>
 
       {/* Error */}
       {error && (
