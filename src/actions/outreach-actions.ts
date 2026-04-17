@@ -196,7 +196,7 @@ export async function suggestContacts(campaignId: string) {
       campaign.brief,
       campaign.client.name,
       campaign.client.industry,
-      contacts.map((c) => ({
+      contacts.map((c: typeof contacts[number]) => ({
         id: c.id,
         name: c.name,
         publication: c.outlet ?? "",
@@ -268,7 +268,7 @@ export async function sendOutreach(outreachId: string) {
     // Convert body to HTML paragraphs
     const bodyHtml = outreach.body
       .split(/\n\n+/)
-      .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+      .map((para: string) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
       .join("");
 
     const result = await sendMail(accessToken, {
