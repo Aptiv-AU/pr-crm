@@ -39,7 +39,7 @@ export function SupplierContactForm({ supplierContact, supplierId, onSuccess }: 
         ? await updateSupplierContact(supplierContact!.id, formData)
         : await createSupplierContact(formData);
 
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         onSuccess();

@@ -118,7 +118,7 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
         ? await updateContact(contact!.id, formData)
         : await createContact(formData);
 
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         onSuccess();

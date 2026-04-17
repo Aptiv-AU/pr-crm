@@ -62,7 +62,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
         ? await updateClient(client!.id, formData)
         : await createClient(formData);
 
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         onSuccess();

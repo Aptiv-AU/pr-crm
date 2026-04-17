@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function downloadAndStorePhoto(url: string): Promise<string | null> {
@@ -62,80 +62,72 @@ async function getOrganizationId(): Promise<string> {
   return org.id;
 }
 
-export async function createContact(formData: FormData) {
-  try {
-    const name = formData.get("name") as string | null;
-    const email = formData.get("email") as string | null;
-    const phone = formData.get("phone") as string | null;
-    const publication = formData.get("publication") as string | null;
-    const beat = formData.get("beat") as string | null;
-    const tier = formData.get("tier") as string | null;
-    const initials = formData.get("initials") as string | null;
-    const avatarBg = formData.get("avatarBg") as string | null;
-    const avatarFg = formData.get("avatarFg") as string | null;
-    const instagram = formData.get("instagram") as string | null;
-    const twitter = formData.get("twitter") as string | null;
-    const linkedin = formData.get("linkedin") as string | null;
-    const notes = formData.get("notes") as string | null;
-    const photo = await resolvePhoto(formData.get("photo") as string | null);
+export const createContact = action("createContact", async (formData: FormData) => {
+  const name = formData.get("name") as string | null;
+  const email = formData.get("email") as string | null;
+  const phone = formData.get("phone") as string | null;
+  const publication = formData.get("publication") as string | null;
+  const beat = formData.get("beat") as string | null;
+  const tier = formData.get("tier") as string | null;
+  const initials = formData.get("initials") as string | null;
+  const avatarBg = formData.get("avatarBg") as string | null;
+  const avatarFg = formData.get("avatarFg") as string | null;
+  const instagram = formData.get("instagram") as string | null;
+  const twitter = formData.get("twitter") as string | null;
+  const linkedin = formData.get("linkedin") as string | null;
+  const notes = formData.get("notes") as string | null;
+  const photo = await resolvePhoto(formData.get("photo") as string | null);
 
-    if (
-      !name ||
-      !publication ||
-      !beat ||
-      !tier ||
-      !initials ||
-      !avatarBg ||
-      !avatarFg
-    ) {
-      return { error: "All required fields must be provided" };
-    }
-
-    const organizationId = await getOrganizationId();
-
-    const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
-      const existing = await db.contact.findFirst({
-        where: { organizationId, slug: candidate },
-        select: { id: true },
-      });
-      return existing !== null;
-    });
-
-    const contact = await db.contact.create({
-      data: {
-        organizationId,
-        name,
-        slug,
-        email: email || null,
-        phone: phone || null,
-        outlet: publication,
-        beat,
-        tier,
-        health: "warm",
-        initials: initials.toUpperCase().slice(0, 2),
-        avatarBg,
-        avatarFg,
-        instagram: instagram || null,
-        twitter: twitter || null,
-        linkedin: linkedin || null,
-        notes: notes || null,
-        photo,
-      },
-    });
-
-    revalidatePath("/contacts");
-
-    return { success: true, contactId: contact.id };
-  } catch (error) {
-    console.error("createContact error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to create contact",
-    };
+  if (
+    !name ||
+    !publication ||
+    !beat ||
+    !tier ||
+    !initials ||
+    !avatarBg ||
+    !avatarFg
+  ) {
+    throw new Error("All required fields must be provided");
   }
-}
 
-export async function updateContact(contactId: string, formData: FormData) {
-  try {
+  const organizationId = await getOrganizationId();
+
+  const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
+    const existing = await db.contact.findFirst({
+      where: { organizationId, slug: candidate },
+      select: { id: true },
+    });
+    return existing !== null;
+  });
+
+  const contact = await db.contact.create({
+    data: {
+      organizationId,
+      name,
+      slug,
+      email: email || null,
+      phone: phone || null,
+      outlet: publication,
+      beat,
+      tier,
+      health: "warm",
+      initials: initials.toUpperCase().slice(0, 2),
+      avatarBg,
+      avatarFg,
+      instagram: instagram || null,
+      twitter: twitter || null,
+      linkedin: linkedin || null,
+      notes: notes || null,
+      photo,
+    },
+  });
+
+  return { data: { contactId: contact.id }, revalidate: ["/contacts"] };
+});
+
+export const updateContact = action(
+  "updateContact",
+  async (contactId: string, formData: FormData) => {
     const name = formData.get("name") as string | null;
     const email = formData.get("email") as string | null;
     const phone = formData.get("phone") as string | null;
@@ -162,7 +154,7 @@ export async function updateContact(contactId: string, formData: FormData) {
       !avatarBg ||
       !avatarFg
     ) {
-      return { error: "All required fields must be provided" };
+      throw new Error("All required fields must be provided");
     }
 
     await db.contact.update({
@@ -186,15 +178,6 @@ export async function updateContact(contactId: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/contacts");
-    revalidatePath(`/contacts/${contactId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("updateContact error:", error);
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to update contact",
-    };
+    return { revalidate: ["/contacts", `/contacts/${contactId}`] };
   }
-}
+);

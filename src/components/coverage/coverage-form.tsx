@@ -85,7 +85,7 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
         ? await updateCoverage(coverage!.id, formData)
         : await createCoverage(formData);
 
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         onSuccess();

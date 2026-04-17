@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function getOrganizationId(): Promise<string> {
@@ -14,65 +14,57 @@ async function getOrganizationId(): Promise<string> {
   return org.id;
 }
 
-export async function createCoverage(formData: FormData) {
-  try {
-    const campaignId = formData.get("campaignId") as string | null;
-    const contactId = formData.get("contactId") as string | null;
-    const publication = formData.get("publication") as string | null;
-    const dateStr = formData.get("date") as string | null;
-    const type = formData.get("type") as string | null;
-    const url = formData.get("url") as string | null;
-    const mediaValueStr = formData.get("mediaValue") as string | null;
-    const attachmentUrl = formData.get("attachmentUrl") as string | null;
-    const notes = formData.get("notes") as string | null;
+export const createCoverage = action("createCoverage", async (formData: FormData) => {
+  const campaignId = formData.get("campaignId") as string | null;
+  const contactId = formData.get("contactId") as string | null;
+  const publication = formData.get("publication") as string | null;
+  const dateStr = formData.get("date") as string | null;
+  const type = formData.get("type") as string | null;
+  const url = formData.get("url") as string | null;
+  const mediaValueStr = formData.get("mediaValue") as string | null;
+  const attachmentUrl = formData.get("attachmentUrl") as string | null;
+  const notes = formData.get("notes") as string | null;
 
-    if (!publication || !dateStr || !type) {
-      return { error: "Publication, date, and type are required" };
-    }
-
-    const organizationId = await getOrganizationId();
-    const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
-
-    const slug = await ensureUniqueSlug(slugify(publication), async (candidate) => {
-      const existing = await db.coverage.findFirst({
-        where: { organizationId, slug: candidate },
-        select: { id: true },
-      });
-      return existing !== null;
-    });
-
-    const coverage = await db.coverage.create({
-      data: {
-        organizationId,
-        campaignId: campaignId || null,
-        contactId: contactId || null,
-        publication,
-        slug,
-        date: new Date(dateStr),
-        type,
-        url: url || null,
-        mediaValue: mediaValue && !isNaN(mediaValue) ? mediaValue : null,
-        attachmentUrl: attachmentUrl || null,
-        notes: notes || null,
-      },
-    });
-
-    revalidatePath("/coverage");
-    if (campaignId) {
-      revalidatePath(`/campaigns/${campaignId}`);
-    }
-
-    return { success: true, coverageId: coverage.id };
-  } catch (error) {
-    console.error("createCoverage error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to create coverage",
-    };
+  if (!publication || !dateStr || !type) {
+    throw new Error("Publication, date, and type are required");
   }
-}
 
-export async function updateCoverage(coverageId: string, formData: FormData) {
-  try {
+  const organizationId = await getOrganizationId();
+  const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
+
+  const slug = await ensureUniqueSlug(slugify(publication), async (candidate) => {
+    const existing = await db.coverage.findFirst({
+      where: { organizationId, slug: candidate },
+      select: { id: true },
+    });
+    return existing !== null;
+  });
+
+  const coverage = await db.coverage.create({
+    data: {
+      organizationId,
+      campaignId: campaignId || null,
+      contactId: contactId || null,
+      publication,
+      slug,
+      date: new Date(dateStr),
+      type,
+      url: url || null,
+      mediaValue: mediaValue && !isNaN(mediaValue) ? mediaValue : null,
+      attachmentUrl: attachmentUrl || null,
+      notes: notes || null,
+    },
+  });
+
+  const revalidate = ["/coverage"];
+  if (campaignId) revalidate.push(`/campaigns/${campaignId}`);
+
+  return { data: { coverageId: coverage.id }, revalidate };
+});
+
+export const updateCoverage = action(
+  "updateCoverage",
+  async (coverageId: string, formData: FormData) => {
     const campaignId = formData.get("campaignId") as string | null;
     const contactId = formData.get("contactId") as string | null;
     const publication = formData.get("publication") as string | null;
@@ -84,7 +76,7 @@ export async function updateCoverage(coverageId: string, formData: FormData) {
     const notes = formData.get("notes") as string | null;
 
     if (!publication || !dateStr || !type) {
-      return { error: "Publication, date, and type are required" };
+      throw new Error("Publication, date, and type are required");
     }
 
     const existing = await db.coverage.findUnique({
@@ -93,7 +85,7 @@ export async function updateCoverage(coverageId: string, formData: FormData) {
     });
 
     if (!existing) {
-      return { error: "Coverage not found" };
+      throw new Error("Coverage not found");
     }
 
     const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
@@ -113,45 +105,29 @@ export async function updateCoverage(coverageId: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/coverage");
-    if (campaignId) {
-      revalidatePath(`/campaigns/${campaignId}`);
-    }
+    const revalidate = ["/coverage"];
+    if (campaignId) revalidate.push(`/campaigns/${campaignId}`);
 
-    return { success: true };
-  } catch (error) {
-    console.error("updateCoverage error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to update coverage",
-    };
+    return { revalidate };
   }
-}
+);
 
-export async function deleteCoverage(coverageId: string) {
-  try {
-    const existing = await db.coverage.findUnique({
-      where: { id: coverageId },
-      select: { campaignId: true },
-    });
+export const deleteCoverage = action("deleteCoverage", async (coverageId: string) => {
+  const existing = await db.coverage.findUnique({
+    where: { id: coverageId },
+    select: { campaignId: true },
+  });
 
-    if (!existing) {
-      return { error: "Coverage not found" };
-    }
-
-    await db.coverage.delete({
-      where: { id: coverageId },
-    });
-
-    revalidatePath("/coverage");
-    if (existing.campaignId) {
-      revalidatePath(`/campaigns/${existing.campaignId}`);
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("deleteCoverage error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to delete coverage",
-    };
+  if (!existing) {
+    throw new Error("Coverage not found");
   }
-}
+
+  await db.coverage.delete({
+    where: { id: coverageId },
+  });
+
+  const revalidate = ["/coverage"];
+  if (existing.campaignId) revalidate.push(`/campaigns/${existing.campaignId}`);
+
+  return { revalidate };
+});
