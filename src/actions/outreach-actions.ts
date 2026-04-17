@@ -12,7 +12,7 @@ import {
   type SendResult,
 } from "@/lib/email/provider";
 import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
-import type { EmailAccount, Prisma } from "@prisma/client";
+import { OutreachStatus, type EmailAccount, type Prisma } from "@prisma/client";
 
 type SendableOutreach = Prisma.OutreachGetPayload<{
   include: { contact: true; campaign: true };
@@ -69,7 +69,7 @@ export const createOutreachDraft = action(
     if (existing) {
       await db.outreach.update({
         where: { id: existing.id },
-        data: { subject, body, generatedByAI, status: "draft" },
+        data: { subject, body, generatedByAI, status: OutreachStatus.draft },
       });
     } else {
       await db.outreach.create({
@@ -80,7 +80,7 @@ export const createOutreachDraft = action(
           body,
           generatedByAI,
           followUpNumber: 0,
-          status: "draft",
+          status: OutreachStatus.draft,
         },
       });
     }
@@ -118,7 +118,7 @@ export const approveOutreach = action("approveOutreach", async (outreachId: stri
 
   await db.outreach.update({
     where: { id: outreachId },
-    data: { status: "approved" },
+    data: { status: OutreachStatus.approved },
   });
 
   return { revalidate: [`/campaigns/${existing.campaignId}`] };
@@ -137,10 +137,10 @@ export const bulkApproveOutreaches = action(
     await db.outreach.updateMany({
       where: {
         campaignId,
-        status: "draft",
+        status: OutreachStatus.draft,
         followUpNumber: 0,
       },
-      data: { status: "approved" },
+      data: { status: OutreachStatus.approved },
     });
 
     return { revalidate: [`/campaigns/${campaignId}`] };
@@ -159,7 +159,7 @@ export const revertOutreachToDraft = action(
 
     await db.outreach.update({
       where: { id: outreachId },
-      data: { status: "draft" },
+      data: { status: OutreachStatus.draft },
     });
 
     return { revalidate: [`/campaigns/${existing.campaignId}`] };
@@ -283,7 +283,7 @@ async function loadSendableOutreach(
     include: { contact: true, campaign: true },
   });
   if (!outreach) throw new Error("Outreach not found");
-  if (outreach.status !== "approved") {
+  if (outreach.status !== OutreachStatus.approved) {
     throw new Error("Outreach must be approved before sending");
   }
   if (!outreach.contact.email) {
@@ -351,7 +351,7 @@ async function markOutreachSent(
   await db.outreach.update({
     where: { id },
     data: {
-      status: "sent",
+      status: OutreachStatus.sent,
       sentAt: new Date(),
       sentVia: provider === "google" ? "gmail" : "microsoft_graph",
       messageId: sent.messageId,
@@ -384,7 +384,7 @@ export async function sendBulkOutreach(campaignId: string) {
   const approved = await db.outreach.findMany({
     where: {
       campaignId,
-      status: "approved",
+      status: OutreachStatus.approved,
     },
     select: { id: true },
   });

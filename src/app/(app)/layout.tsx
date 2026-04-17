@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { CampaignStatus, OutreachStatus } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 export const revalidate = 30; // revalidate layout data every 30 seconds (badge counts, client list)
@@ -51,8 +52,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       orderBy: { name: "asc" },
     }),
     db.contact.count({ where: { organizationId: org.id } }),
-    db.campaign.count({ where: { organizationId: org.id, status: { not: "complete" } } }),
-    db.outreach.count({ where: { campaign: { organizationId: org.id }, status: "draft" } }),
+    db.campaign.count({ where: { organizationId: org.id, status: { not: CampaignStatus.complete } } }),
+    db.outreach.count({ where: { campaign: { organizationId: org.id }, status: OutreachStatus.draft } }),
   ]);
 
   return (

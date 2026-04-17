@@ -304,7 +304,7 @@ model Outreach {
   contact       Contact   @relation(fields: [contactId], references: [id])
   subject       String
   body          String
-  status        String    @default("draft")
+  status        OutreachStatus @default(draft)
   generatedByAI  Boolean   @default(false)
   followUpNumber Int       @default(0)
   scheduledAt    DateTime?
@@ -447,4 +447,11 @@ enum CampaignStatus {
   draft
   active
   complete
+}
+
+enum OutreachStatus {
+  draft
+  approved
+  sent
+  replied
 }

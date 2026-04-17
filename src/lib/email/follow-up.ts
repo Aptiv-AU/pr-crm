@@ -3,7 +3,7 @@ import { providerFor } from "./provider";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { parsePitchResponse } from "@/lib/ai/prompts";
-import type { Prisma } from "@prisma/client";
+import { OutreachStatus, type Prisma } from "@prisma/client";
 
 const OUTREACHES_CONCURRENCY = 5;
 const FOLLOWUPS_CONCURRENCY = 5;
@@ -33,7 +33,7 @@ export async function checkForReplies(organizationId: string): Promise<number> {
   const outreaches = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
-      status: "sent",
+      status: OutreachStatus.sent,
       threadId: { not: null },
       sentAt: { gte: windowCutoff },
       OR: [
@@ -94,7 +94,7 @@ async function checkOne(
       await db.outreach.update({
         where: { id: outreach.id },
         data: {
-          status: "replied",
+          status: OutreachStatus.replied,
           lastCheckedForReplyAt: new Date(),
         },
       });
@@ -153,7 +153,7 @@ export async function generateFollowUps(
   const needsFirstFollowUp = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
-      status: "sent",
+      status: OutreachStatus.sent,
       followUpNumber: 0,
       sentAt: { lte: threeDaysAgo },
     },
@@ -167,7 +167,7 @@ export async function generateFollowUps(
   const needsSecondFollowUp = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
-      status: "sent",
+      status: OutreachStatus.sent,
       followUpNumber: 1,
       sentAt: { lte: sevenDaysAgo },
     },
@@ -232,7 +232,7 @@ async function generateOneFollowUp(
         contactId: outreach.contactId,
         subject: parsed.subject || `Re: ${outreach.subject}`,
         body: parsed.body || response,
-        status: "draft",
+        status: OutreachStatus.draft,
         followUpNumber: nextFollowUp,
         generatedByAI: true,
       },

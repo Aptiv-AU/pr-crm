@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { OutreachStatus } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { requireOrgId } from "@/lib/server/org";
 import { getAIConfig } from "@/lib/ai/get-config";
@@ -143,7 +144,7 @@ export async function POST(request: Request) {
           if (existing) {
             await db.outreach.update({
               where: { id: existing.id },
-              data: { subject, body, generatedByAI: true, status: "draft" },
+              data: { subject, body, generatedByAI: true, status: OutreachStatus.draft },
             });
           } else {
             await db.outreach.create({
@@ -154,7 +155,7 @@ export async function POST(request: Request) {
                 body,
                 generatedByAI: true,
                 followUpNumber: 0,
-                status: "draft",
+                status: OutreachStatus.draft,
               },
             });
           }
