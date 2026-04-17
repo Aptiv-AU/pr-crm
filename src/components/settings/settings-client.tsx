@@ -75,7 +75,7 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
     setProfileSaved(false);
     const formData = new FormData();
     formData.set("name", profileName);
-    await updateUserProfile(currentUser.id, formData);
+    await updateUserProfile(formData);
     setProfileSaving(false);
     setProfileSaved(true);
     router.refresh();
