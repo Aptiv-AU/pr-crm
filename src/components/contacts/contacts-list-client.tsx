@@ -19,6 +19,7 @@ type Tag = { id: string; label: string; colorBg: string; colorFg: string };
 
 interface ContactRow {
   id: string;
+  slug: string;
   name: string;
   initials: string;
   avatarBg: string;

@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 
 interface ContactRow {
   id: string;
+  slug: string;
   name: string;
   initials: string;
   avatarBg: string;
@@ -41,7 +42,7 @@ export function ContactCardList({ contacts }: ContactCardListProps) {
       {contacts.map((contact) => (
         <Link
           key={contact.id}
-          href={`/contacts/${contact.id}`}
+          href={`/contacts/${contact.slug}`}
           style={{
             textDecoration: "none",
             color: "inherit",

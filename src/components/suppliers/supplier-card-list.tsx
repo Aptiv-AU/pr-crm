@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 
 interface SupplierRow {
   id: string;
+  slug: string;
   name: string;
   serviceCategory: string;
   email: string | null;
@@ -24,7 +25,7 @@ export function SupplierCardList({ suppliers }: SupplierCardListProps) {
       {suppliers.map((supplier) => (
         <Link
           key={supplier.id}
-          href={`/suppliers/${supplier.id}`}
+          href={`/suppliers/${supplier.slug}`}
           style={{
             textDecoration: "none",
             color: "inherit",

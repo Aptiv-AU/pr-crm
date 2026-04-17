@@ -13,6 +13,7 @@ interface Campaign {
 interface ClientCardProps {
   client: {
     id: string;
+    slug: string;
     name: string;
     industry: string;
     colour: string;
@@ -38,7 +39,7 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
 
   return (
     <Link
-      href={`/workspaces/${client.id}`}
+      href={`/workspaces/${client.slug}`}
       className="block rounded-[10px] transition-colors"
       style={{
         border: "1px solid var(--border-custom)",

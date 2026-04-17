@@ -123,6 +123,7 @@ export default async function CampaignDetailPage({
   // Serialize campaign data (dates and Decimals)
   const serializedCampaign = {
     id: campaign.id,
+    slug: campaign.slug,
     name: campaign.name,
     type: campaign.type,
     status: campaign.status,

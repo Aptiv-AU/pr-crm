@@ -30,6 +30,7 @@ interface OutreachClient {
 
 interface OutreachCampaign {
   id: string;
+  slug: string;
   name: string;
   client: OutreachClient;
 }
@@ -104,7 +105,7 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
           {filtered.map((outreach) => (
             <Link
               key={outreach.id}
-              href={`/campaigns/${outreach.campaign.id}?tab=outreach`}
+              href={`/campaigns/${outreach.campaign.slug}?tab=outreach`}
               className="block rounded-[10px] p-3 transition-colors"
               style={{
                 border: "1px solid var(--border-custom)",

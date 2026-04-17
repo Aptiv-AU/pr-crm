@@ -15,6 +15,7 @@ import { ClientBadge } from "@/components/shared/client-badge";
 
 interface CampaignRow {
   id: string;
+  slug: string;
   name: string;
   type: string;
   status: string;
@@ -160,7 +161,7 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
           return (
             <Link
               key={campaign.id}
-              href={`/campaigns/${campaign.id}`}
+              href={`/campaigns/${campaign.slug}`}
               style={{ textDecoration: "none" }}
             >
               <Card

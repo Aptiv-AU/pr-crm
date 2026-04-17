@@ -10,6 +10,7 @@ export async function getAllOutreaches(organizationId: string) {
       campaign: {
         select: {
           id: true,
+          slug: true,
           name: true,
           client: { select: { id: true, name: true, initials: true, colour: true, bgColour: true, logo: true } },
         },

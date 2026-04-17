@@ -6,6 +6,7 @@ import Link from "next/link";
 interface EventsCalendarProps {
   events: {
     id: string;
+    slug: string;
     name: string;
     status: string;
     client: { name: string; initials: string; colour: string; bgColour: string };
@@ -197,7 +198,7 @@ export function EventsCalendar({ events }: EventsCalendarProps) {
               {dayEvents.slice(0, 2).map((evt) => (
                 <Link
                   key={evt.id}
-                  href={`/events/${evt.id}`}
+                  href={`/events/${evt.slug}`}
                   style={{
                     display: "block",
                     marginTop: 2,

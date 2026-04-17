@@ -13,6 +13,7 @@ import { SupplierForm } from "@/components/suppliers/supplier-form";
 
 interface SupplierRow {
   id: string;
+  slug: string;
   name: string;
   serviceCategory: string;
   email: string | null;

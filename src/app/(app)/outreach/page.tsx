@@ -23,6 +23,7 @@ export default async function OutreachPage() {
     contact: { ...o.contact, publication: o.contact.outlet ?? "" },
     campaign: {
       id: o.campaign.id,
+      slug: o.campaign.slug,
       name: o.campaign.name,
       client: o.campaign.client,
     },

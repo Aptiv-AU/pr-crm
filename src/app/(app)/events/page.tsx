@@ -17,6 +17,7 @@ export default async function EventsPage() {
 
   const serialized = campaigns.map((c) => ({
     id: c.id,
+    slug: c.slug,
     name: c.name,
     status: c.status,
     client: c.client,

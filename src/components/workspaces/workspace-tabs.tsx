@@ -43,6 +43,7 @@ interface WorkspaceOutreach {
 
 interface Campaign {
   id: string;
+  slug: string;
   name: string;
   type: string;
   status: string;
@@ -225,7 +226,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
 
       {activeTab === "Outreach" && (() => {
         const rows = campaigns.flatMap((c) =>
-          c.outreaches.map((o) => ({ ...o, campaign: { id: c.id, name: c.name } })),
+          c.outreaches.map((o) => ({ ...o, campaign: { id: c.id, slug: c.slug, name: c.name } })),
         ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         if (rows.length === 0) {
@@ -247,7 +248,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
             {rows.map((o) => (
               <Link
                 key={o.id}
-                href={`/campaigns/${o.campaign.id}?tab=outreach`}
+                href={`/campaigns/${o.campaign.slug}?tab=outreach`}
                 className="block rounded-[10px] p-3 transition-colors"
                 style={{
                   border: "1px solid var(--border-custom)",

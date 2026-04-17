@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 
 interface SupplierRow {
   id: string;
+  slug: string;
   name: string;
   serviceCategory: string;
   email: string | null;
@@ -62,7 +63,7 @@ export function SupplierTable({ suppliers }: SupplierTableProps) {
           >
             <td style={cellStyle}>
               <Link
-                href={`/suppliers/${supplier.id}`}
+                href={`/suppliers/${supplier.slug}`}
                 style={{
                   textDecoration: "none",
                   color: "inherit",
@@ -74,33 +75,33 @@ export function SupplierTable({ suppliers }: SupplierTableProps) {
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <Badge variant="default">{supplier.serviceCategory}</Badge>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
                   {supplier.contactName || "\u2014"}
                 </span>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
                   {supplier.phone || "\u2014"}
                 </span>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
                   {supplier.campaignCount}
                 </span>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <Icon name="chevronR" size={14} color="var(--text-muted-custom)" />
               </Link>
             </td>

@@ -28,6 +28,7 @@ interface CampaignTabsProps {
     };
   }[];
   campaignId: string;
+  campaignSlug: string;
   campaignType: string;
   availableContacts: {
     id: string;
@@ -130,6 +131,7 @@ type Tab = (typeof baseTabs)[number] | "Event";
 export function CampaignTabs({
   campaignContacts,
   campaignId,
+  campaignSlug,
   campaignType,
   availableContacts,
   campaignSuppliers,
@@ -340,7 +342,7 @@ export function CampaignTabs({
 
               {/* Link to full event page */}
               <Link
-                href={`/events/${campaignId}`}
+                href={`/events/${campaignSlug}`}
                 style={{
                   fontSize: 13,
                   fontWeight: 500,
@@ -360,7 +362,7 @@ export function CampaignTabs({
                 No event details configured yet.
               </div>
               <Link
-                href={`/events/${campaignId}`}
+                href={`/events/${campaignSlug}`}
                 style={{
                   fontSize: 13,
                   fontWeight: 500,

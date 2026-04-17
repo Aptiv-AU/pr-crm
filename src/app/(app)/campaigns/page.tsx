@@ -23,6 +23,7 @@ export default async function CampaignsPage() {
 
   const serializedCampaigns = campaigns.map((c) => ({
     id: c.id,
+    slug: c.slug,
     name: c.name,
     type: c.type,
     status: c.status,

@@ -48,6 +48,7 @@ export default async function ContactsPage() {
 
   const serializedContacts = contacts.map((c) => ({
     id: c.id,
+    slug: c.slug,
     name: c.name,
     initials: c.initials,
     avatarBg: c.avatarBg,

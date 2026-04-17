@@ -40,6 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       where: { organizationId: org.id },
       select: {
         id: true,
+        slug: true,
         name: true,
         industry: true,
         colour: true,

@@ -12,6 +12,7 @@ import { updatePhaseStatus, revertToPhase, completeCampaign, reopenCampaign, arc
 interface CampaignDetailClientProps {
   campaign: {
     id: string;
+    slug: string;
     name: string;
     type: string;
     status: string;
@@ -214,6 +215,7 @@ export function CampaignDetailClient({
         <CampaignTabs
           campaignContacts={campaign.campaignContacts}
           campaignId={campaign.id}
+          campaignSlug={campaign.slug}
           campaignType={campaign.type}
           availableContacts={availableContacts}
           campaignSuppliers={campaign.campaignSuppliers}

@@ -45,7 +45,7 @@ interface UserData {
 }
 
 interface SidebarProps {
-  clients: { id: string; name: string; industry: string; colour: string; bgColour: string; initials: string }[];
+  clients: { id: string; slug: string; name: string; industry: string; colour: string; bgColour: string; initials: string }[];
   badgeCounts: BadgeCounts;
   userData: UserData;
 }

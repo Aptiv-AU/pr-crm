@@ -8,6 +8,7 @@ import { GlobalSearch } from "@/components/shared/global-search";
 
 interface ClientOption {
   id: string;
+  slug: string;
   name: string;
   industry: string;
   colour: string;

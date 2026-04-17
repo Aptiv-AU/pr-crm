@@ -30,6 +30,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       take: 5,
       select: {
         id: true,
+        slug: true,
         name: true,
         industry: true,
         initials: true,
@@ -48,6 +49,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       take: 5,
       select: {
         id: true,
+        slug: true,
         name: true,
         outlet: true,
         initials: true,
@@ -62,7 +64,12 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
-      include: { client: { select: { name: true } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        client: { select: { name: true } },
+      },
     }),
     db.supplier.findMany({
       where: {
@@ -70,7 +77,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
-      select: { id: true, name: true, serviceCategory: true },
+      select: { id: true, slug: true, name: true, serviceCategory: true },
     }),
   ]);
 
@@ -80,7 +87,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: c.id,
       title: c.name,
       subtitle: c.industry,
-      href: `/workspaces/${c.id}`,
+      href: `/workspaces/${c.slug}`,
       initials: c.initials,
       colour: c.colour,
       bgColour: c.bgColour,
@@ -92,7 +99,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: c.id,
       title: c.name,
       subtitle: c.outlet ?? "",
-      href: `/contacts/${c.id}`,
+      href: `/contacts/${c.slug}`,
       initials: c.initials,
       colour: c.avatarFg,
       bgColour: c.avatarBg,
@@ -105,7 +112,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: c.id,
       title: c.name,
       subtitle: c.client.name,
-      href: `/campaigns/${c.id}`,
+      href: `/campaigns/${c.slug}`,
     })
   );
   suppliers.forEach((s) =>
@@ -114,7 +121,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: s.id,
       title: s.name,
       subtitle: s.serviceCategory,
-      href: `/suppliers/${s.id}`,
+      href: `/suppliers/${s.slug}`,
     })
   );
 

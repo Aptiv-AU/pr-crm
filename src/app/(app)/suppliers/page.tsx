@@ -18,6 +18,7 @@ export default async function SuppliersPage() {
 
   const serializedSuppliers = suppliers.map((s) => ({
     id: s.id,
+    slug: s.slug,
     name: s.name,
     serviceCategory: s.serviceCategory,
     email: s.email,
