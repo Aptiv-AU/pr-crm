@@ -3,9 +3,21 @@ import { db } from "@/lib/db";
 import { checkForReplies, generateFollowUps } from "@/lib/email/follow-up";
 
 export async function GET(request: Request) {
-  // Verify authorization
+  // Fail-closed: CRON_SECRET must be configured in non-dev environments.
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (!cronSecret) {
+    if (isDev) {
+      console.warn("[cron/check-replies] CRON_SECRET not set — allowing in dev only");
+    } else {
+      console.warn("[cron/check-replies] CRON_SECRET not configured — refusing");
+      return NextResponse.json(
+        { error: "CRON_SECRET not configured" },
+        { status: 500 }
+      );
+    }
+  } else {
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
