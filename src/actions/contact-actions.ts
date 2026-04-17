@@ -4,6 +4,34 @@ import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
+import { promises as dns } from "node:dns";
+import net from "node:net";
+import { isPrivateV4, isPrivateV6 } from "@/lib/net/ip-cidr";
+
+/**
+ * Resolve `hostname` via DNS and refuse if ANY returned address is private
+ * or reserved. Throws (rather than returns) so callers using try/catch
+ * treat it like a fetch failure. Defuses DNS rebinding and
+ * `*.nip.io`-style tricks because we trust the resolver, not the string.
+ */
+async function assertPublicHost(hostname: string): Promise<void> {
+  const [v4, v6] = await Promise.all([
+    dns.resolve4(hostname).catch(() => [] as string[]),
+    dns.resolve6(hostname).catch(() => [] as string[]),
+  ]);
+  const addrs = [...v4, ...v6];
+  if (addrs.length === 0) {
+    throw new Error(`DNS resolution failed for ${hostname}`);
+  }
+  for (const addr of addrs) {
+    if (net.isIPv4(addr) && isPrivateV4(addr)) {
+      throw new Error(`Refusing private IPv4: ${addr}`);
+    }
+    if (net.isIPv6(addr) && isPrivateV6(addr)) {
+      throw new Error(`Refusing private IPv6: ${addr}`);
+    }
+  }
+}
 
 async function downloadAndStorePhoto(url: string): Promise<string | null> {
   try {
@@ -16,7 +44,7 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
     }
     if (parsed.protocol !== "https:") return null;
     const hostname = parsed.hostname.toLowerCase();
-    // Block private/local network ranges
+    // First-pass string denylist — cheap belt-and-braces before DNS.
     if (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
@@ -30,7 +58,14 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
       return null;
     }
 
-    const res = await fetch(url);
+    // Second pass: resolve to IPs and verify every returned address is public.
+    // Defuses DNS rebinding and hostnames that encode private IPs (e.g. nip.io).
+    await assertPublicHost(hostname);
+
+    // Pin redirects manually — refuse any 3xx so an allowed host can't hop
+    // to a private target mid-request.
+    const res = await fetch(url, { redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) return null;
     if (!res.ok) return null;
     const length = Number(res.headers.get("content-length") ?? 0);
     if (length > 5 * 1024 * 1024) return null;
