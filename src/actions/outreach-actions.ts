@@ -280,10 +280,27 @@ export async function sendOutreach(outreachId: string) {
     }
 
     // Convert body to HTML paragraphs
-    const bodyHtml = outreach.body
+    const paragraphHtml = outreach.body
       .split(/\n\n+/)
       .map((para: string) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
       .join("");
+
+    // Wrap body in the user's resolved font, then append their signature.
+    // Both provider branches receive the same finished HTML.
+    const fontFamily =
+      emailAccount.fontFamily ??
+      (emailAccount.provider === "google"
+        ? "Arial, Helvetica, sans-serif"
+        : "Aptos, Calibri, sans-serif");
+    const fontSize =
+      emailAccount.fontSize ??
+      (emailAccount.provider === "google" ? "13px" : "11pt");
+    const signature = emailAccount.signatureHtml ?? "";
+
+    let bodyHtml = `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${paragraphHtml}</div>`;
+    if (signature) {
+      bodyHtml += `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${signature}</div>`;
+    }
 
     // Provider dispatch. Gmail's threadId is stored in Outreach.conversationId
     // — same semantics, no extra column.
