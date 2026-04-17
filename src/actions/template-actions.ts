@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 import { renderTemplate } from "@/lib/templates/render";
 
 async function orgId() {
@@ -11,42 +11,27 @@ async function orgId() {
   return org.id;
 }
 
-export async function createTemplate(data: { name: string; subject: string; body: string }) {
-  try {
+export const createTemplate = action(
+  "createTemplate",
+  async (data: { name: string; subject: string; body: string }) => {
     const organizationId = await orgId();
     await db.emailTemplate.create({ data: { organizationId, ...data } });
-    revalidatePath("/settings/templates");
-    return { success: true };
-  } catch (error) {
-    console.error("createTemplate error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to create template" };
+    return { revalidate: ["/settings/templates"] };
   }
-}
+);
 
-export async function updateTemplate(
-  id: string,
-  data: { name: string; subject: string; body: string }
-) {
-  try {
+export const updateTemplate = action(
+  "updateTemplate",
+  async (id: string, data: { name: string; subject: string; body: string }) => {
     await db.emailTemplate.update({ where: { id }, data });
-    revalidatePath("/settings/templates");
-    return { success: true };
-  } catch (error) {
-    console.error("updateTemplate error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to update template" };
+    return { revalidate: ["/settings/templates"] };
   }
-}
+);
 
-export async function deleteTemplate(id: string) {
-  try {
-    await db.emailTemplate.delete({ where: { id } });
-    revalidatePath("/settings/templates");
-    return { success: true };
-  } catch (error) {
-    console.error("deleteTemplate error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to delete template" };
-  }
-}
+export const deleteTemplate = action("deleteTemplate", async (id: string) => {
+  await db.emailTemplate.delete({ where: { id } });
+  return { revalidate: ["/settings/templates"] };
+});
 
 export async function listTemplates() {
   const organizationId = await orgId();
@@ -56,8 +41,9 @@ export async function listTemplates() {
   });
 }
 
-export async function applyTemplateToOutreach(outreachId: string, templateId: string) {
-  try {
+export const applyTemplateToOutreach = action(
+  "applyTemplateToOutreach",
+  async (outreachId: string, templateId: string) => {
     const outreach = await db.outreach.findUnique({
       where: { id: outreachId },
       include: {
@@ -65,10 +51,10 @@ export async function applyTemplateToOutreach(outreachId: string, templateId: st
         campaign: { include: { client: true } },
       },
     });
-    if (!outreach) return { error: "Outreach not found" };
+    if (!outreach) throw new Error("Outreach not found");
 
     const template = await db.emailTemplate.findUnique({ where: { id: templateId } });
-    if (!template) return { error: "Template not found" };
+    if (!template) throw new Error("Template not found");
 
     const session = await auth();
     const senderName =
@@ -93,10 +79,9 @@ export async function applyTemplateToOutreach(outreachId: string, templateId: st
       data: { subject, body },
     });
 
-    revalidatePath(`/campaigns/${outreach.campaignId}`);
-    return { success: true, subject, body };
-  } catch (error) {
-    console.error("applyTemplateToOutreach error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to apply template" };
+    return {
+      data: { subject, body },
+      revalidate: [`/campaigns/${outreach.campaignId}`],
+    };
   }
-}
+);

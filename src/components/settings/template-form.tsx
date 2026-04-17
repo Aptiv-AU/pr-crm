@@ -101,7 +101,7 @@ export function TemplateForm({ templates }: TemplateFormProps) {
         ? await createTemplate({ name: name.trim(), subject, body })
         : await updateTemplate(selectedId, { name: name.trim(), subject, body });
     setSaving(false);
-    if (result.error) {
+    if ("error" in result) {
       setMessage(result.error);
       return;
     }
@@ -115,7 +115,7 @@ export function TemplateForm({ templates }: TemplateFormProps) {
     setSaving(true);
     const result = await deleteTemplate(selectedId);
     setSaving(false);
-    if (result.error) {
+    if ("error" in result) {
       setMessage(result.error);
       return;
     }

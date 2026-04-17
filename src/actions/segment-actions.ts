@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 import type { SegmentFilter } from "@/lib/segments/filter";
 import { getContactsByFilter } from "@/lib/queries/contact-queries";
 
@@ -11,21 +11,22 @@ async function orgId() {
   return org.id;
 }
 
-export async function createSegment(name: string, filter: SegmentFilter) {
-  if (!name.trim()) return { error: "Name required" };
-  const organizationId = await orgId();
-  const seg = await db.contactSegment.create({
-    data: { organizationId, name: name.trim(), filter: filter as object },
-  });
-  revalidatePath("/contacts");
-  return { success: true, segment: seg };
-}
+export const createSegment = action(
+  "createSegment",
+  async (name: string, filter: SegmentFilter) => {
+    if (!name.trim()) throw new Error("Name required");
+    const organizationId = await orgId();
+    const segment = await db.contactSegment.create({
+      data: { organizationId, name: name.trim(), filter: filter as object },
+    });
+    return { data: { segment }, revalidate: ["/contacts"] };
+  }
+);
 
-export async function deleteSegment(id: string) {
+export const deleteSegment = action("deleteSegment", async (id: string) => {
   await db.contactSegment.delete({ where: { id } });
-  revalidatePath("/contacts");
-  return { success: true };
-}
+  return { revalidate: ["/contacts"] };
+});
 
 export async function applyFilter(filter: SegmentFilter) {
   const organizationId = await orgId();

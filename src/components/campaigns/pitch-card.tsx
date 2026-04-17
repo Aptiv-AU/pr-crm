@@ -70,7 +70,7 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
     startTransition(async () => {
       const result = await applyTemplateToOutreach(outreach.id, templateId);
       setApplyingTemplate(false);
-      if (result.error) {
+      if ("error" in result) {
         setTemplateError(result.error);
         return;
       }

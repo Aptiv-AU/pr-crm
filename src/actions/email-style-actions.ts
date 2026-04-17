@@ -1,29 +1,20 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 import { resolveStyle } from "@/lib/compose/resolve-style";
 
-export async function refreshEmailStyle(accountId: string) {
-  try {
+export const refreshEmailStyle = action(
+  "refreshEmailStyle",
+  async (accountId: string) => {
     await resolveStyle(accountId);
-    revalidatePath("/settings/email");
-    return { success: true };
-  } catch (error) {
-    console.error("refreshEmailStyle error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to refresh style",
-    };
+    return { revalidate: ["/settings/email"] };
   }
-}
+);
 
-export async function setManualSignature(
-  accountId: string,
-  html: string,
-  fontFamily: string,
-  fontSize: string,
-) {
-  try {
+export const setManualSignature = action(
+  "setManualSignature",
+  async (accountId: string, html: string, fontFamily: string, fontSize: string) => {
     await db.emailAccount.update({
       where: { id: accountId },
       data: {
@@ -34,12 +25,6 @@ export async function setManualSignature(
         styleResolvedAt: new Date(),
       },
     });
-    revalidatePath("/settings/email");
-    return { success: true };
-  } catch (error) {
-    console.error("setManualSignature error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to save signature",
-    };
+    return { revalidate: ["/settings/email"] };
   }
-}
+);

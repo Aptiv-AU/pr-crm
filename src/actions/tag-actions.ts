@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 
 async function orgId() {
   const org = await db.organization.findFirst();
@@ -9,34 +9,30 @@ async function orgId() {
   return org.id;
 }
 
-export async function createTag(label: string, colorBg?: string) {
-  if (!label.trim()) return { error: "Label required" };
+export const createTag = action("createTag", async (label: string, colorBg?: string) => {
+  if (!label.trim()) throw new Error("Label required");
   const organizationId = await orgId();
   const tag = await db.contactTag.create({
     data: { organizationId, label: label.trim(), colorBg: colorBg ?? "#374151" },
   });
-  revalidatePath("/contacts");
-  return { success: true, tag };
-}
+  return { data: { tag }, revalidate: ["/contacts"] };
+});
 
-export async function deleteTag(tagId: string) {
+export const deleteTag = action("deleteTag", async (tagId: string) => {
   await db.contactTag.delete({ where: { id: tagId } });
-  revalidatePath("/contacts");
-  return { success: true };
-}
+  return { revalidate: ["/contacts"] };
+});
 
-export async function assignTag(contactId: string, tagId: string) {
+export const assignTag = action("assignTag", async (contactId: string, tagId: string) => {
   await db.contactTagAssignment.upsert({
     where: { contactId_tagId: { contactId, tagId } },
     create: { contactId, tagId },
     update: {},
   });
-  revalidatePath(`/contacts/${contactId}`);
-  return { success: true };
-}
+  return { revalidate: [`/contacts/${contactId}`] };
+});
 
-export async function removeTag(contactId: string, tagId: string) {
+export const removeTag = action("removeTag", async (contactId: string, tagId: string) => {
   await db.contactTagAssignment.deleteMany({ where: { contactId, tagId } });
-  revalidatePath(`/contacts/${contactId}`);
-  return { success: true };
-}
+  return { revalidate: [`/contacts/${contactId}`] };
+});

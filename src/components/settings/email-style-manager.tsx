@@ -45,7 +45,7 @@ export function EmailStyleManager({
     setError(null);
     startTransition(async () => {
       const res = await refreshEmailStyle(accountId);
-      if (res.error) {
+      if ("error" in res) {
         setError(res.error);
         return;
       }
@@ -58,7 +58,7 @@ export function EmailStyleManager({
     setError(null);
     startTransition(async () => {
       const res = await setManualSignature(accountId, html, family, size);
-      if (res.error) {
+      if ("error" in res) {
         setError(res.error);
         return;
       }
