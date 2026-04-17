@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getValidToken, getConversationReplies } from "./microsoft-graph";
+import { getValidGoogleToken, getGmailThreadReplies } from "./gmail";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { parsePitchResponse } from "@/lib/ai/prompts";
@@ -31,7 +32,10 @@ export async function checkForReplies(organizationId: string): Promise<number> {
 
   if (!emailAccount) return 0;
 
-  const accessToken = await getValidToken(emailAccount.id);
+  const isGoogle = emailAccount.provider === "google";
+  const accessToken = isGoogle
+    ? await getValidGoogleToken(emailAccount.id)
+    : await getValidToken(emailAccount.id);
 
   let replyCount = 0;
 
@@ -39,11 +43,17 @@ export async function checkForReplies(organizationId: string): Promise<number> {
     if (!outreach.conversationId || !outreach.sentAt) continue;
 
     try {
-      const replies = await getConversationReplies(
-        accessToken,
-        outreach.conversationId,
-        outreach.sentAt
-      );
+      const replies = isGoogle
+        ? await getGmailThreadReplies(
+            accessToken,
+            outreach.conversationId,
+            outreach.sentAt
+          )
+        : await getConversationReplies(
+            accessToken,
+            outreach.conversationId,
+            outreach.sentAt
+          );
 
       if (replies.length > 0) {
         const firstReply = replies[0];
