@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateOutreachDraft, approveOutreach, revertOutreachToDraft, deleteOutreach } from "@/actions/outreach-actions";
+import { listTemplates, applyTemplateToOutreach } from "@/actions/template-actions";
 import { Badge } from "@/components/ui/badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,45 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const isApproved = outreach.status === "approved";
+
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templatesList, setTemplatesList] = useState<
+    { id: string; name: string }[] | null
+  >(null);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!templatesOpen || templatesList !== null) return;
+    setTemplatesLoading(true);
+    listTemplates()
+      .then((rows) => {
+        setTemplatesList(rows.map((r) => ({ id: r.id, name: r.name })));
+        setTemplatesLoading(false);
+      })
+      .catch(() => {
+        setTemplatesList([]);
+        setTemplatesLoading(false);
+      });
+  }, [templatesOpen, templatesList]);
+
+  function handleApplyTemplate(templateId: string) {
+    setTemplatesOpen(false);
+    setTemplateError(null);
+    setApplyingTemplate(true);
+    startTransition(async () => {
+      const result = await applyTemplateToOutreach(outreach.id, templateId);
+      setApplyingTemplate(false);
+      if (result.error) {
+        setTemplateError(result.error);
+        return;
+      }
+      if (result.subject !== undefined) setSubject(result.subject);
+      if (result.body !== undefined) setBody(result.body);
+      router.refresh();
+    });
+  }
 
   function handleSave() {
     setEditing(false);
@@ -197,6 +237,80 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
             <Button variant="ghost" size="sm" icon="sparkle" onClick={() => onRegenerate(outreach.contact.id)}>
               Regenerate
             </Button>
+            <div style={{ position: "relative" }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="mail"
+                onClick={() => setTemplatesOpen((v) => !v)}
+                disabled={applyingTemplate}
+              >
+                {applyingTemplate ? "Loading..." : "Load template"}
+              </Button>
+              {templatesOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: "100%",
+                    marginTop: 4,
+                    zIndex: 10,
+                    minWidth: 220,
+                    backgroundColor: "var(--card-bg)",
+                    border: "1px solid var(--border-custom)",
+                    borderRadius: 8,
+                    padding: 4,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {templatesLoading && (
+                    <div style={{ padding: "8px 10px", fontSize: 12, color: "var(--text-muted-custom)" }}>
+                      Loading…
+                    </div>
+                  )}
+                  {!templatesLoading && templatesList && templatesList.length === 0 && (
+                    <div style={{ padding: "8px 10px", fontSize: 12, color: "var(--text-muted-custom)" }}>
+                      No templates yet.{" "}
+                      <a href="/settings/templates" style={{ color: "var(--accent-custom)" }}>
+                        Create one
+                      </a>
+                    </div>
+                  )}
+                  {!templatesLoading &&
+                    templatesList?.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => handleApplyTemplate(t.id)}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "6px 10px",
+                          fontSize: 12,
+                          borderRadius: 5,
+                          color: "var(--text-primary)",
+                          backgroundColor: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "var(--page-bg)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        {t.name}
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+            {templateError && (
+              <span className="text-[11px]" style={{ color: "var(--amber)" }}>
+                {templateError}
+              </span>
+            )}
             <div style={{ flex: 1 }} />
             <Button variant="ghost" size="sm" icon="close" onClick={handleDelete}>
               Delete
