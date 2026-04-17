@@ -108,6 +108,7 @@ interface CampaignTabsProps {
   }[];
   campaignName?: string;
   emailConnected?: boolean;
+  suppressedEmails?: string[];
   eventDetail?: {
     id: string;
     venue: string | null;
@@ -140,6 +141,7 @@ export function CampaignTabs({
   coverages,
   campaignName,
   emailConnected,
+  suppressedEmails,
   eventDetail,
 }: CampaignTabsProps) {
   const tabs: Tab[] = campaignType === "event"
@@ -209,6 +211,7 @@ export function CampaignTabs({
             campaignId={campaignId}
             outreaches={outreaches ?? []}
             emailConnected={emailConnected ?? false}
+            suppressedEmails={suppressedEmails ?? []}
           />
         </div>
       )}

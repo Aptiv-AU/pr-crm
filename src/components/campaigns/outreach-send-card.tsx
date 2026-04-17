@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
 import { sendOutreach, approveOutreach } from "@/actions/outreach-actions";
+import { addSuppression } from "@/actions/suppression-actions";
 
 interface OutreachSendCardProps {
   outreach: {
@@ -26,11 +27,27 @@ interface OutreachSendCardProps {
     };
   };
   emailConnected: boolean;
+  isSuppressed?: boolean;
 }
 
-export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardProps) {
+export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: OutreachSendCardProps) {
   const [isPending, startTransition] = useTransition();
+  const [suppressed, setSuppressed] = useState(!!isSuppressed);
   const { contact } = outreach;
+
+  function handleAddToSuppression() {
+    if (!contact.email) return;
+    startTransition(async () => {
+      const res = await addSuppression({
+        email: contact.email!,
+        reason: "reply_request",
+        note: outreach.sentAt ? `From reply on ${outreach.sentAt}` : "From reply",
+      });
+      if ("success" in res && res.success) {
+        setSuppressed(true);
+      }
+    });
+  }
 
   function handleSend() {
     startTransition(async () => {
@@ -245,9 +262,21 @@ export function OutreachSendCard({ outreach, emailConnected }: OutreachSendCardP
             )}
           </div>
         </div>
-        <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
+        <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)", marginBottom: 10 }}>
           {outreach.subject}
         </div>
+        {contact.email && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleAddToSuppression}
+              disabled={isPending || suppressed}
+            >
+              {suppressed ? "On suppression list" : "Add to suppression list"}
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

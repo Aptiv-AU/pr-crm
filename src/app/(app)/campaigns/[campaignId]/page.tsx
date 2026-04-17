@@ -19,7 +19,7 @@ export default async function CampaignDetailPage({
     org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
   }
 
-  const [campaign, orgContacts, orgSuppliers, allClients, emailAccount] = await Promise.all([
+  const [campaign, orgContacts, orgSuppliers, allClients, emailAccount, suppressions] = await Promise.all([
     getCampaignById(campaignId),
     getContacts(org.id),
     getSuppliers(org.id),
@@ -29,7 +29,13 @@ export default async function CampaignDetailPage({
       orderBy: { name: "asc" },
     }),
     db.emailAccount.findFirst(),
+    db.suppression.findMany({
+      where: { organizationId: org.id },
+      select: { email: true },
+    }),
   ]);
+
+  const suppressedEmails = suppressions.map((s) => s.email);
 
   if (!campaign) {
     notFound();
@@ -170,6 +176,7 @@ export default async function CampaignDetailPage({
       availableSuppliers={availableSuppliers}
       clients={allClients}
       emailConnected={!!emailAccount}
+      suppressedEmails={suppressedEmails}
       eventDetail={eventDetailData}
     />
   );

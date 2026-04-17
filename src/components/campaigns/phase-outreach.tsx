@@ -27,9 +27,11 @@ interface OutreachPhaseProps {
     };
   }[];
   emailConnected: boolean;
+  suppressedEmails?: string[];
 }
 
-export function OutreachPhase({ campaignId, outreaches, emailConnected }: OutreachPhaseProps) {
+export function OutreachPhase({ campaignId, outreaches, emailConnected, suppressedEmails }: OutreachPhaseProps) {
+  const suppressedSet = new Set((suppressedEmails ?? []).map((e) => e.toLowerCase()));
   const [isPending, startTransition] = useTransition();
 
   if (!emailConnected) {
@@ -141,7 +143,7 @@ export function OutreachPhase({ campaignId, outreaches, emailConnected }: Outrea
           </div>
           <div className="flex flex-col gap-[8px]">
             {approved.map((o) => (
-              <OutreachSendCard key={o.id} outreach={o} emailConnected={emailConnected} />
+              <OutreachSendCard key={o.id} outreach={o} emailConnected={emailConnected} isSuppressed={!!o.contact.email && suppressedSet.has(o.contact.email.toLowerCase())} />
             ))}
           </div>
         </div>
@@ -158,7 +160,7 @@ export function OutreachPhase({ campaignId, outreaches, emailConnected }: Outrea
           </div>
           <div className="flex flex-col gap-[8px]">
             {sentAndReplied.map((o) => (
-              <OutreachSendCard key={o.id} outreach={o} emailConnected={emailConnected} />
+              <OutreachSendCard key={o.id} outreach={o} emailConnected={emailConnected} isSuppressed={!!o.contact.email && suppressedSet.has(o.contact.email.toLowerCase())} />
             ))}
           </div>
         </div>
@@ -175,7 +177,7 @@ export function OutreachPhase({ campaignId, outreaches, emailConnected }: Outrea
           </div>
           <div className="flex flex-col gap-[8px]">
             {followUps.map((o) => (
-              <OutreachSendCard key={o.id} outreach={o} emailConnected={emailConnected} />
+              <OutreachSendCard key={o.id} outreach={o} emailConnected={emailConnected} isSuppressed={!!o.contact.email && suppressedSet.has(o.contact.email.toLowerCase())} />
             ))}
           </div>
         </div>

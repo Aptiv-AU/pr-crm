@@ -114,6 +114,7 @@ interface CampaignDetailClientProps {
   }[];
   clients: { id: string; name: string; initials: string; colour: string; bgColour: string }[];
   emailConnected: boolean;
+  suppressedEmails?: string[];
   eventDetail?: {
     id: string;
     venue: string | null;
@@ -136,6 +137,7 @@ export function CampaignDetailClient({
   availableSuppliers,
   clients,
   emailConnected,
+  suppressedEmails,
   eventDetail,
 }: CampaignDetailClientProps) {
   const router = useRouter();
@@ -227,6 +229,7 @@ export function CampaignDetailClient({
           coverages={campaign.coverages}
           campaignName={campaign.name}
           emailConnected={emailConnected}
+          suppressedEmails={suppressedEmails}
           eventDetail={eventDetail}
         />
       </div>
