@@ -179,7 +179,7 @@ export async function suggestContacts(campaignId: string) {
         where: { campaignId },
         select: { contactId: true },
       })
-      .then((cc) => cc.map((c) => c.contactId));
+      .then((cc: { contactId: string }[]) => cc.map((c) => c.contactId));
 
     const contacts = await db.contact.findMany({
       where: {
