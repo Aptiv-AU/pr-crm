@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function downloadAndStorePhoto(url: string): Promise<string | null> {
   try {
@@ -92,10 +93,19 @@ export async function createContact(formData: FormData) {
 
     const organizationId = await getOrganizationId();
 
+    const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
+      const existing = await db.contact.findFirst({
+        where: { organizationId, slug: candidate },
+        select: { id: true },
+      });
+      return existing !== null;
+    });
+
     const contact = await db.contact.create({
       data: {
         organizationId,
         name,
+        slug,
         email: email || null,
         phone: phone || null,
         outlet: publication,

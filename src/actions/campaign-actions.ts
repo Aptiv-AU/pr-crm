@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function getOrganizationId(): Promise<string> {
   const org = await db.organization.findFirst();
@@ -42,11 +43,20 @@ export async function createCampaign(formData: FormData) {
     const phases = PHASE_TEMPLATES[type] || [];
     const firstPhaseName = phases[0] || null;
 
+    const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
+      const existing = await db.campaign.findFirst({
+        where: { organizationId, slug: candidate },
+        select: { id: true },
+      });
+      return existing !== null;
+    });
+
     const campaign = await db.campaign.create({
       data: {
         organizationId,
         clientId,
         name,
+        slug,
         type,
         status: "draft",
         currentPhase: firstPhaseName,

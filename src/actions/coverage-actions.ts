@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function getOrganizationId(): Promise<string> {
   const org = await db.organization.findFirst();
@@ -32,12 +33,21 @@ export async function createCoverage(formData: FormData) {
     const organizationId = await getOrganizationId();
     const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
 
+    const slug = await ensureUniqueSlug(slugify(publication), async (candidate) => {
+      const existing = await db.coverage.findFirst({
+        where: { organizationId, slug: candidate },
+        select: { id: true },
+      });
+      return existing !== null;
+    });
+
     const coverage = await db.coverage.create({
       data: {
         organizationId,
         campaignId: campaignId || null,
         contactId: contactId || null,
         publication,
+        slug,
         date: new Date(dateStr),
         type,
         url: url || null,

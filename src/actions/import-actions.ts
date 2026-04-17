@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { MappedContact } from "@/lib/import/contact-import";
+import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 type ImportResult =
   | { success: true; created: number; updated: number; skipped: number }
@@ -19,6 +20,9 @@ export async function importContacts(contacts: MappedContact[]): Promise<ImportR
   let created = 0;
   let updated = 0;
   let skipped = 0;
+
+  // Batch-local reservation so duplicate names in one import get -2, -3 etc.
+  const reservedSlugs = new Set<string>();
 
   for (const c of contacts) {
     try {
@@ -52,10 +56,21 @@ export async function importContacts(contacts: MappedContact[]): Promise<ImportR
         .slice(0, 2)
         .join("");
 
+      const slug = await ensureUniqueSlug(slugify(c.name), async (candidate) => {
+        if (reservedSlugs.has(candidate)) return true;
+        const existing = await db.contact.findFirst({
+          where: { organizationId: org.id, slug: candidate },
+          select: { id: true },
+        });
+        return existing !== null;
+      });
+      reservedSlugs.add(slug);
+
       await db.contact.create({
         data: {
           organizationId: org.id,
           name: c.name,
+          slug,
           email: c.email,
           phone: c.phone,
           outlet: c.outlet,

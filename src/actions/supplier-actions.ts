@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function getOrganizationId(): Promise<string> {
   const org = await db.organization.findFirst();
@@ -28,10 +29,19 @@ export async function createSupplier(formData: FormData) {
 
     const organizationId = await getOrganizationId();
 
+    const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
+      const existing = await db.supplier.findFirst({
+        where: { organizationId, slug: candidate },
+        select: { id: true },
+      });
+      return existing !== null;
+    });
+
     const supplier = await db.supplier.create({
       data: {
         organizationId,
         name,
+        slug,
         serviceCategory,
         email: email || null,
         phone: phone || null,
