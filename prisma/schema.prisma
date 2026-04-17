@@ -147,6 +147,11 @@ model Contact {
   tags             ContactTagAssignment[]
 
   @@unique([organizationId, slug])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, beat])
+  @@index([organizationId, tier])
+  @@index([organizationId, outlet])
+  @@index([organizationId, email])
 }
 
 model ContactTag {
@@ -275,6 +280,7 @@ model CampaignContact {
   status     String   @default("added")
 
   @@unique([campaignId, contactId])
+  @@index([contactId])
 }
 
 model CampaignSupplier {
@@ -307,6 +313,9 @@ model Outreach {
   conversationId String?
   sentAt         DateTime?
   createdAt     DateTime  @default(now())
+
+  @@index([campaignId, status])
+  @@index([campaignId, contactId, followUpNumber])
 }
 
 model Coverage {
@@ -328,6 +337,9 @@ model Coverage {
   createdAt      DateTime      @default(now())
 
   @@unique([organizationId, slug])
+  @@index([organizationId, date])
+  @@index([campaignId, date])
+  @@index([contactId])
 }
 
 model Interaction {
@@ -342,6 +354,9 @@ model Interaction {
   campaignId     String?
   campaign       Campaign?    @relation(fields: [campaignId], references: [id])
   createdAt      DateTime     @default(now())
+
+  @@index([contactId, date])
+  @@index([organizationId, date])
 }
 
 model EventDetail {
@@ -384,6 +399,8 @@ model EmailAccount {
   styleResolvedAt DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
 }
 
 enum SignatureSource {
