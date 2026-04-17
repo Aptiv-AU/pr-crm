@@ -1,13 +1,13 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { CampaignStatus } from "@prisma/client";
+import { CampaignStatus, PhaseStatus } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 
 export const updatePhaseStatus = action(
   "updatePhaseStatus",
-  async (phaseId: string, status: string) => {
+  async (phaseId: string, status: PhaseStatus) => {
     const orgId = await requireOrgId();
     const phase = await db.campaignPhase.findFirst({
       where: { id: phaseId, campaign: { organizationId: orgId } },
@@ -23,7 +23,7 @@ export const updatePhaseStatus = action(
       data: { status },
     });
 
-    if (status === "complete") {
+    if (status === PhaseStatus.complete) {
       const nextPhase = await db.campaignPhase.findFirst({
         where: {
           campaignId: phase.campaignId,
@@ -35,7 +35,7 @@ export const updatePhaseStatus = action(
       if (nextPhase) {
         await db.campaignPhase.update({
           where: { id: nextPhase.id },
-          data: { status: "active" },
+          data: { status: PhaseStatus.active },
         });
 
         await db.campaign.update({
@@ -65,14 +65,14 @@ export const revertToPhase = action("revertToPhase", async (phaseId: string) => 
   await db.$transaction([
     db.campaignPhase.update({
       where: { id: phaseId },
-      data: { status: "active" },
+      data: { status: PhaseStatus.active },
     }),
     db.campaignPhase.updateMany({
       where: {
         campaignId: phase.campaignId,
         order: { gt: phase.order },
       },
-      data: { status: "pending" },
+      data: { status: PhaseStatus.pending },
     }),
     db.campaign.update({
       where: { id: phase.campaignId },

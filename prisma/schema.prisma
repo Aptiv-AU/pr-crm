@@ -257,7 +257,7 @@ model CampaignPhase {
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   name       String
   order      Int
-  status     String   @default("pending")
+  status     PhaseStatus @default(pending)
 }
 
 model BudgetLineItem {
@@ -454,4 +454,10 @@ enum OutreachStatus {
   approved
   sent
   replied
+}
+
+enum PhaseStatus {
+  pending
+  active
+  complete
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { CampaignStatus } from "@prisma/client";
+import { CampaignStatus, PhaseStatus } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 import { generateSlug } from "@/lib/slug/generate";
@@ -68,7 +68,7 @@ export const createCampaign = action("createCampaign", async (formData: FormData
         create: phases.map((phaseName, index) => ({
           name: phaseName,
           order: index + 1,
-          status: index === 0 ? "active" : "pending",
+          status: index === 0 ? PhaseStatus.active : PhaseStatus.pending,
         })),
       },
     },
