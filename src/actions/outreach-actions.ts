@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
-import { getValidToken, sendMail } from "@/lib/email/microsoft-graph";
+import {
+  getValidToken as getValidMicrosoftToken,
+  sendMail as sendViaMicrosoft,
+} from "@/lib/email/microsoft-graph";
+import { getValidGoogleToken, sendGmail } from "@/lib/email/gmail";
 
 export async function saveBrief(campaignId: string, brief: string) {
   try {
@@ -263,28 +267,48 @@ export async function sendOutreach(outreachId: string) {
       return { error: "Connect your email account in Settings first" };
     }
 
-    const accessToken = await getValidToken(emailAccount.id);
-
     // Convert body to HTML paragraphs
     const bodyHtml = outreach.body
       .split(/\n\n+/)
       .map((para: string) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
       .join("");
 
-    const result = await sendMail(accessToken, {
-      to: outreach.contact.email,
-      subject: outreach.subject,
-      bodyHtml,
-    });
+    // Provider dispatch. Gmail's threadId is stored in Outreach.conversationId
+    // — same semantics, no extra column.
+    let messageId: string;
+    let conversationId: string;
+    let sentVia: string;
+
+    if (emailAccount.provider === "google") {
+      const token = await getValidGoogleToken(emailAccount.id);
+      const res = await sendGmail(token, {
+        to: outreach.contact.email,
+        subject: outreach.subject,
+        bodyHtml,
+      });
+      messageId = res.messageId;
+      conversationId = res.threadId;
+      sentVia = "gmail";
+    } else {
+      const token = await getValidMicrosoftToken(emailAccount.id);
+      const res = await sendViaMicrosoft(token, {
+        to: outreach.contact.email,
+        subject: outreach.subject,
+        bodyHtml,
+      });
+      messageId = res.messageId;
+      conversationId = res.conversationId;
+      sentVia = "microsoft_graph";
+    }
 
     await db.outreach.update({
       where: { id: outreachId },
       data: {
         status: "sent",
         sentAt: new Date(),
-        sentVia: "microsoft_graph",
-        messageId: result.messageId,
-        conversationId: result.conversationId,
+        sentVia,
+        messageId,
+        conversationId,
       },
     });
 
