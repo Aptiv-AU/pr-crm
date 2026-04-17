@@ -1,21 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { exchangeCodeForTokens } from "@/lib/email/microsoft-graph";
 import { resolveStyle } from "@/lib/compose/resolve-style";
 
+function getBaseUrl() {
+  return (
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000")
+  );
+}
+
 export async function GET(request: NextRequest) {
+  const baseUrl = getBaseUrl();
+
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.redirect(new URL("/auth/signin", baseUrl));
+    }
+    const userId = session.user.id;
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");
     const error = searchParams.get("error");
-
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
 
     if (error) {
       console.error("OAuth error from Microsoft:", error);
@@ -23,9 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!code || !state) {
-      return NextResponse.redirect(
-        new URL("/settings?email=error", baseUrl)
-      );
+      return NextResponse.redirect(new URL("/settings?email=error", baseUrl));
     }
 
     // Verify state matches cookie
@@ -34,9 +44,7 @@ export async function GET(request: NextRequest) {
 
     if (!storedState || storedState !== state) {
       console.error("OAuth state mismatch");
-      return NextResponse.redirect(
-        new URL("/settings?email=error", baseUrl)
-      );
+      return NextResponse.redirect(new URL("/settings?email=error", baseUrl));
     }
 
     // Delete the state cookie
@@ -46,21 +54,9 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${baseUrl}/api/email/callback`;
     const tokens = await exchangeCodeForTokens(code, redirectUri);
 
-    // Find the first user (temporary — no multi-user auth yet)
-    const user = await db.user.findFirst({
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (!user) {
-      console.error("No user found in database");
-      return NextResponse.redirect(
-        new URL("/settings?email=error", baseUrl)
-      );
-    }
-
-    // Upsert EmailAccount
+    // Bind the tokens to the signed-in user.
     const existing = await db.emailAccount.findFirst({
-      where: { userId: user.id },
+      where: { userId },
     });
 
     let accountId: string;
@@ -79,7 +75,7 @@ export async function GET(request: NextRequest) {
     } else {
       const created = await db.emailAccount.create({
         data: {
-          userId: user.id,
+          userId,
           provider: "microsoft",
           email: tokens.email,
           accessToken: tokens.accessToken,
@@ -96,16 +92,9 @@ export async function GET(request: NextRequest) {
       console.warn("resolveStyle failed on Microsoft connect", e);
     }
 
-    return NextResponse.redirect(
-      new URL("/settings?email=connected", baseUrl)
-    );
+    return NextResponse.redirect(new URL("/settings?email=connected", baseUrl));
   } catch (error) {
     console.error("Email callback error:", error);
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
     return NextResponse.redirect(new URL("/settings?email=error", baseUrl));
   }
 }

@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { exchangeGoogleCode } from "@/lib/email/gmail";
 import { resolveStyle } from "@/lib/compose/resolve-style";
 
-export async function GET(request: NextRequest) {
-  const baseUrl =
+function getBaseUrl() {
+  return (
     process.env.NEXTAUTH_URL ||
     (process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+      : "http://localhost:3000")
+  );
+}
+
+export async function GET(request: NextRequest) {
+  const baseUrl = getBaseUrl();
 
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.redirect(new URL("/auth/signin", baseUrl));
+    }
+    const userId = session.user.id;
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");
@@ -39,18 +51,8 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${baseUrl}/api/email/google/callback`;
     const tokens = await exchangeGoogleCode(code, redirectUri);
 
-    // Find the first user (temporary — no multi-user auth yet)
-    const user = await db.user.findFirst({
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (!user) {
-      console.error("No user found in database");
-      return NextResponse.redirect(new URL("/settings?email=error", baseUrl));
-    }
-
     const existing = await db.emailAccount.findFirst({
-      where: { userId: user.id },
+      where: { userId },
     });
 
     let accountId: string;
@@ -69,7 +71,7 @@ export async function GET(request: NextRequest) {
     } else {
       const created = await db.emailAccount.create({
         data: {
-          userId: user.id,
+          userId,
           provider: "google",
           email: tokens.email,
           accessToken: tokens.accessToken,
