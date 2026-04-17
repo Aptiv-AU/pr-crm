@@ -2,20 +2,15 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import type { SegmentFilter } from "@/lib/segments/filter";
 import { getContactsByFilter } from "@/lib/queries/contact-queries";
-
-async function orgId() {
-  const org = await db.organization.findFirst();
-  if (!org) throw new Error("no org");
-  return org.id;
-}
 
 export const createSegment = action(
   "createSegment",
   async (name: string, filter: SegmentFilter) => {
     if (!name.trim()) throw new Error("Name required");
-    const organizationId = await orgId();
+    const organizationId = await requireOrgId();
     const segment = await db.contactSegment.create({
       data: { organizationId, name: name.trim(), filter: filter as object },
     });
@@ -24,12 +19,19 @@ export const createSegment = action(
 );
 
 export const deleteSegment = action("deleteSegment", async (id: string) => {
+  const organizationId = await requireOrgId();
+  const existing = await db.contactSegment.findFirst({
+    where: { id, organizationId },
+    select: { id: true },
+  });
+  if (!existing) throw new Error("Segment not found");
+
   await db.contactSegment.delete({ where: { id } });
   return { revalidate: ["/contacts"] };
 });
 
 export async function applyFilter(filter: SegmentFilter) {
-  const organizationId = await orgId();
+  const organizationId = await requireOrgId();
   const contacts = await getContactsByFilter(organizationId, filter);
   return contacts.map((c) => ({
     id: c.id,

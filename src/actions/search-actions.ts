@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { requireOrgId } from "@/lib/server/org";
 
 interface SearchResult {
   type: "client" | "contact" | "campaign" | "supplier";
@@ -16,15 +17,19 @@ interface SearchResult {
 
 export async function globalSearch(query: string): Promise<SearchResult[]> {
   if (!query || query.length < 2) return [];
-  const org = await db.organization.findFirst();
-  if (!org) return [];
+  let organizationId: string;
+  try {
+    organizationId = await requireOrgId();
+  } catch {
+    return [];
+  }
 
   const results: SearchResult[] = [];
 
   const [clients, contacts, campaigns, suppliers] = await Promise.all([
     db.client.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
@@ -40,7 +45,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     }),
     db.contact.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { outlet: { contains: query, mode: "insensitive" } },
@@ -60,7 +65,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     }),
     db.campaign.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
@@ -73,7 +78,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     }),
     db.supplier.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,

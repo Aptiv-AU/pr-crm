@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
@@ -11,7 +12,26 @@ import {
 } from "@/lib/email/microsoft-graph";
 import { getValidGoogleToken, sendGmail } from "@/lib/email/gmail";
 
+async function loadOutreachInOrg<T extends object = {}>(
+  outreachId: string,
+  orgId: string,
+  extraInclude?: T
+) {
+  // Outreach belongs to a campaign belongs to an org.
+  return db.outreach.findFirst({
+    where: { id: outreachId, campaign: { organizationId: orgId } },
+    include: { contact: true, campaign: true, ...(extraInclude ?? {}) },
+  });
+}
+
 export const saveBrief = action("saveBrief", async (campaignId: string, brief: string) => {
+  const orgId = await requireOrgId();
+  const campaign = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!campaign) throw new Error("Campaign not found");
+
   await db.campaign.update({
     where: { id: campaignId },
     data: { brief },
@@ -29,6 +49,20 @@ export const createOutreachDraft = action(
     body: string,
     generatedByAI: boolean
   ) => {
+    const orgId = await requireOrgId();
+    const [campaign, contact] = await Promise.all([
+      db.campaign.findFirst({
+        where: { id: campaignId, organizationId: orgId },
+        select: { id: true },
+      }),
+      db.contact.findFirst({
+        where: { id: contactId, organizationId: orgId },
+        select: { id: true },
+      }),
+    ]);
+    if (!campaign) throw new Error("Campaign not found");
+    if (!contact) throw new Error("Contact not found");
+
     // Check if a draft already exists for this campaign+contact with followUpNumber 0
     const existing = await db.outreach.findFirst({
       where: {
@@ -64,27 +98,48 @@ export const createOutreachDraft = action(
 export const updateOutreachDraft = action(
   "updateOutreachDraft",
   async (outreachId: string, subject: string, body: string) => {
-    const outreach = await db.outreach.update({
+    const orgId = await requireOrgId();
+    const existing = await db.outreach.findFirst({
+      where: { id: outreachId, campaign: { organizationId: orgId } },
+      select: { campaignId: true },
+    });
+    if (!existing) throw new Error("Outreach not found");
+
+    await db.outreach.update({
       where: { id: outreachId },
       data: { subject, body },
     });
 
-    return { revalidate: [`/campaigns/${outreach.campaignId}`] };
+    return { revalidate: [`/campaigns/${existing.campaignId}`] };
   }
 );
 
 export const approveOutreach = action("approveOutreach", async (outreachId: string) => {
-  const outreach = await db.outreach.update({
+  const orgId = await requireOrgId();
+  const existing = await db.outreach.findFirst({
+    where: { id: outreachId, campaign: { organizationId: orgId } },
+    select: { campaignId: true },
+  });
+  if (!existing) throw new Error("Outreach not found");
+
+  await db.outreach.update({
     where: { id: outreachId },
     data: { status: "approved" },
   });
 
-  return { revalidate: [`/campaigns/${outreach.campaignId}`] };
+  return { revalidate: [`/campaigns/${existing.campaignId}`] };
 });
 
 export const bulkApproveOutreaches = action(
   "bulkApproveOutreaches",
   async (campaignId: string) => {
+    const orgId = await requireOrgId();
+    const campaign = await db.campaign.findFirst({
+      where: { id: campaignId, organizationId: orgId },
+      select: { id: true },
+    });
+    if (!campaign) throw new Error("Campaign not found");
+
     await db.outreach.updateMany({
       where: {
         campaignId,
@@ -101,18 +156,26 @@ export const bulkApproveOutreaches = action(
 export const revertOutreachToDraft = action(
   "revertOutreachToDraft",
   async (outreachId: string) => {
-    const outreach = await db.outreach.update({
+    const orgId = await requireOrgId();
+    const existing = await db.outreach.findFirst({
+      where: { id: outreachId, campaign: { organizationId: orgId } },
+      select: { campaignId: true },
+    });
+    if (!existing) throw new Error("Outreach not found");
+
+    await db.outreach.update({
       where: { id: outreachId },
       data: { status: "draft" },
     });
 
-    return { revalidate: [`/campaigns/${outreach.campaignId}`] };
+    return { revalidate: [`/campaigns/${existing.campaignId}`] };
   }
 );
 
 export const deleteOutreach = action("deleteOutreach", async (outreachId: string) => {
-  const outreach = await db.outreach.findUnique({
-    where: { id: outreachId },
+  const orgId = await requireOrgId();
+  const outreach = await db.outreach.findFirst({
+    where: { id: outreachId, campaign: { organizationId: orgId } },
     select: { campaignId: true },
   });
 
@@ -128,13 +191,14 @@ export const deleteOutreach = action("deleteOutreach", async (outreachId: string
 });
 
 export const suggestContacts = action("suggestContacts", async (campaignId: string) => {
+  const orgId = await requireOrgId();
   const config = await getAIConfig();
   if (!config) {
     throw new Error("No AI provider configured. Add an API key in environment variables.");
   }
 
-  const campaign = await db.campaign.findUnique({
-    where: { id: campaignId },
+  const campaign = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId: orgId },
     include: { client: true },
   });
 
@@ -156,7 +220,7 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
 
   const contacts = await db.contact.findMany({
     where: {
-      organizationId: campaign.organizationId,
+      organizationId: orgId,
       id: { notIn: existingContactIds.length > 0 ? existingContactIds : undefined },
     },
   });
@@ -198,13 +262,8 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
 });
 
 export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
-  const outreach = await db.outreach.findUnique({
-    where: { id: outreachId },
-    include: {
-      contact: true,
-      campaign: true,
-    },
-  });
+  const orgId = await requireOrgId();
+  const outreach = await loadOutreachInOrg(outreachId, orgId);
 
   if (!outreach) {
     throw new Error("Outreach not found");
@@ -322,6 +381,13 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
 });
 
 export async function sendBulkOutreach(campaignId: string) {
+  const orgId = await requireOrgId();
+  const campaign = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!campaign) throw new Error("Campaign not found");
+
   const approved = await db.outreach.findMany({
     where: {
       campaignId,

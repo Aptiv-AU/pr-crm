@@ -1,12 +1,24 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { action } from "@/lib/server/action";
 import { resolveStyle } from "@/lib/compose/resolve-style";
+
+async function assertAccountOwnedBySessionUser(accountId: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const account = await db.emailAccount.findFirst({
+    where: { id: accountId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!account) throw new Error("Email account not found");
+}
 
 export const refreshEmailStyle = action(
   "refreshEmailStyle",
   async (accountId: string) => {
+    await assertAccountOwnedBySessionUser(accountId);
     await resolveStyle(accountId);
     return { revalidate: ["/settings/email"] };
   }
@@ -15,6 +27,7 @@ export const refreshEmailStyle = action(
 export const setManualSignature = action(
   "setManualSignature",
   async (accountId: string, html: string, fontFamily: string, fontSize: string) => {
+    await assertAccountOwnedBySessionUser(accountId);
     await db.emailAccount.update({
       where: { id: accountId },
       data: {

@@ -3,12 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { action } from "@/lib/server/action";
-
-async function orgId() {
-  const org = await db.organization.findFirst();
-  if (!org) throw new Error("no org");
-  return org.id;
-}
+import { requireOrgId } from "@/lib/server/org";
 
 export const addSuppression = action(
   "addSuppression",
@@ -22,7 +17,7 @@ export const addSuppression = action(
     note?: string;
   }) => {
     const session = await auth();
-    const organizationId = await orgId();
+    const organizationId = await requireOrgId();
     const normalised = email.trim().toLowerCase();
     if (!normalised) throw new Error("Email required");
 
@@ -42,12 +37,19 @@ export const addSuppression = action(
 );
 
 export const removeSuppression = action("removeSuppression", async (id: string) => {
+  const organizationId = await requireOrgId();
+  const existing = await db.suppression.findFirst({
+    where: { id, organizationId },
+    select: { id: true },
+  });
+  if (!existing) throw new Error("Suppression not found");
+
   await db.suppression.delete({ where: { id } });
   return { revalidate: ["/settings/suppressions"] };
 });
 
 export async function listSuppressions() {
-  const organizationId = await orgId();
+  const organizationId = await requireOrgId();
   return db.suppression.findMany({
     where: { organizationId },
     orderBy: { createdAt: "desc" },

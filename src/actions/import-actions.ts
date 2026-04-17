@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import type { MappedContact } from "@/lib/import/contact-import";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
@@ -14,11 +14,7 @@ export const importContacts = action(
       throw new Error(`Import capped at ${MAX_IMPORT_ROWS} rows. Split large files.`);
     }
 
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Not authenticated");
-
-    const org = await db.organization.findFirst();
-    if (!org) throw new Error("No organization");
+    const organizationId = await requireOrgId();
 
     let created = 0;
     let updated = 0;
@@ -31,7 +27,7 @@ export const importContacts = action(
       try {
         if (c.email) {
           const existing = await db.contact.findFirst({
-            where: { organizationId: org.id, email: c.email },
+            where: { organizationId, email: c.email },
           });
           if (existing) {
             await db.contact.update({
@@ -62,7 +58,7 @@ export const importContacts = action(
         const slug = await ensureUniqueSlug(slugify(c.name), async (candidate) => {
           if (reservedSlugs.has(candidate)) return true;
           const existing = await db.contact.findFirst({
-            where: { organizationId: org.id, slug: candidate },
+            where: { organizationId, slug: candidate },
             select: { id: true },
           });
           return existing !== null;
@@ -71,7 +67,7 @@ export const importContacts = action(
 
         await db.contact.create({
           data: {
-            organizationId: org.id,
+            organizationId,
             name: c.name,
             slug,
             email: c.email,
