@@ -17,6 +17,31 @@ function oauthClient(redirectUri: string) {
 }
 
 /**
+ * Strip CR/LF/tabs and other control characters. Used to defuse header
+ * injection into raw MIME envelopes (Gmail's send accepts raw RFC 5322).
+ */
+export function stripControlChars(s: string): string {
+  // eslint-disable-next-line no-control-regex
+  return s.replace(/[\r\n\t\x00-\x1f]/g, " ").trim();
+}
+
+/**
+ * Assert that `addr` is a single, well-shaped RFC 5322 address. Rejects
+ * multi-recipient strings (comma/semicolon) and anything that looks ragged.
+ * Not a full parser — a deliberate minimal shape check.
+ */
+export function assertSingleRfc5322Address(addr: string): string {
+  const cleaned = stripControlChars(addr);
+  if (/[,;]/.test(cleaned)) {
+    throw new Error("Multiple recipients not allowed here");
+  }
+  if (!/^[^\s<>()[\]:;"]+@[^\s<>()[\]:;"]+\.[^\s<>()[\]:;"]+$/.test(cleaned)) {
+    throw new Error(`Invalid email address: ${cleaned}`);
+  }
+  return cleaned;
+}
+
+/**
  * Build the Google OAuth authorization URL.
  */
 export function getGoogleAuthUrl(redirectUri: string, state: string): string {
@@ -99,19 +124,23 @@ export async function sendGmail(
   accessToken: string,
   { to, subject, bodyHtml }: { to: string; subject: string; bodyHtml: string },
 ): Promise<{ messageId: string; threadId: string }> {
+  // Neutralise header-injection vectors before we concatenate into raw MIME.
+  const safeSubject = stripControlChars(subject);
+  const safeTo = assertSingleRfc5322Address(to);
+
   const client = oauthClient("");
   client.setCredentials({ access_token: accessToken });
   const gmail = google.gmail({ version: "v1", auth: client });
 
   // Encode subject as RFC 2047 if it contains non-ASCII characters so MIME
   // parsers don't mangle it.
-  const encodedSubject = /[^\x20-\x7E]/.test(subject)
-    ? `=?UTF-8?B?${Buffer.from(subject, "utf-8").toString("base64")}?=`
-    : subject;
+  const encodedSubject = /[^\x20-\x7E]/.test(safeSubject)
+    ? `=?UTF-8?B?${Buffer.from(safeSubject, "utf-8").toString("base64")}?=`
+    : safeSubject;
 
   const raw = Buffer.from(
     [
-      `To: ${to}`,
+      `To: ${safeTo}`,
       "Content-Type: text/html; charset=utf-8",
       "MIME-Version: 1.0",
       `Subject: ${encodedSubject}`,
