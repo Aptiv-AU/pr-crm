@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
-import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
+import { generateSlug } from "@/lib/slug/generate";
 
 export const createClient = action("createClient", async (formData: FormData) => {
   const name = formData.get("name") as string | null;
@@ -19,13 +19,7 @@ export const createClient = action("createClient", async (formData: FormData) =>
 
   const organizationId = await requireOrgId();
 
-  const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
-    const existing = await db.client.findFirst({
-      where: { organizationId, slug: candidate },
-      select: { id: true },
-    });
-    return existing !== null;
-  });
+  const slug = await generateSlug("client", organizationId, name);
 
   const client = await db.client.create({
     data: {

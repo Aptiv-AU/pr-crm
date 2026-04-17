@@ -129,7 +129,10 @@ export const importContacts = action(
       }
 
       // New contact — generate a slug via in-memory collision check.
-      // `ensureUniqueSlug`'s `exists` predicate is async but we resolve synchronously.
+      // Intentionally does NOT use `generateSlug` from `@/lib/slug/generate`:
+      // bulk imports pre-fetch all org slugs once (above) and check in-memory
+      // to avoid N DB roundtrips per row. `ensureUniqueSlug`'s `exists`
+      // predicate is async but we resolve synchronously here.
       const slug = await ensureUniqueSlug(slugify(c.name), async (candidate) =>
         existingSlugs.has(candidate) || reservedSlugs.has(candidate)
       );

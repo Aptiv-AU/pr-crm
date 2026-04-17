@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
-import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
+import { generateSlug } from "@/lib/slug/generate";
 
 export const createSupplier = action("createSupplier", async (formData: FormData) => {
   const name = formData.get("name") as string | null;
@@ -19,13 +19,7 @@ export const createSupplier = action("createSupplier", async (formData: FormData
 
   const organizationId = await requireOrgId();
 
-  const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
-    const existing = await db.supplier.findFirst({
-      where: { organizationId, slug: candidate },
-      select: { id: true },
-    });
-    return existing !== null;
-  });
+  const slug = await generateSlug("supplier", organizationId, name);
 
   const supplier = await db.supplier.create({
     data: {

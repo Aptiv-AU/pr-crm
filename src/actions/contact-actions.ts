@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
-import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
+import { generateSlug } from "@/lib/slug/generate";
 import { promises as dns } from "node:dns";
 import net from "node:net";
 import { isPrivateV4, isPrivateV6 } from "@/lib/net/ip-cidr";
@@ -118,13 +118,7 @@ export const createContact = action("createContact", async (formData: FormData) 
 
   const organizationId = await requireOrgId();
 
-  const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
-    const existing = await db.contact.findFirst({
-      where: { organizationId, slug: candidate },
-      select: { id: true },
-    });
-    return existing !== null;
-  });
+  const slug = await generateSlug("contact", organizationId, name);
 
   const contact = await db.contact.create({
     data: {

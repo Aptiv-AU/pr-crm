@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
-import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
+import { generateSlug } from "@/lib/slug/generate";
 
 async function assertOptionalCampaignInOrg(
   campaignId: string | null,
@@ -52,13 +52,7 @@ export const createCoverage = action("createCoverage", async (formData: FormData
 
   const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
 
-  const slug = await ensureUniqueSlug(slugify(publication), async (candidate) => {
-    const existing = await db.coverage.findFirst({
-      where: { organizationId, slug: candidate },
-      select: { id: true },
-    });
-    return existing !== null;
-  });
+  const slug = await generateSlug("coverage", organizationId, publication);
 
   const coverage = await db.coverage.create({
     data: {
