@@ -92,7 +92,7 @@ export function CampaignSuppliersTab({
       if (agreedCost) formData.set("agreedCost", agreedCost);
 
       const result = await addSupplierToCampaign(formData);
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         setSupplierId("");

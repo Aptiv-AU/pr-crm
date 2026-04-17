@@ -67,7 +67,7 @@ export function CampaignBudget({ lineItems, campaignId, totalBudget }: CampaignB
       formData.set("amount", amount);
 
       const result = await addBudgetLineItem(formData);
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         setDescription("");

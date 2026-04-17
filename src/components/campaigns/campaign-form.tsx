@@ -58,7 +58,7 @@ export function CampaignForm({ campaign, clients, onSuccess }: CampaignFormProps
         ? await updateCampaign(campaign!.id, formData)
         : await createCampaign(formData);
 
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         onSuccess();

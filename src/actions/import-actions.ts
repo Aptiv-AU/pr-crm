@@ -2,96 +2,97 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
 import type { MappedContact } from "@/lib/import/contact-import";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
-type ImportResult =
-  | { success: true; created: number; updated: number; skipped: number }
-  | { error: string };
+export const importContacts = action(
+  "importContacts",
+  async (contacts: MappedContact[]) => {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Not authenticated");
 
-export async function importContacts(contacts: MappedContact[]): Promise<ImportResult> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "Not authenticated" };
+    const org = await db.organization.findFirst();
+    if (!org) throw new Error("No organization");
 
-  const org = await db.organization.findFirst();
-  if (!org) return { error: "No organization" };
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
 
-  let created = 0;
-  let updated = 0;
-  let skipped = 0;
+    // Batch-local reservation so duplicate names in one import get -2, -3 etc.
+    const reservedSlugs = new Set<string>();
 
-  // Batch-local reservation so duplicate names in one import get -2, -3 etc.
-  const reservedSlugs = new Set<string>();
-
-  for (const c of contacts) {
-    try {
-      if (c.email) {
-        const existing = await db.contact.findFirst({
-          where: { organizationId: org.id, email: c.email },
-        });
-        if (existing) {
-          await db.contact.update({
-            where: { id: existing.id },
-            data: {
-              name: c.name,
-              phone: c.phone ?? existing.phone,
-              outlet: c.outlet ?? existing.outlet,
-              beat: c.beat ?? existing.beat,
-              tier: c.tier ?? existing.tier,
-              instagram: c.instagram ?? existing.instagram,
-              twitter: c.twitter ?? existing.twitter,
-              linkedin: c.linkedin ?? existing.linkedin,
-              notes: c.notes ?? existing.notes,
-            },
+    for (const c of contacts) {
+      try {
+        if (c.email) {
+          const existing = await db.contact.findFirst({
+            where: { organizationId: org.id, email: c.email },
           });
-          updated++;
-          continue;
+          if (existing) {
+            await db.contact.update({
+              where: { id: existing.id },
+              data: {
+                name: c.name,
+                phone: c.phone ?? existing.phone,
+                outlet: c.outlet ?? existing.outlet,
+                beat: c.beat ?? existing.beat,
+                tier: c.tier ?? existing.tier,
+                instagram: c.instagram ?? existing.instagram,
+                twitter: c.twitter ?? existing.twitter,
+                linkedin: c.linkedin ?? existing.linkedin,
+                notes: c.notes ?? existing.notes,
+              },
+            });
+            updated++;
+            continue;
+          }
         }
-      }
 
-      const initials = c.name
-        .split(/\s+/)
-        .map((p) => p[0]?.toUpperCase() ?? "")
-        .slice(0, 2)
-        .join("");
+        const initials = c.name
+          .split(/\s+/)
+          .map((p) => p[0]?.toUpperCase() ?? "")
+          .slice(0, 2)
+          .join("");
 
-      const slug = await ensureUniqueSlug(slugify(c.name), async (candidate) => {
-        if (reservedSlugs.has(candidate)) return true;
-        const existing = await db.contact.findFirst({
-          where: { organizationId: org.id, slug: candidate },
-          select: { id: true },
+        const slug = await ensureUniqueSlug(slugify(c.name), async (candidate) => {
+          if (reservedSlugs.has(candidate)) return true;
+          const existing = await db.contact.findFirst({
+            where: { organizationId: org.id, slug: candidate },
+            select: { id: true },
+          });
+          return existing !== null;
         });
-        return existing !== null;
-      });
-      reservedSlugs.add(slug);
+        reservedSlugs.add(slug);
 
-      await db.contact.create({
-        data: {
-          organizationId: org.id,
-          name: c.name,
-          slug,
-          email: c.email,
-          phone: c.phone,
-          outlet: c.outlet,
-          beat: c.beat,
-          tier: c.tier,
-          instagram: c.instagram,
-          twitter: c.twitter,
-          linkedin: c.linkedin,
-          notes: c.notes,
-          initials: initials || "?",
-          avatarBg: "#1f2937",
-          avatarFg: "#ffffff",
-        },
-      });
-      created++;
-    } catch (err) {
-      skipped++;
-      console.error("import row failed", err);
+        await db.contact.create({
+          data: {
+            organizationId: org.id,
+            name: c.name,
+            slug,
+            email: c.email,
+            phone: c.phone,
+            outlet: c.outlet,
+            beat: c.beat,
+            tier: c.tier,
+            instagram: c.instagram,
+            twitter: c.twitter,
+            linkedin: c.linkedin,
+            notes: c.notes,
+            initials: initials || "?",
+            avatarBg: "#1f2937",
+            avatarFg: "#ffffff",
+          },
+        });
+        created++;
+      } catch (err) {
+        skipped++;
+        console.error("import row failed", err);
+      }
     }
-  }
 
-  revalidatePath("/contacts");
-  return { success: true, created, updated, skipped };
-}
+    return {
+      data: { created, updated, skipped },
+      revalidate: ["/contacts"],
+    };
+  }
+);
