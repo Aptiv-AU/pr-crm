@@ -32,6 +32,7 @@ model Organization {
   interactions  Interaction[]
   contactTags     ContactTag[]
   contactSegments ContactSegment[]
+  emailTemplates  EmailTemplate[]
 }
 
 model User {
@@ -364,4 +365,17 @@ model EmailAccount {
   expiresAt     DateTime
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model EmailTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  subject        String
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, name])
 }
