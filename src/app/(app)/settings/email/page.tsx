@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { EmailStyleManager } from "@/components/settings/email-style-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,17 @@ export default async function EmailSettingsPage() {
   if (!session?.user) redirect("/auth/signin");
 
   const emailAccount = await db.emailAccount.findFirst({
-    select: { id: true, email: true, provider: true, createdAt: true },
+    select: {
+      id: true,
+      email: true,
+      provider: true,
+      createdAt: true,
+      signatureHtml: true,
+      signatureSource: true,
+      fontFamily: true,
+      fontSize: true,
+      styleResolvedAt: true,
+    },
   });
 
   const providerLabel =
@@ -73,6 +84,19 @@ export default async function EmailSettingsPage() {
               year: "numeric",
             })}
           </div>
+
+          <EmailStyleManager
+            accountId={emailAccount.id}
+            signatureHtml={emailAccount.signatureHtml}
+            signatureSource={emailAccount.signatureSource}
+            fontFamily={emailAccount.fontFamily}
+            fontSize={emailAccount.fontSize}
+            styleResolvedAt={
+              emailAccount.styleResolvedAt
+                ? emailAccount.styleResolvedAt.toISOString()
+                : null
+            }
+          />
         </div>
       ) : (
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

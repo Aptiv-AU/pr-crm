@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { exchangeCodeForTokens } from "@/lib/email/microsoft-graph";
+import { resolveStyle } from "@/lib/compose/resolve-style";
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,26 +63,37 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
     });
 
+    let accountId: string;
     if (existing) {
-      await db.emailAccount.update({
+      const updated = await db.emailAccount.update({
         where: { id: existing.id },
         data: {
           email: tokens.email,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           expiresAt: tokens.expiresAt,
+          provider: "microsoft",
         },
       });
+      accountId = updated.id;
     } else {
-      await db.emailAccount.create({
+      const created = await db.emailAccount.create({
         data: {
           userId: user.id,
+          provider: "microsoft",
           email: tokens.email,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           expiresAt: tokens.expiresAt,
         },
       });
+      accountId = created.id;
+    }
+
+    try {
+      await resolveStyle(accountId);
+    } catch (e) {
+      console.warn("resolveStyle failed on Microsoft connect", e);
     }
 
     return NextResponse.redirect(

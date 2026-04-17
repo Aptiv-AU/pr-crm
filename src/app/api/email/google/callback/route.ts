@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { exchangeGoogleCode } from "@/lib/email/gmail";
+import { resolveStyle } from "@/lib/compose/resolve-style";
 
 export async function GET(request: NextRequest) {
   const baseUrl =
@@ -52,8 +53,9 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
     });
 
+    let accountId: string;
     if (existing) {
-      await db.emailAccount.update({
+      const updated = await db.emailAccount.update({
         where: { id: existing.id },
         data: {
           provider: "google",
@@ -63,8 +65,9 @@ export async function GET(request: NextRequest) {
           expiresAt: tokens.expiresAt,
         },
       });
+      accountId = updated.id;
     } else {
-      await db.emailAccount.create({
+      const created = await db.emailAccount.create({
         data: {
           userId: user.id,
           provider: "google",
@@ -74,6 +77,13 @@ export async function GET(request: NextRequest) {
           expiresAt: tokens.expiresAt,
         },
       });
+      accountId = created.id;
+    }
+
+    try {
+      await resolveStyle(accountId);
+    } catch (e) {
+      console.warn("resolveStyle failed on Google connect", e);
     }
 
     return NextResponse.redirect(new URL("/settings?email=connected", baseUrl));
