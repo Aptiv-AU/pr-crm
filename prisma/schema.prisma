@@ -33,6 +33,7 @@ model Organization {
   contactTags     ContactTag[]
   contactSegments ContactSegment[]
   emailTemplates  EmailTemplate[]
+  suppressions    Suppression[]
 }
 
 model User {
@@ -378,4 +379,23 @@ model EmailTemplate {
   updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, name])
+}
+
+model Suppression {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  email          String
+  reason         SuppressionReason
+  note           String?
+  createdByUserId String?
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, email])
+}
+
+enum SuppressionReason {
+  reply_request
+  bounce
+  manual
 }
