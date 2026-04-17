@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { CampaignContactStatus } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 
@@ -214,6 +215,9 @@ export const reorderRunsheetEntries = action(
 export const updateGuestRsvp = action(
   "updateGuestRsvp",
   async (campaignContactId: string, status: string) => {
+    if (!(status in CampaignContactStatus)) {
+      throw new Error(`Invalid guest status: ${status}`);
+    }
     const orgId = await requireOrgId();
     const campaignContact = await db.campaignContact.findFirst({
       where: { id: campaignContactId, campaign: { organizationId: orgId } },
@@ -226,7 +230,7 @@ export const updateGuestRsvp = action(
 
     await db.campaignContact.update({
       where: { id: campaignContactId },
-      data: { status },
+      data: { status: status as CampaignContactStatus },
     });
 
     return {

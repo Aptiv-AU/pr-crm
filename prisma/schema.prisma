@@ -277,7 +277,7 @@ model CampaignContact {
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contactId  String
   contact    Contact  @relation(fields: [contactId], references: [id])
-  status     String   @default("added")
+  status     CampaignContactStatus @default(added)
 
   @@unique([campaignId, contactId])
   @@index([contactId])
@@ -466,4 +466,11 @@ enum SupplierStatus {
   pending
   confirmed
   cancelled
+}
+
+enum CampaignContactStatus {
+  added
+  confirmed
+  declined
+  attended
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { CampaignStatus, PhaseStatus } from "@prisma/client";
+import { CampaignContactStatus, CampaignStatus, PhaseStatus } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 import { generateSlug } from "@/lib/slug/generate";
@@ -141,7 +141,7 @@ export const addContactToCampaign = action(
       data: {
         campaignId,
         contactId,
-        status: "added",
+        status: CampaignContactStatus.added,
       },
     });
 
