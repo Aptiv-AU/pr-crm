@@ -15,7 +15,7 @@ interface ContactDetailClientProps {
     name: string;
     email: string | null;
     phone: string | null;
-    publication: string;
+    outlet: string;
     beat: string;
     tier: string;
     health: string;

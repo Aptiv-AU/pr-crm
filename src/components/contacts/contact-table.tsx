@@ -13,7 +13,7 @@ interface ContactRow {
   avatarBg: string;
   avatarFg: string;
   photo?: string | null;
-  publication: string;
+  outlet: string;
   beat: string;
   tier: string;
   health: string;
@@ -111,7 +111,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
             </td>
             <td style={cellStyle}>
               <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication}</span>
+                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
               </Link>
             </td>
             <td style={cellStyle}>

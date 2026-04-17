@@ -237,7 +237,7 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
     contacts.map((c: typeof contacts[number]) => ({
       id: c.id,
       name: c.name,
-      publication: c.outlet ?? "",
+      outlet: c.outlet ?? "",
       beat: c.beat ?? "",
       tier: c.tier ?? "",
     }))

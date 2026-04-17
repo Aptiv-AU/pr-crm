@@ -14,7 +14,7 @@ interface Contact {
   avatarBg: string;
   avatarFg: string;
   photo?: string | null;
-  publication: string | null;
+  outlet: string | null;
   beat: string | null;
   tier: string | null;
   health: string;
@@ -37,7 +37,7 @@ interface WorkspaceOutreach {
     avatarBg: string;
     avatarFg: string;
     photo: string | null;
-    publication: string | null;
+    outlet: string | null;
   };
 }
 
@@ -208,7 +208,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                       lineHeight: 1.3,
                     }}
                   >
-                    {contact.publication}
+                    {contact.outlet}
                   </div>
                 </div>
                 <Badge variant={tierVariantMap[contact.tier ?? ""] ?? "default"}>
@@ -266,9 +266,9 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                   <span className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>
                     {o.contact.name}
                   </span>
-                  {o.contact.publication && (
+                  {o.contact.outlet && (
                     <span className="text-[12px] truncate shrink-0" style={{ color: "var(--text-sub)" }}>
-                      {o.contact.publication}
+                      {o.contact.outlet}
                     </span>
                   )}
                   <div className="ml-auto shrink-0">

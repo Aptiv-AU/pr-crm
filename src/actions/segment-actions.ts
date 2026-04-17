@@ -40,7 +40,7 @@ export async function applyFilter(filter: SegmentFilter) {
     avatarBg: c.avatarBg,
     avatarFg: c.avatarFg,
     photo: c.photo,
-    publication: c.outlet ?? "",
+    outlet: c.outlet ?? "",
     beat: c.beat ?? "",
     tier: c.tier ?? "",
     health: c.health,

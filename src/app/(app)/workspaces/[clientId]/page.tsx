@@ -59,11 +59,11 @@ export default async function ClientWorkspacePage({
             ...c,
             campaignContacts: c.campaignContacts.map((cc) => ({
               ...cc,
-              contact: { ...cc.contact, publication: cc.contact.outlet ?? "" },
+              contact: { ...cc.contact, outlet: cc.contact.outlet ?? "" },
             })),
             outreaches: c.outreaches.map((o) => ({
               ...o,
-              contact: { ...o.contact, publication: o.contact.outlet ?? "" },
+              contact: { ...o.contact, outlet: o.contact.outlet ?? "" },
             })),
           }))}
         />

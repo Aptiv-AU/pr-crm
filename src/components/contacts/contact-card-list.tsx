@@ -13,7 +13,7 @@ interface ContactRow {
   avatarBg: string;
   avatarFg: string;
   photo?: string | null;
-  publication: string;
+  outlet: string;
   beat: string;
   tier: string;
   health: string;
@@ -68,7 +68,7 @@ export function ContactCardList({ contacts }: ContactCardListProps) {
               {contact.name}
             </div>
             <div style={{ fontSize: 11, color: "var(--text-sub)", marginTop: 1 }}>
-              {contact.publication}
+              {contact.outlet}
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
               <TierBadge tier={contact.tier} />

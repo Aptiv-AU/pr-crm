@@ -9,7 +9,7 @@ interface ContactHeroProps {
   contact: {
     id: string;
     name: string;
-    publication: string;
+    outlet: string;
     beat: string;
     tier: string;
     health: string;
@@ -64,7 +64,7 @@ export function ContactHero({ contact, stats, onEdit }: ContactHeroProps) {
                   lineHeight: 1.3,
                 }}
               >
-                {contact.publication}
+                {contact.outlet}
               </div>
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

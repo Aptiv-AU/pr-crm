@@ -20,7 +20,7 @@ export default async function OutreachPage() {
     subject: o.subject,
     status: o.status,
     createdAt: o.createdAt.toISOString(),
-    contact: { ...o.contact, publication: o.contact.outlet ?? "" },
+    contact: { ...o.contact, outlet: o.contact.outlet ?? "" },
     campaign: {
       id: o.campaign.id,
       slug: o.campaign.slug,
