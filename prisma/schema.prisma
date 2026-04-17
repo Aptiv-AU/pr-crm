@@ -96,10 +96,12 @@ model Client {
   logo           String?
   archivedAt     DateTime?
   currency       String?
+  slug           String
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]
   contacts       ClientContact[]
 
+  @@unique([organizationId, slug])
   @@index([archivedAt])
 }
 
@@ -136,12 +138,15 @@ model Contact {
   twitter          String?
   linkedin         String?
   notes            String?
+  slug             String
   createdAt        DateTime          @default(now())
   campaignContacts CampaignContact[]
   outreaches       Outreach[]
   coverages        Coverage[]
   interactions     Interaction[]
   tags             ContactTagAssignment[]
+
+  @@unique([organizationId, slug])
 }
 
 model ContactTag {
@@ -191,10 +196,13 @@ model Supplier {
   website           String?
   notes             String?
   rating            Int?
+  slug              String
   createdAt         DateTime           @default(now())
   contacts          SupplierContact[]
   campaignSuppliers CampaignSupplier[]
   budgetLineItems   BudgetLineItem[]
+
+  @@unique([organizationId, slug])
 }
 
 model SupplierContact {
@@ -223,6 +231,7 @@ model Campaign {
   dueDate           DateTime?
   brief             String?
   archivedAt        DateTime?
+  slug              String
   createdAt         DateTime           @default(now())
   phases            CampaignPhase[]
   campaignContacts  CampaignContact[]
@@ -233,6 +242,7 @@ model Campaign {
   interactions      Interaction[]
   eventDetail       EventDetail?
 
+  @@unique([organizationId, slug])
   @@index([archivedAt])
 }
 
@@ -314,7 +324,10 @@ model Coverage {
   mediaValue     Decimal?
   attachmentUrl  String?
   notes          String?
+  slug           String
   createdAt      DateTime      @default(now())
+
+  @@unique([organizationId, slug])
 }
 
 model Interaction {
