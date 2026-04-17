@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { CampaignStatus } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 
@@ -44,7 +45,7 @@ export const updatePhaseStatus = action(
       } else {
         await db.campaign.update({
           where: { id: phase.campaignId },
-          data: { status: "complete" },
+          data: { status: CampaignStatus.complete },
         });
       }
     }
@@ -75,7 +76,7 @@ export const revertToPhase = action("revertToPhase", async (phaseId: string) => 
     }),
     db.campaign.update({
       where: { id: phase.campaignId },
-      data: { currentPhase: phase.name, status: "active" },
+      data: { currentPhase: phase.name, status: CampaignStatus.active },
     }),
   ]);
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { CampaignStatus } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 import { generateSlug } from "@/lib/slug/generate";
@@ -57,7 +58,7 @@ export const createCampaign = action("createCampaign", async (formData: FormData
       name,
       slug,
       type,
-      status: "draft",
+      status: CampaignStatus.draft,
       currentPhase: firstPhaseName,
       budget: budget !== null && !isNaN(budget) ? budget : null,
       startDate,
@@ -86,7 +87,11 @@ export const updateCampaign = action(
     await assertCampaignInOrg(campaignId, orgId);
 
     const name = formData.get("name") as string | null;
-    const status = formData.get("status") as string | null;
+    const statusRaw = formData.get("status") as string | null;
+    const status =
+      statusRaw && statusRaw in CampaignStatus
+        ? (statusRaw as CampaignStatus)
+        : null;
     const budgetStr = formData.get("budget") as string | null;
     const startDateStr = formData.get("startDate") as string | null;
     const dueDateStr = formData.get("dueDate") as string | null;
@@ -172,7 +177,7 @@ export const completeCampaign = action("completeCampaign", async (campaignId: st
   await assertCampaignInOrg(campaignId, orgId);
   await db.campaign.update({
     where: { id: campaignId },
-    data: { status: "complete" },
+    data: { status: CampaignStatus.complete },
   });
   return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
 });
@@ -182,7 +187,7 @@ export const reopenCampaign = action("reopenCampaign", async (campaignId: string
   await assertCampaignInOrg(campaignId, orgId);
   await db.campaign.update({
     where: { id: campaignId },
-    data: { status: "active" },
+    data: { status: CampaignStatus.active },
   });
   return { revalidate: ["/campaigns", `/campaigns/${campaignId}`] };
 });

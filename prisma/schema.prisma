@@ -229,7 +229,7 @@ model Campaign {
   client            Client             @relation(fields: [clientId], references: [id])
   name              String
   type              String
-  status            String             @default("draft")
+  status            CampaignStatus     @default(draft)
   currentPhase      String?
   budget            Decimal?
   startDate         DateTime?
@@ -441,4 +441,10 @@ enum SuppressionReason {
   reply_request
   bounce
   manual
+}
+
+enum CampaignStatus {
+  draft
+  active
+  complete
 }

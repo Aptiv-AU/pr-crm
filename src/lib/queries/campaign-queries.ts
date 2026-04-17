@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
+import { CampaignStatus } from "@prisma/client";
 
 export async function getCampaigns(
   organizationId: string,
-  filters?: { type?: string; status?: string; clientId?: string }
+  filters?: { type?: string; status?: CampaignStatus | "All"; clientId?: string }
 ) {
   const campaigns = await db.campaign.findMany({
     where: {
@@ -149,9 +150,9 @@ export async function getCampaignById(campaignId: string) {
 export async function getCampaignStats(organizationId: string) {
   const [total, active, draft, complete] = await Promise.all([
     db.campaign.count({ where: { organizationId, archivedAt: null } }),
-    db.campaign.count({ where: { organizationId, archivedAt: null, status: "active" } }),
-    db.campaign.count({ where: { organizationId, archivedAt: null, status: "draft" } }),
-    db.campaign.count({ where: { organizationId, archivedAt: null, status: "complete" } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: CampaignStatus.active } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: CampaignStatus.draft } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: CampaignStatus.complete } }),
   ]);
 
   return { total, active, draft, complete };
