@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireOrgId } from "@/lib/server/org";
 
 export async function updateAISettings(formData: FormData) {
@@ -19,6 +19,9 @@ export async function updateAISettings(formData: FormData) {
   });
 
   revalidatePath("/settings");
+  // W6: org row is cached in `getCurrentOrg()` / `getOrgById()` under
+  // `org:${orgId}` — bust it so branding/AI config is read fresh.
+  revalidateTag(`org:${organizationId}`, "max");
 }
 
 export async function updateUserProfile(formData: FormData) {
@@ -57,4 +60,5 @@ export async function updateOrganizationSettings(formData: FormData) {
   });
 
   revalidatePath("/settings");
+  revalidateTag(`org:${organizationId}`, "max");
 }

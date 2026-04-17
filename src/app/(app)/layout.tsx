@@ -1,10 +1,16 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { CampaignStatus, OutreachStatus } from "@prisma/client";
+import {
+  getOrgById,
+  getSidebarBadgeCounts,
+  getSidebarClients,
+} from "@/lib/queries/org-queries";
 import { redirect } from "next/navigation";
 
-export const revalidate = 30; // revalidate layout data every 30 seconds (badge counts, client list)
+// W6: per-query tag-scoped caches now cover badge counts and the
+// client sidebar. Mutations invalidate `stats:${orgId}` / `clients:${orgId}`
+// directly, so the blanket segment-level revalidate is no longer needed.
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -18,9 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     select: { organizationId: true, name: true },
   });
 
-  let org = user?.organizationId
-    ? await db.organization.findUnique({ where: { id: user.organizationId } })
-    : null;
+  let org = user?.organizationId ? await getOrgById(user.organizationId) : null;
 
   if (!org) {
     // Edge case: user exists but no org — create one and assign
@@ -36,30 +40,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     });
   }
 
-  const [clients, contactCount, activeCampaignCount, draftOutreachCount] = await Promise.all([
-    db.client.findMany({
-      where: { organizationId: org.id },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        industry: true,
-        colour: true,
-        bgColour: true,
-        initials: true,
-        logo: true,
-      },
-      orderBy: { name: "asc" },
-    }),
-    db.contact.count({ where: { organizationId: org.id } }),
-    db.campaign.count({ where: { organizationId: org.id, status: { not: CampaignStatus.complete } } }),
-    db.outreach.count({ where: { campaign: { organizationId: org.id }, status: OutreachStatus.draft } }),
+  const [clients, badges] = await Promise.all([
+    getSidebarClients(org.id),
+    getSidebarBadgeCounts(org.id),
   ]);
 
   return (
     <AppShell
       clients={clients}
-      badgeCounts={{ contacts: contactCount, campaigns: activeCampaignCount, outreach: draftOutreachCount }}
+      badgeCounts={{
+        contacts: badges.contacts,
+        campaigns: badges.campaigns,
+        outreach: badges.outreach,
+      }}
       userData={{
         name: user?.name ?? session.user.email?.split("@")[0] ?? "User",
         orgName: org.name,
