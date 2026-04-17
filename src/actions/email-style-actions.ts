@@ -20,7 +20,8 @@ export const refreshEmailStyle = action(
   "refreshEmailStyle",
   async (accountId: string) => {
     await assertAccountOwnedBySessionUser(accountId);
-    await resolveStyle(accountId);
+    // User explicitly asked to refresh — bypass the 7-day TTL gate.
+    await resolveStyle(accountId, { force: true });
     return { revalidate: ["/settings/email"] };
   }
 );

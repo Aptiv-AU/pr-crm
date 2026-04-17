@@ -10,9 +10,30 @@ const GMAIL_DEFAULT_SIZE = "13px";
 const OUTLOOK_DEFAULT_FONT = "Aptos, Calibri, sans-serif";
 const OUTLOOK_DEFAULT_SIZE = "11pt";
 
-export async function resolveStyle(emailAccountId: string) {
+const STYLE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/**
+ * Resolve and cache the user's email signature + font style.
+ *
+ * W6 fast-path: if `styleResolvedAt` is within the 7-day TTL we skip
+ * the provider round-trip. Callers that want to force a refresh —
+ * the "Refresh signature" button, and first-connect OAuth callbacks —
+ * pass `force: true` to bypass the gate.
+ */
+export async function resolveStyle(
+  emailAccountId: string,
+  options?: { force?: boolean },
+) {
   const acct = await db.emailAccount.findUnique({ where: { id: emailAccountId } });
   if (!acct) throw new Error("EmailAccount not found");
+
+  if (
+    !options?.force &&
+    acct.styleResolvedAt &&
+    Date.now() - acct.styleResolvedAt.getTime() < STYLE_TTL_MS
+  ) {
+    return;
+  }
 
   if (acct.provider === "google") {
     return await resolveGoogle(acct);
