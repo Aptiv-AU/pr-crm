@@ -23,7 +23,7 @@ interface OutreachPhaseProps {
       avatarBg: string;
       avatarFg: string;
       email: string | null;
-      publication: string | null;
+      outlet: string | null;
     };
   }[];
   emailConnected: boolean;

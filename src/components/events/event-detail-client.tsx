@@ -51,7 +51,7 @@ interface EventDetailClientProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string | null;
+      outlet: string | null;
       email: string | null;
     };
   }[];
@@ -61,7 +61,7 @@ interface EventDetailClientProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    outlet: string | null;
   }[];
   campaignSuppliers: {
     id: string;

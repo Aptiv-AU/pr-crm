@@ -20,7 +20,7 @@ interface CampaignContact {
     avatarBg: string;
     avatarFg: string;
     photo?: string | null;
-    publication: string | null;
+    outlet: string | null;
     email: string | null;
   };
 }
@@ -32,7 +32,7 @@ interface AvailableContact {
   avatarBg: string;
   avatarFg: string;
   photo?: string | null;
-  publication: string | null;
+  outlet: string | null;
 }
 
 interface GuestListProps {
@@ -162,7 +162,7 @@ export function GuestList({ campaignId, campaignContacts, availableContacts }: G
               >
                 <ContactAvatar contact={contact} size={22} />
                 <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{contact.name}</span>
-                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication || ""}</span>
+                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet || ""}</span>
               </div>
             ))
           )}
@@ -234,7 +234,7 @@ export function GuestList({ campaignId, campaignContacts, availableContacts }: G
                   {cc.contact.name}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-sub)" }}>
-                  {cc.contact.publication || "\u2014"}
+                  {cc.contact.outlet || "\u2014"}
                 </div>
                 {cc.contact.email && (
                   <div style={{ fontSize: 12, color: "var(--text-muted-custom)" }}>

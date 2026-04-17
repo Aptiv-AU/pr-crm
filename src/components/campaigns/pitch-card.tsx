@@ -24,7 +24,7 @@ interface PitchCardProps {
       avatarBg: string;
       avatarFg: string;
       photo?: string | null;
-      publication: string | null;
+      outlet: string | null;
     };
   };
   onRegenerate: (contactId: string) => void;
@@ -126,7 +126,7 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
           {outreach.contact.name}
         </span>
         <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
-          {outreach.contact.publication}
+          {outreach.contact.outlet}
         </span>
         <div style={{ flex: 1 }} />
         {outreach.generatedByAI && (

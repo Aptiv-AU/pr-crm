@@ -23,7 +23,7 @@ interface OutreachSendCardProps {
       avatarFg: string;
       photo?: string | null;
       email: string | null;
-      publication: string | null;
+      outlet: string | null;
     };
   };
   emailConnected: boolean;
@@ -97,9 +97,9 @@ export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: Out
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}
             </div>
-            {contact.publication && (
+            {contact.outlet && (
               <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
-                {contact.publication}
+                {contact.outlet}
               </div>
             )}
           </div>
@@ -158,9 +158,9 @@ export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: Out
                 {contact.email}
               </div>
             )}
-            {contact.publication && (
+            {contact.outlet && (
               <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
-                {contact.publication}
+                {contact.outlet}
               </div>
             )}
           </div>
@@ -201,9 +201,9 @@ export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: Out
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}
             </div>
-            {contact.publication && (
+            {contact.outlet && (
               <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
-                {contact.publication}
+                {contact.outlet}
               </div>
             )}
           </div>
@@ -247,9 +247,9 @@ export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: Out
             <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
               {contact.name}
             </div>
-            {contact.publication && (
+            {contact.outlet && (
               <div className="text-[11px]" style={{ color: "var(--text-sub)" }}>
-                {contact.publication}
+                {contact.outlet}
               </div>
             )}
           </div>

@@ -70,7 +70,7 @@ export default async function EventDetailPage({
       avatarBg: c.avatarBg,
       avatarFg: c.avatarFg,
       photo: c.photo,
-      publication: c.outlet ?? "",
+      outlet: c.outlet ?? "",
     }));
 
   // Serialize data
@@ -124,7 +124,7 @@ export default async function EventDetailPage({
       avatarBg: cc.contact.avatarBg,
       avatarFg: cc.contact.avatarFg,
       photo: cc.contact.photo,
-      publication: cc.contact.outlet ?? "",
+      outlet: cc.contact.outlet ?? "",
       email: cc.contact.email,
     },
   }));

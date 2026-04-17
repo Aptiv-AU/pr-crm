@@ -20,7 +20,7 @@ interface ContactPickerProps {
       avatarBg: string;
       avatarFg: string;
       photo?: string | null;
-      publication: string | null;
+      outlet: string | null;
       beat?: string | null;
       tier?: string | null;
     };
@@ -32,7 +32,7 @@ interface ContactPickerProps {
     avatarBg: string;
     avatarFg: string;
     photo?: string | null;
-    publication: string | null;
+    outlet: string | null;
     beat?: string | null;
     tier?: string | null;
   }[];
@@ -184,7 +184,7 @@ export function ContactPicker({
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{contact.name}</span>
-                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication}</span>
+                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
                     </div>
                     <div style={{ fontSize: 12, fontStyle: "italic", color: "var(--text-sub)", marginTop: 2 }}>
                       {s.reason}
@@ -221,7 +221,7 @@ export function ContactPicker({
                 >
                   <ContactAvatar contact={contact} size={22} />
                   <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{contact.name}</span>
-                  <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication}</span>
+                  <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
                 </div>
               ))
             )
@@ -268,7 +268,7 @@ export function ContactPicker({
                     {cc.contact.name}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-sub)" }}>
-                    {cc.contact.publication || "\u2014"}
+                    {cc.contact.outlet || "\u2014"}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>

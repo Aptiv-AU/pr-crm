@@ -31,7 +31,7 @@ interface DraftPitchesPhaseProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string | null;
+      outlet: string | null;
       beat?: string | null;
       tier?: string | null;
       health?: string | null;
@@ -43,7 +43,7 @@ interface DraftPitchesPhaseProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    outlet: string | null;
     beat?: string | null;
     tier?: string | null;
   }[];
@@ -60,7 +60,7 @@ interface DraftPitchesPhaseProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string | null;
+      outlet: string | null;
     };
   }[];
 }

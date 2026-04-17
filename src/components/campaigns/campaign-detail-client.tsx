@@ -41,7 +41,7 @@ interface CampaignDetailClientProps {
         initials: string;
         avatarBg: string;
         avatarFg: string;
-        publication: string | null;
+        outlet: string | null;
         beat: string | null;
         tier: string | null;
         health: string | null;
@@ -95,7 +95,7 @@ interface CampaignDetailClientProps {
         avatarBg: string;
         avatarFg: string;
         email: string | null;
-        publication: string | null;
+        outlet: string | null;
       };
     }[];
   };
@@ -106,7 +106,7 @@ interface CampaignDetailClientProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    outlet: string | null;
   }[];
   availableSuppliers: {
     id: string;

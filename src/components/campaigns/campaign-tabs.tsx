@@ -22,7 +22,7 @@ interface CampaignTabsProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string | null;
+      outlet: string | null;
       tier: string | null;
       health: string | null;
     };
@@ -36,7 +36,7 @@ interface CampaignTabsProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    outlet: string | null;
   }[];
   campaignSuppliers: {
     id: string;
@@ -91,7 +91,7 @@ interface CampaignTabsProps {
       avatarBg: string;
       avatarFg: string;
       email: string | null;
-      publication: string | null;
+      outlet: string | null;
     };
   }[];
   coverages?: {
