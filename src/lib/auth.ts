@@ -33,8 +33,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).organizationId = (user as any).organizationId;
+        session.user.organizationId = (user as { organizationId?: string | null })
+          .organizationId ?? null;
       }
       return session;
     },
