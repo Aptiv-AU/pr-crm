@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
-import { getValidToken, getConversationReplies } from "./microsoft-graph";
-import { getValidGoogleToken, getGmailThreadReplies } from "./gmail";
+import { providerFor } from "./provider";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { parsePitchResponse } from "@/lib/ai/prompts";
@@ -58,17 +57,15 @@ export async function checkForReplies(organizationId: string): Promise<number> {
 
   if (!emailAccount) return 0;
 
-  const isGoogle = emailAccount.provider === "google";
-  const accessToken = isGoogle
-    ? await getValidGoogleToken(emailAccount.id)
-    : await getValidToken(emailAccount.id);
+  const provider = providerFor(emailAccount);
+  const accessToken = await provider.getValidToken(emailAccount.id);
 
   let replyCount = 0;
 
   for (let i = 0; i < outreaches.length; i += OUTREACHES_CONCURRENCY) {
     const batch = outreaches.slice(i, i + OUTREACHES_CONCURRENCY);
     const results = await Promise.all(
-      batch.map((o) => checkOne(o, accessToken, isGoogle))
+      batch.map((o) => checkOne(o, accessToken, provider))
     );
     replyCount += results.filter(Boolean).length;
   }
@@ -79,23 +76,17 @@ export async function checkForReplies(organizationId: string): Promise<number> {
 async function checkOne(
   outreach: OutreachWithRefs,
   accessToken: string,
-  isGoogle: boolean
+  provider: ReturnType<typeof providerFor>
 ): Promise<boolean> {
   // Guarded by the findMany filter, but keep local invariants explicit.
   if (!outreach.threadId || !outreach.sentAt) return false;
 
   try {
-    const replies = isGoogle
-      ? await getGmailThreadReplies(
-          accessToken,
-          outreach.threadId,
-          outreach.sentAt
-        )
-      : await getConversationReplies(
-          accessToken,
-          outreach.threadId,
-          outreach.sentAt
-        );
+    const replies = await provider.getReplies(
+      accessToken,
+      outreach.threadId,
+      outreach.sentAt
+    );
 
     if (replies.length > 0) {
       const firstReply = replies[0];

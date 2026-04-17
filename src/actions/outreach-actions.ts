@@ -7,23 +7,16 @@ import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
 import {
-  getValidToken as getValidMicrosoftToken,
-  sendMail as sendViaMicrosoft,
-} from "@/lib/email/microsoft-graph";
-import { getValidGoogleToken, sendGmail } from "@/lib/email/gmail";
+  providerFor,
+  type OutgoingMessage,
+  type SendResult,
+} from "@/lib/email/provider";
 import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
+import type { EmailAccount, Prisma } from "@prisma/client";
 
-async function loadOutreachInOrg<T extends object = {}>(
-  outreachId: string,
-  orgId: string,
-  extraInclude?: T
-) {
-  // Outreach belongs to a campaign belongs to an org.
-  return db.outreach.findFirst({
-    where: { id: outreachId, campaign: { organizationId: orgId } },
-    include: { contact: true, campaign: true, ...(extraInclude ?? {}) },
-  });
-}
+type SendableOutreach = Prisma.OutreachGetPayload<{
+  include: { contact: true; campaign: true };
+}>;
 
 export const saveBrief = action("saveBrief", async (campaignId: string, brief: string) => {
   const orgId = await requireOrgId();
@@ -264,107 +257,110 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
 
 export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
   const orgId = await requireOrgId();
-  const outreach = await loadOutreachInOrg(outreachId, orgId);
+  const outreach = await loadSendableOutreach(outreachId, orgId);
+  await assertNotSuppressed(outreach, orgId);
+  const account = await requireEmailAccount(outreach.campaign.organizationId);
+  const bodyHtml = renderOutreachHtml(outreach.body, account);
+  const sent = await sendViaProvider(account, {
+    to: outreach.contact.email!,
+    subject: outreach.subject,
+    bodyHtml,
+  });
+  await markOutreachSent(outreach.id, account.provider, sent);
+  await logSentInteraction(outreach);
 
-  if (!outreach) {
-    throw new Error("Outreach not found");
-  }
+  return {
+    revalidate: [`/campaigns/${outreach.campaignId}`, "/outreach"],
+  };
+});
 
+async function loadSendableOutreach(
+  id: string,
+  orgId: string
+): Promise<SendableOutreach> {
+  const outreach = await db.outreach.findFirst({
+    where: { id, campaign: { organizationId: orgId } },
+    include: { contact: true, campaign: true },
+  });
+  if (!outreach) throw new Error("Outreach not found");
   if (outreach.status !== "approved") {
     throw new Error("Outreach must be approved before sending");
   }
-
   if (!outreach.contact.email) {
     throw new Error("Contact has no email address");
   }
+  return outreach;
+}
 
-  // Suppression list check — block before any provider dispatch
-  const normalised = outreach.contact.email.trim().toLowerCase();
+async function assertNotSuppressed(
+  outreach: SendableOutreach,
+  orgId: string
+): Promise<void> {
+  const email = outreach.contact.email!.trim().toLowerCase();
   const suppressed = await db.suppression.findFirst({
-    where: {
-      organizationId: outreach.campaign.organizationId,
-      email: normalised,
-    },
+    where: { organizationId: orgId, email },
   });
   if (suppressed) {
     throw new Error(`Address is on the suppression list (${suppressed.reason})`);
   }
+}
 
-  // Find an EmailAccount for the org (via user -> organization)
-  const emailAccount = await db.emailAccount.findFirst({
-    where: {
-      user: {
-        organizationId: outreach.campaign.organizationId,
-      },
-    },
+async function requireEmailAccount(orgId: string): Promise<EmailAccount> {
+  const account = await db.emailAccount.findFirst({
+    where: { user: { organizationId: orgId } },
   });
+  if (!account) throw new Error("Connect your email account in Settings first");
+  return account;
+}
 
-  if (!emailAccount) {
-    throw new Error("Connect your email account in Settings first");
-  }
-
-  // Convert body to HTML paragraphs
-  const paragraphHtml = outreach.body
+function renderOutreachHtml(body: string, account: EmailAccount): string {
+  const paragraphHtml = body
     .split(/\n\n+/)
-    .map((para: string) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
     .join("");
 
-  // Wrap body in the user's resolved font, then append their signature.
-  // Both provider branches receive the same finished HTML.
   const fontFamily =
-    emailAccount.fontFamily ??
-    (emailAccount.provider === "google"
+    account.fontFamily ??
+    (account.provider === "google"
       ? "Arial, Helvetica, sans-serif"
       : "Aptos, Calibri, sans-serif");
   const fontSize =
-    emailAccount.fontSize ??
-    (emailAccount.provider === "google" ? "13px" : "11pt");
-  const signature = sanitizeSignatureHtml(emailAccount.signatureHtml);
+    account.fontSize ?? (account.provider === "google" ? "13px" : "11pt");
+  const signature = sanitizeSignatureHtml(account.signatureHtml);
 
-  let bodyHtml = `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${paragraphHtml}</div>`;
-  if (signature) {
-    bodyHtml += `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${signature}</div>`;
-  }
+  const wrap = (inner: string) =>
+    `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${inner}</div>`;
 
-  // Provider dispatch. Gmail's threadId and Microsoft's conversationId share
-  // the same semantics — both stored in Outreach.threadId.
-  let messageId: string;
-  let threadId: string;
-  let sentVia: string;
+  return signature ? wrap(paragraphHtml) + wrap(signature) : wrap(paragraphHtml);
+}
 
-  if (emailAccount.provider === "google") {
-    const token = await getValidGoogleToken(emailAccount.id);
-    const res = await sendGmail(token, {
-      to: outreach.contact.email,
-      subject: outreach.subject,
-      bodyHtml,
-    });
-    messageId = res.messageId;
-    threadId = res.threadId;
-    sentVia = "gmail";
-  } else {
-    const token = await getValidMicrosoftToken(emailAccount.id);
-    const res = await sendViaMicrosoft(token, {
-      to: outreach.contact.email,
-      subject: outreach.subject,
-      bodyHtml,
-    });
-    messageId = res.messageId;
-    threadId = res.conversationId;
-    sentVia = "microsoft_graph";
-  }
+async function sendViaProvider(
+  account: EmailAccount,
+  msg: OutgoingMessage
+): Promise<SendResult> {
+  const p = providerFor(account);
+  const token = await p.getValidToken(account.id);
+  return p.send(token, msg);
+}
 
+async function markOutreachSent(
+  id: string,
+  provider: string,
+  sent: SendResult
+): Promise<void> {
   await db.outreach.update({
-    where: { id: outreachId },
+    where: { id },
     data: {
       status: "sent",
       sentAt: new Date(),
-      sentVia,
-      messageId,
-      threadId,
+      sentVia: provider === "google" ? "gmail" : "microsoft_graph",
+      messageId: sent.messageId,
+      threadId: sent.threadId,
     },
   });
+}
 
+async function logSentInteraction(outreach: SendableOutreach): Promise<void> {
   await db.interaction.create({
     data: {
       type: "email_sent",
@@ -375,11 +371,7 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
       summary: outreach.subject,
     },
   });
-
-  return {
-    revalidate: [`/campaigns/${outreach.campaignId}`, "/outreach"],
-  };
-});
+}
 
 export async function sendBulkOutreach(campaignId: string) {
   const orgId = await requireOrgId();
