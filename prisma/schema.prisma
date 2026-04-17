@@ -30,6 +30,8 @@ model Organization {
   campaigns     Campaign[]
   coverages     Coverage[]
   interactions  Interaction[]
+  contactTags     ContactTag[]
+  contactSegments ContactSegment[]
 }
 
 model User {
@@ -137,6 +139,43 @@ model Contact {
   outreaches       Outreach[]
   coverages        Coverage[]
   interactions     Interaction[]
+  tags             ContactTagAssignment[]
+}
+
+model ContactTag {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  label          String
+  colorBg        String   @default("#374151")
+  colorFg        String   @default("#ffffff")
+  createdAt      DateTime @default(now())
+  assignments    ContactTagAssignment[]
+
+  @@unique([organizationId, label])
+}
+
+model ContactTagAssignment {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       ContactTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([contactId, tagId])
+  @@index([tagId])
+}
+
+model ContactSegment {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  filter         Json
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, name])
 }
 
 model Supplier {
