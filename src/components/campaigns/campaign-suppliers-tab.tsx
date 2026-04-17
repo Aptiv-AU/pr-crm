@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addSupplierToCampaign, removeSupplierFromCampaign } from "@/actions/campaign-actions";
+import { addSupplierToCampaign, removeSupplierFromCampaign } from "@/actions/budget-actions";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

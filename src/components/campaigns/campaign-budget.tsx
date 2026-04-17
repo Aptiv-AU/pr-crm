@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addBudgetLineItem, deleteBudgetLineItem, confirmBudgetLineItem } from "@/actions/campaign-actions";
+import { addBudgetLineItem, deleteBudgetLineItem, confirmBudgetLineItem } from "@/actions/budget-actions";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 

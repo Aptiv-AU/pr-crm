@@ -7,7 +7,8 @@ import { CampaignTabs } from "@/components/campaigns/campaign-tabs";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { updatePhaseStatus, revertToPhase, completeCampaign, reopenCampaign, archiveCampaign } from "@/actions/campaign-actions";
+import { updatePhaseStatus, revertToPhase } from "@/actions/phase-actions";
+import { completeCampaign, reopenCampaign, archiveCampaign } from "@/actions/campaign-actions";
 
 interface CampaignDetailClientProps {
   campaign: {
