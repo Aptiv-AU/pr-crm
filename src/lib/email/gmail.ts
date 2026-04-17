@@ -118,7 +118,7 @@ export async function getValidGoogleToken(emailAccountId: string): Promise<strin
 
 /**
  * Send an email via Gmail. Returns the message id and the Gmail thread id
- * (thread id is stored in Outreach.conversationId — same semantics).
+ * (thread id is stored in Outreach.threadId).
  */
 export async function sendGmail(
   accessToken: string,

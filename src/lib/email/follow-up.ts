@@ -35,7 +35,7 @@ export async function checkForReplies(organizationId: string): Promise<number> {
     where: {
       campaign: { organizationId },
       status: "sent",
-      conversationId: { not: null },
+      threadId: { not: null },
       sentAt: { gte: windowCutoff },
       OR: [
         { lastCheckedForReplyAt: null },
@@ -82,18 +82,18 @@ async function checkOne(
   isGoogle: boolean
 ): Promise<boolean> {
   // Guarded by the findMany filter, but keep local invariants explicit.
-  if (!outreach.conversationId || !outreach.sentAt) return false;
+  if (!outreach.threadId || !outreach.sentAt) return false;
 
   try {
     const replies = isGoogle
       ? await getGmailThreadReplies(
           accessToken,
-          outreach.conversationId,
+          outreach.threadId,
           outreach.sentAt
         )
       : await getConversationReplies(
           accessToken,
-          outreach.conversationId,
+          outreach.threadId,
           outreach.sentAt
         );
 

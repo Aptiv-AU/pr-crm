@@ -326,10 +326,10 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
     bodyHtml += `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${signature}</div>`;
   }
 
-  // Provider dispatch. Gmail's threadId is stored in Outreach.conversationId
-  // — same semantics, no extra column.
+  // Provider dispatch. Gmail's threadId and Microsoft's conversationId share
+  // the same semantics — both stored in Outreach.threadId.
   let messageId: string;
-  let conversationId: string;
+  let threadId: string;
   let sentVia: string;
 
   if (emailAccount.provider === "google") {
@@ -340,7 +340,7 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
       bodyHtml,
     });
     messageId = res.messageId;
-    conversationId = res.threadId;
+    threadId = res.threadId;
     sentVia = "gmail";
   } else {
     const token = await getValidMicrosoftToken(emailAccount.id);
@@ -350,7 +350,7 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
       bodyHtml,
     });
     messageId = res.messageId;
-    conversationId = res.conversationId;
+    threadId = res.conversationId;
     sentVia = "microsoft_graph";
   }
 
@@ -361,7 +361,7 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
       sentAt: new Date(),
       sentVia,
       messageId,
-      conversationId,
+      threadId,
     },
   });
 

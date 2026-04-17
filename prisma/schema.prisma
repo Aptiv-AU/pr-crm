@@ -310,7 +310,7 @@ model Outreach {
   scheduledAt    DateTime?
   sentVia        String?
   messageId      String?
-  conversationId String?
+  threadId      String?
   sentAt         DateTime?
   lastCheckedForReplyAt DateTime?
   createdAt     DateTime  @default(now())
