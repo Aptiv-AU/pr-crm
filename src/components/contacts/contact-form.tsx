@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { createContact, updateContact } from "@/actions/contact-actions";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { TextInput, Textarea } from "@/components/ui/text-input";
 
 const COLOR_PRESETS = [
   { colour: "#92400E", bgColour: "#FEF3C7", label: "Amber" },
@@ -124,26 +126,6 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
     });
   }
 
-  const inputStyle = {
-    width: "100%",
-    height: 34,
-    padding: "0 10px",
-    fontSize: 13,
-    borderRadius: 7,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
-    color: "var(--text-primary)",
-    outline: "none",
-  } as const;
-
-  const labelStyle = {
-    fontSize: 12,
-    fontWeight: 500 as const,
-    color: "var(--text-sub)",
-    marginBottom: 6,
-    display: "block" as const,
-  };
-
   const toggleBtnBase = {
     height: 30,
     padding: "0 14px",
@@ -205,45 +187,42 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
         </div>
       </div>
 
-      {/* Name */}
-      <div>
-        <label style={labelStyle}>Name</label>
-        <input
-          type="text"
+      <Field label="Name">
+        <TextInput
           value={name}
           onChange={(e) => handleNameChange(e.target.value)}
           placeholder="Contact name"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Publication */}
-      <div>
-        <label style={labelStyle}>Publication</label>
-        <input
-          type="text"
+      <Field label="Publication">
+        <TextInput
           value={publication}
           onChange={(e) => setPublication(e.target.value)}
           placeholder="e.g., Vogue Beauty"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Beat */}
-      <div>
-        <label style={labelStyle}>Beat</label>
-        <input
-          type="text"
+      <Field label="Beat">
+        <TextInput
           value={beat}
           onChange={(e) => setBeat(e.target.value)}
           placeholder="e.g., Beauty, Fashion, Lifestyle"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
       {/* Tier */}
       <div>
-        <label style={labelStyle}>Tier</label>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-sub)",
+            marginBottom: 6,
+          }}
+        >
+          Tier
+        </div>
         <div style={{ display: "flex", gap: 8 }}>
           {(["A", "B", "C"] as const).map((t) => (
             <button
@@ -260,9 +239,9 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
 
       {/* Profile Photo */}
       <div>
-        <label style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", marginBottom: 6, display: "block" }}>
+        <div style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", marginBottom: 6 }}>
           Profile Photo
-        </label>
+        </div>
         {photo ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
             <img src={photo} alt="Preview" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover" }} />
@@ -286,16 +265,12 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
               {photoUploading ? "Uploading..." : "Upload photo"}
             </label>
             <div style={{ display: "flex", gap: 6 }}>
-              <input
+              <TextInput
                 type="url"
                 placeholder="Or paste an image URL"
                 value={photoUrl}
                 onChange={(e) => setPhotoUrl(e.target.value)}
-                style={{
-                  flex: 1, padding: "8px 10px", fontSize: 13, borderRadius: 8,
-                  border: "1px solid var(--border-custom)", backgroundColor: "var(--card-bg)",
-                  color: "var(--text-primary)",
-                }}
+                style={{ flex: 1, backgroundColor: "var(--card-bg)" }}
               />
               <button
                 type="button"
@@ -313,22 +288,28 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
         )}
       </div>
 
-      {/* Initials */}
-      <div>
-        <label style={labelStyle}>Initials</label>
-        <input
-          type="text"
+      <Field label="Initials">
+        <TextInput
           value={initials}
           onChange={(e) => setInitials(e.target.value.toUpperCase().slice(0, 2))}
           maxLength={2}
           placeholder="AB"
-          style={{ ...inputStyle, width: 60, textAlign: "center" as const }}
+          style={{ width: 60, textAlign: "center" }}
         />
-      </div>
+      </Field>
 
       {/* Color Picker */}
       <div>
-        <label style={labelStyle}>Color</label>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-sub)",
+            marginBottom: 6,
+          }}
+        >
+          Color
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
           {COLOR_PRESETS.map((preset) => (
             <button
@@ -368,87 +349,69 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
         </div>
       </div>
 
-      {/* Email */}
-      <div>
-        <label style={labelStyle}>Email</label>
-        <input
+      <Field label="Email">
+        <TextInput
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="email@example.com"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Phone */}
-      <div>
-        <label style={labelStyle}>Phone</label>
-        <input
-          type="text"
+      <Field label="Phone">
+        <TextInput
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Phone number"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Instagram */}
-      <div>
-        <label style={labelStyle}>Instagram</label>
-        <input
-          type="text"
+      <Field label="Instagram">
+        <TextInput
           value={instagram}
           onChange={(e) => setInstagram(e.target.value)}
           placeholder="@handle"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Twitter */}
-      <div>
-        <label style={labelStyle}>Twitter</label>
-        <input
-          type="text"
+      <Field label="Twitter">
+        <TextInput
           value={twitter}
           onChange={(e) => setTwitter(e.target.value)}
           placeholder="@handle"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* LinkedIn */}
-      <div>
-        <label style={labelStyle}>LinkedIn</label>
-        <input
-          type="text"
+      <Field label="LinkedIn">
+        <TextInput
           value={linkedin}
           onChange={(e) => setLinkedin(e.target.value)}
           placeholder="URL or handle"
-          style={inputStyle}
         />
-      </div>
+      </Field>
 
-      {/* Notes */}
-      <div>
-        <label style={labelStyle}>Notes</label>
-        <textarea
+      <Field label="Notes">
+        <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Additional notes..."
           rows={3}
-          style={{
-            ...inputStyle,
-            height: "auto",
-            padding: "8px 10px",
-            resize: "vertical" as const,
-          }}
         />
-      </div>
+      </Field>
 
       {/* Health (edit mode only) */}
       {isEdit && (
         <div>
-          <label style={labelStyle}>Health</label>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              color: "var(--text-sub)",
+              marginBottom: 6,
+            }}
+          >
+            Health
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
             {(["warm", "cool", "cold"] as const).map((h) => (
               <button
