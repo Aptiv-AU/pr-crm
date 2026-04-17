@@ -291,7 +291,7 @@ model CampaignSupplier {
   supplier   Supplier  @relation(fields: [supplierId], references: [id])
   role       String
   agreedCost Decimal?
-  status     String    @default("pending")
+  status     SupplierStatus @default(pending)
 
   @@unique([campaignId, supplierId])
 }
@@ -460,4 +460,10 @@ enum PhaseStatus {
   pending
   active
   complete
+}
+
+enum SupplierStatus {
+  pending
+  confirmed
+  cancelled
 }
