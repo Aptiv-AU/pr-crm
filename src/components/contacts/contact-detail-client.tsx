@@ -7,6 +7,7 @@ import { ContactTabs } from "@/components/contacts/contact-tabs";
 import { ContactInfoSidebar } from "@/components/contacts/contact-info-sidebar";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { ContactForm } from "@/components/contacts/contact-form";
+import { TagPicker } from "@/components/contacts/tag-picker";
 
 interface ContactDetailClientProps {
   contact: {
@@ -51,9 +52,16 @@ interface ContactDetailClientProps {
     replyRate: number;
     campaignCount: number;
   };
+  assignedTags?: { id: string; label: string; colorBg: string; colorFg: string }[];
+  availableTags?: { id: string; label: string; colorBg: string; colorFg: string }[];
 }
 
-export function ContactDetailClient({ contact, stats }: ContactDetailClientProps) {
+export function ContactDetailClient({
+  contact,
+  stats,
+  assignedTags = [],
+  availableTags = [],
+}: ContactDetailClientProps) {
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
 
@@ -81,8 +89,25 @@ export function ContactDetailClient({ contact, stats }: ContactDetailClientProps
         </div>
 
         {/* Right column */}
-        <div className="w-full md:w-[300px]">
+        <div className="w-full md:w-[300px] flex flex-col gap-4">
           <ContactInfoSidebar contact={contact} />
+          <div
+            style={{
+              padding: 12,
+              border: "1px solid var(--border-custom)",
+              borderRadius: 8,
+              backgroundColor: "var(--card-bg)",
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: "var(--text-primary)" }}>
+              Tags
+            </div>
+            <TagPicker
+              contactId={contact.id}
+              assigned={assignedTags}
+              available={availableTags}
+            />
+          </div>
         </div>
       </div>
 

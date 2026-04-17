@@ -10,11 +10,41 @@ export default async function ContactsPage() {
     org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
   }
 
-  const [contacts, stats, beats] = await Promise.all([
+  const [contacts, stats, beats, tags, segments, outletRows, tierRows] = await Promise.all([
     getContacts(org.id),
     getContactStats(org.id),
     getContactBeats(org.id),
+    db.contactTag.findMany({
+      where: { organizationId: org.id },
+      orderBy: { label: "asc" },
+    }),
+    db.contactSegment.findMany({
+      where: { organizationId: org.id },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.contact.findMany({
+      where: { organizationId: org.id },
+      select: { outlet: true },
+      distinct: ["outlet"],
+    }),
+    db.contact.findMany({
+      where: { organizationId: org.id },
+      select: { tier: true },
+      distinct: ["tier"],
+    }),
   ]);
+
+  // Load tag assignments for contacts in one shot.
+  const assignments = await db.contactTagAssignment.findMany({
+    where: { contactId: { in: contacts.map((c) => c.id) } },
+    include: { tag: true },
+  });
+  const tagsByContact = new Map<string, typeof assignments>();
+  for (const a of assignments) {
+    const list = tagsByContact.get(a.contactId) ?? [];
+    list.push(a);
+    tagsByContact.set(a.contactId, list);
+  }
 
   const serializedContacts = contacts.map((c) => ({
     id: c.id,
@@ -29,6 +59,12 @@ export default async function ContactsPage() {
     health: c.health,
     createdAt: c.createdAt.toISOString(),
     lastContactDate: c.interactions[0]?.date?.toISOString() ?? null,
+    tags: (tagsByContact.get(c.id) ?? []).map((a) => ({
+      id: a.tag.id,
+      label: a.tag.label,
+      colorBg: a.tag.colorBg,
+      colorFg: a.tag.colorFg,
+    })),
   }));
 
   return (
@@ -36,6 +72,19 @@ export default async function ContactsPage() {
       contacts={serializedContacts}
       stats={stats}
       beats={["All", ...beats.filter((b): b is string => !!b)]}
+      tags={tags.map((t) => ({
+        id: t.id,
+        label: t.label,
+        colorBg: t.colorBg,
+        colorFg: t.colorFg,
+      }))}
+      outlets={outletRows.map((o) => o.outlet).filter((o): o is string => !!o)}
+      tiers={tierRows.map((t) => t.tier).filter((t): t is string => !!t)}
+      segments={segments.map((s) => ({
+        id: s.id,
+        name: s.name,
+        filter: s.filter as object,
+      }))}
     />
   );
 }
