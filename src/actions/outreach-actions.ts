@@ -254,6 +254,18 @@ export async function sendOutreach(outreachId: string) {
       return { error: "Contact has no email address" };
     }
 
+    // Suppression list check — block before any provider dispatch
+    const normalised = outreach.contact.email.trim().toLowerCase();
+    const suppressed = await db.suppression.findFirst({
+      where: {
+        organizationId: outreach.campaign.organizationId,
+        email: normalised,
+      },
+    });
+    if (suppressed) {
+      return { error: `Address is on the suppression list (${suppressed.reason})` };
+    }
+
     // Find an EmailAccount for the org (via user -> organization)
     const emailAccount = await db.emailAccount.findFirst({
       where: {
