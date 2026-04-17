@@ -2,22 +2,8 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
-
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
-
-  if (org) return org.id;
-
-  const newOrg = await db.organization.create({
-    data: {
-      name: "NWPR",
-      currency: "AUD",
-    },
-  });
-
-  return newOrg.id;
-}
 
 export const createClient = action("createClient", async (formData: FormData) => {
   const name = formData.get("name") as string | null;
@@ -31,7 +17,7 @@ export const createClient = action("createClient", async (formData: FormData) =>
     throw new Error("All fields are required");
   }
 
-  const organizationId = await getOrganizationId();
+  const organizationId = await requireOrgId();
 
   const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
     const existing = await db.client.findFirst({
@@ -57,9 +43,20 @@ export const createClient = action("createClient", async (formData: FormData) =>
   return { data: { clientId: client.id }, revalidate: ["/workspaces"] };
 });
 
+async function assertClientInOrg(clientId: string, orgId: string): Promise<void> {
+  const found = await db.client.findFirst({
+    where: { id: clientId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Client not found");
+}
+
 export const updateClient = action(
   "updateClient",
   async (clientId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+    await assertClientInOrg(clientId, organizationId);
+
     const name = formData.get("name") as string | null;
     const industry = formData.get("industry") as string | null;
     const colour = formData.get("colour") as string | null;
@@ -88,13 +85,16 @@ export const updateClient = action(
 );
 
 export const archiveClient = action("archiveClient", async (clientId: string) => {
+  const organizationId = await requireOrgId();
+  await assertClientInOrg(clientId, organizationId);
+
   await db.$transaction([
     db.client.update({
       where: { id: clientId },
       data: { archivedAt: new Date() },
     }),
     db.campaign.updateMany({
-      where: { clientId },
+      where: { clientId, organizationId },
       data: { archivedAt: new Date() },
     }),
   ]);
@@ -103,13 +103,16 @@ export const archiveClient = action("archiveClient", async (clientId: string) =>
 });
 
 export const restoreClient = action("restoreClient", async (clientId: string) => {
+  const organizationId = await requireOrgId();
+  await assertClientInOrg(clientId, organizationId);
+
   await db.$transaction([
     db.client.update({
       where: { id: clientId },
       data: { archivedAt: null },
     }),
     db.campaign.updateMany({
-      where: { clientId },
+      where: { clientId, organizationId },
       data: { archivedAt: null },
     }),
   ]);

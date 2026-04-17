@@ -2,17 +2,8 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
-
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
-
-  if (!org) {
-    throw new Error("Organization not found");
-  }
-
-  return org.id;
-}
 
 export const createSupplier = action("createSupplier", async (formData: FormData) => {
   const name = formData.get("name") as string | null;
@@ -26,7 +17,7 @@ export const createSupplier = action("createSupplier", async (formData: FormData
     throw new Error("Name and service category are required");
   }
 
-  const organizationId = await getOrganizationId();
+  const organizationId = await requireOrgId();
 
   const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
     const existing = await db.supplier.findFirst({
@@ -52,9 +43,20 @@ export const createSupplier = action("createSupplier", async (formData: FormData
   return { data: { supplierId: supplier.id }, revalidate: ["/suppliers"] };
 });
 
+async function assertSupplierInOrg(supplierId: string, orgId: string): Promise<void> {
+  const found = await db.supplier.findFirst({
+    where: { id: supplierId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Supplier not found");
+}
+
 export const updateSupplier = action(
   "updateSupplier",
   async (supplierId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+    await assertSupplierInOrg(supplierId, organizationId);
+
     const name = formData.get("name") as string | null;
     const serviceCategory = formData.get("serviceCategory") as string | null;
     const email = formData.get("email") as string | null;
@@ -99,6 +101,9 @@ export const createSupplierContact = action(
       throw new Error("Supplier and contact name are required");
     }
 
+    const organizationId = await requireOrgId();
+    await assertSupplierInOrg(supplierId, organizationId);
+
     await db.supplierContact.create({
       data: {
         supplierId,
@@ -125,8 +130,9 @@ export const updateSupplierContact = action(
       throw new Error("Contact name is required");
     }
 
-    const existing = await db.supplierContact.findUnique({
-      where: { id: supplierContactId },
+    const organizationId = await requireOrgId();
+    const existing = await db.supplierContact.findFirst({
+      where: { id: supplierContactId, supplier: { organizationId } },
       select: { supplierId: true },
     });
 
@@ -151,8 +157,9 @@ export const updateSupplierContact = action(
 export const deleteSupplierContact = action(
   "deleteSupplierContact",
   async (supplierContactId: string) => {
-    const existing = await db.supplierContact.findUnique({
-      where: { id: supplierContactId },
+    const organizationId = await requireOrgId();
+    const existing = await db.supplierContact.findFirst({
+      where: { id: supplierContactId, supplier: { organizationId } },
       select: { supplierId: true },
     });
 

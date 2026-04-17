@@ -2,16 +2,31 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
+async function assertOptionalCampaignInOrg(
+  campaignId: string | null,
+  orgId: string
+): Promise<void> {
+  if (!campaignId) return;
+  const found = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Campaign not found");
+}
 
-  if (!org) {
-    throw new Error("Organization not found");
-  }
-
-  return org.id;
+async function assertOptionalContactInOrg(
+  contactId: string | null,
+  orgId: string
+): Promise<void> {
+  if (!contactId) return;
+  const found = await db.contact.findFirst({
+    where: { id: contactId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Contact not found");
 }
 
 export const createCoverage = action("createCoverage", async (formData: FormData) => {
@@ -29,7 +44,12 @@ export const createCoverage = action("createCoverage", async (formData: FormData
     throw new Error("Publication, date, and type are required");
   }
 
-  const organizationId = await getOrganizationId();
+  const organizationId = await requireOrgId();
+  await Promise.all([
+    assertOptionalCampaignInOrg(campaignId, organizationId),
+    assertOptionalContactInOrg(contactId, organizationId),
+  ]);
+
   const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
 
   const slug = await ensureUniqueSlug(slugify(publication), async (candidate) => {
@@ -65,6 +85,8 @@ export const createCoverage = action("createCoverage", async (formData: FormData
 export const updateCoverage = action(
   "updateCoverage",
   async (coverageId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+
     const campaignId = formData.get("campaignId") as string | null;
     const contactId = formData.get("contactId") as string | null;
     const publication = formData.get("publication") as string | null;
@@ -79,14 +101,16 @@ export const updateCoverage = action(
       throw new Error("Publication, date, and type are required");
     }
 
-    const existing = await db.coverage.findUnique({
-      where: { id: coverageId },
-      select: { organizationId: true },
+    const existing = await db.coverage.findFirst({
+      where: { id: coverageId, organizationId },
+      select: { id: true },
     });
+    if (!existing) throw new Error("Coverage not found");
 
-    if (!existing) {
-      throw new Error("Coverage not found");
-    }
+    await Promise.all([
+      assertOptionalCampaignInOrg(campaignId, organizationId),
+      assertOptionalContactInOrg(contactId, organizationId),
+    ]);
 
     const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
 
@@ -113,8 +137,9 @@ export const updateCoverage = action(
 );
 
 export const deleteCoverage = action("deleteCoverage", async (coverageId: string) => {
-  const existing = await db.coverage.findUnique({
-    where: { id: coverageId },
+  const organizationId = await requireOrgId();
+  const existing = await db.coverage.findFirst({
+    where: { id: coverageId, organizationId },
     select: { campaignId: true },
   });
 

@@ -2,23 +2,22 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
-
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
-
-  if (!org) {
-    throw new Error("Organization not found");
-  }
-
-  return org.id;
-}
 
 const PHASE_TEMPLATES: Record<string, string[]> = {
   press: ["Draft Pitches", "Outreach", "Coverage"],
   event: ["Planning", "Invite List", "Send Invitations", "Track RSVPs", "Logistics & Runsheet", "Post-event Follow-up"],
   gifting: ["Select Products", "Build Send List", "Ship & Track", "Follow-up", "Coverage Tracking"],
 };
+
+async function assertCampaignInOrg(campaignId: string, orgId: string): Promise<void> {
+  const found = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Campaign not found");
+}
 
 export const createCampaign = action("createCampaign", async (formData: FormData) => {
   const name = formData.get("name") as string | null;
@@ -33,7 +32,14 @@ export const createCampaign = action("createCampaign", async (formData: FormData
     throw new Error("Name, type, and client are required");
   }
 
-  const organizationId = await getOrganizationId();
+  const organizationId = await requireOrgId();
+
+  // Ensure the client belongs to the caller's org.
+  const client = await db.client.findFirst({
+    where: { id: clientId, organizationId },
+    select: { id: true },
+  });
+  if (!client) throw new Error("Client not found");
 
   const budget = budgetStr ? parseFloat(budgetStr) : null;
   const startDate = startDateStr ? new Date(startDateStr) : null;
@@ -82,6 +88,9 @@ export const createCampaign = action("createCampaign", async (formData: FormData
 export const updateCampaign = action(
   "updateCampaign",
   async (campaignId: string, formData: FormData) => {
+    const orgId = await requireOrgId();
+    await assertCampaignInOrg(campaignId, orgId);
+
     const name = formData.get("name") as string | null;
     const status = formData.get("status") as string | null;
     const budgetStr = formData.get("budget") as string | null;
@@ -114,8 +123,9 @@ export const updateCampaign = action(
 export const updatePhaseStatus = action(
   "updatePhaseStatus",
   async (phaseId: string, status: string) => {
-    const phase = await db.campaignPhase.findUnique({
-      where: { id: phaseId },
+    const orgId = await requireOrgId();
+    const phase = await db.campaignPhase.findFirst({
+      where: { id: phaseId, campaign: { organizationId: orgId } },
       include: { campaign: true },
     });
 
@@ -162,6 +172,21 @@ export const updatePhaseStatus = action(
 export const addContactToCampaign = action(
   "addContactToCampaign",
   async (campaignId: string, contactId: string) => {
+    const orgId = await requireOrgId();
+    // Both campaign and contact must live in the caller's org.
+    const [campaign, contact] = await Promise.all([
+      db.campaign.findFirst({
+        where: { id: campaignId, organizationId: orgId },
+        select: { id: true },
+      }),
+      db.contact.findFirst({
+        where: { id: contactId, organizationId: orgId },
+        select: { id: true },
+      }),
+    ]);
+    if (!campaign) throw new Error("Campaign not found");
+    if (!contact) throw new Error("Contact not found");
+
     await db.campaignContact.create({
       data: {
         campaignId,
@@ -177,8 +202,9 @@ export const addContactToCampaign = action(
 export const removeContactFromCampaign = action(
   "removeContactFromCampaign",
   async (campaignContactId: string) => {
-    const existing = await db.campaignContact.findUnique({
-      where: { id: campaignContactId },
+    const orgId = await requireOrgId();
+    const existing = await db.campaignContact.findFirst({
+      where: { id: campaignContactId, campaign: { organizationId: orgId } },
       select: { campaignId: true },
     });
 
@@ -208,13 +234,21 @@ export const addSupplierToCampaign = action(
       throw new Error("Campaign, supplier, and role are required");
     }
 
-    const agreedCost = agreedCostStr ? parseFloat(agreedCostStr) : null;
+    const orgId = await requireOrgId();
+    const [campaign, supplier] = await Promise.all([
+      db.campaign.findFirst({
+        where: { id: campaignId, organizationId: orgId },
+        select: { id: true },
+      }),
+      db.supplier.findFirst({
+        where: { id: supplierId, organizationId: orgId },
+        select: { id: true, name: true },
+      }),
+    ]);
+    if (!campaign) throw new Error("Campaign not found");
+    if (!supplier) throw new Error("Supplier not found");
 
-    // Fetch supplier name for budget description
-    const supplier = await db.supplier.findUnique({
-      where: { id: supplierId },
-      select: { name: true },
-    });
+    const agreedCost = agreedCostStr ? parseFloat(agreedCostStr) : null;
 
     await db.campaignSupplier.create({
       data: {
@@ -230,7 +264,7 @@ export const addSupplierToCampaign = action(
       await db.budgetLineItem.create({
         data: {
           campaignId,
-          description: `${supplier?.name ?? "Supplier"} — ${role}`,
+          description: `${supplier.name} — ${role}`,
           amount: agreedCost,
           confirmed: false,
           supplierId,
@@ -245,9 +279,10 @@ export const addSupplierToCampaign = action(
 export const removeSupplierFromCampaign = action(
   "removeSupplierFromCampaign",
   async (campaignSupplierId: string) => {
-    const existing = await db.campaignSupplier.findUnique({
-      where: { id: campaignSupplierId },
-      select: { campaignId: true },
+    const orgId = await requireOrgId();
+    const existing = await db.campaignSupplier.findFirst({
+      where: { id: campaignSupplierId, campaign: { organizationId: orgId } },
+      select: { campaignId: true, supplierId: true },
     });
 
     if (!existing) {
@@ -255,15 +290,9 @@ export const removeSupplierFromCampaign = action(
     }
 
     // Delete linked budget line items for this supplier+campaign
-    const cs = await db.campaignSupplier.findUnique({
-      where: { id: campaignSupplierId },
-      select: { supplierId: true },
+    await db.budgetLineItem.deleteMany({
+      where: { campaignId: existing.campaignId, supplierId: existing.supplierId },
     });
-    if (cs) {
-      await db.budgetLineItem.deleteMany({
-        where: { campaignId: existing.campaignId, supplierId: cs.supplierId },
-      });
-    }
 
     await db.campaignSupplier.delete({
       where: { id: campaignSupplierId },
@@ -287,9 +316,20 @@ export const addBudgetLineItem = action(
       throw new Error("Campaign, description, and amount are required");
     }
 
+    const orgId = await requireOrgId();
+    await assertCampaignInOrg(campaignId, orgId);
+
     const amount = parseFloat(amountStr);
     if (isNaN(amount)) {
       throw new Error("Amount must be a valid number");
+    }
+
+    if (supplierId) {
+      const supplier = await db.supplier.findFirst({
+        where: { id: supplierId, organizationId: orgId },
+        select: { id: true },
+      });
+      if (!supplier) throw new Error("Supplier not found");
     }
 
     await db.budgetLineItem.create({
@@ -308,8 +348,9 @@ export const addBudgetLineItem = action(
 export const deleteBudgetLineItem = action(
   "deleteBudgetLineItem",
   async (lineItemId: string) => {
-    const existing = await db.budgetLineItem.findUnique({
-      where: { id: lineItemId },
+    const orgId = await requireOrgId();
+    const existing = await db.budgetLineItem.findFirst({
+      where: { id: lineItemId, campaign: { organizationId: orgId } },
       select: { campaignId: true },
     });
 
@@ -330,8 +371,9 @@ export const deleteBudgetLineItem = action(
 export const confirmBudgetLineItem = action(
   "confirmBudgetLineItem",
   async (lineItemId: string, amount?: number, confirmed?: boolean) => {
-    const existing = await db.budgetLineItem.findUnique({
-      where: { id: lineItemId },
+    const orgId = await requireOrgId();
+    const existing = await db.budgetLineItem.findFirst({
+      where: { id: lineItemId, campaign: { organizationId: orgId } },
       select: { campaignId: true },
     });
     if (!existing) throw new Error("Budget line item not found");
@@ -351,8 +393,9 @@ export const confirmBudgetLineItem = action(
 );
 
 export const revertToPhase = action("revertToPhase", async (phaseId: string) => {
-  const phase = await db.campaignPhase.findUnique({
-    where: { id: phaseId },
+  const orgId = await requireOrgId();
+  const phase = await db.campaignPhase.findFirst({
+    where: { id: phaseId, campaign: { organizationId: orgId } },
   });
   if (!phase) throw new Error("Phase not found");
 
@@ -379,6 +422,8 @@ export const revertToPhase = action("revertToPhase", async (phaseId: string) => 
 });
 
 export const completeCampaign = action("completeCampaign", async (campaignId: string) => {
+  const orgId = await requireOrgId();
+  await assertCampaignInOrg(campaignId, orgId);
   await db.campaign.update({
     where: { id: campaignId },
     data: { status: "complete" },
@@ -387,6 +432,8 @@ export const completeCampaign = action("completeCampaign", async (campaignId: st
 });
 
 export const reopenCampaign = action("reopenCampaign", async (campaignId: string) => {
+  const orgId = await requireOrgId();
+  await assertCampaignInOrg(campaignId, orgId);
   await db.campaign.update({
     where: { id: campaignId },
     data: { status: "active" },
@@ -395,6 +442,8 @@ export const reopenCampaign = action("reopenCampaign", async (campaignId: string
 });
 
 export const archiveCampaign = action("archiveCampaign", async (campaignId: string) => {
+  const orgId = await requireOrgId();
+  await assertCampaignInOrg(campaignId, orgId);
   await db.campaign.update({
     where: { id: campaignId },
     data: { archivedAt: new Date() },
@@ -403,6 +452,8 @@ export const archiveCampaign = action("archiveCampaign", async (campaignId: stri
 });
 
 export const restoreCampaign = action("restoreCampaign", async (campaignId: string) => {
+  const orgId = await requireOrgId();
+  await assertCampaignInOrg(campaignId, orgId);
   await db.campaign.update({
     where: { id: campaignId },
     data: { archivedAt: null },

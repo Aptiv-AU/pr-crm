@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
 import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 async function downloadAndStorePhoto(url: string): Promise<string | null> {
@@ -52,16 +53,6 @@ async function resolvePhoto(photoInput: string | null): Promise<string | null> {
   return photoInput; // already a Vercel Blob URL from file upload
 }
 
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
-
-  if (!org) {
-    throw new Error("Organization not found");
-  }
-
-  return org.id;
-}
-
 export const createContact = action("createContact", async (formData: FormData) => {
   const name = formData.get("name") as string | null;
   const email = formData.get("email") as string | null;
@@ -90,7 +81,7 @@ export const createContact = action("createContact", async (formData: FormData) 
     throw new Error("All required fields must be provided");
   }
 
-  const organizationId = await getOrganizationId();
+  const organizationId = await requireOrgId();
 
   const slug = await ensureUniqueSlug(slugify(name), async (candidate) => {
     const existing = await db.contact.findFirst({
@@ -128,6 +119,13 @@ export const createContact = action("createContact", async (formData: FormData) 
 export const updateContact = action(
   "updateContact",
   async (contactId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+    const existing = await db.contact.findFirst({
+      where: { id: contactId, organizationId },
+      select: { id: true },
+    });
+    if (!existing) throw new Error("Contact not found");
+
     const name = formData.get("name") as string | null;
     const email = formData.get("email") as string | null;
     const phone = formData.get("phone") as string | null;

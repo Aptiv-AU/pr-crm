@@ -2,10 +2,34 @@
 
 import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
+
+async function assertCampaignInOrg(campaignId: string, orgId: string): Promise<void> {
+  const found = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Campaign not found");
+}
+
+async function assertEventDetailInOrg(
+  eventDetailId: string,
+  orgId: string
+): Promise<string> {
+  const found = await db.eventDetail.findFirst({
+    where: { id: eventDetailId, campaign: { organizationId: orgId } },
+    select: { campaignId: true },
+  });
+  if (!found) throw new Error("Event detail not found");
+  return found.campaignId;
+}
 
 export const createOrUpdateEventDetail = action(
   "createOrUpdateEventDetail",
   async (campaignId: string, formData: FormData) => {
+    const orgId = await requireOrgId();
+    await assertCampaignInOrg(campaignId, orgId);
+
     const venue = formData.get("venue") as string | null;
     const eventDateStr = formData.get("eventDate") as string | null;
     const eventTime = formData.get("eventTime") as string | null;
@@ -54,6 +78,9 @@ export const addRunsheetEntry = action("addRunsheetEntry", async (formData: Form
     throw new Error("Event detail, time, and activity are required");
   }
 
+  const orgId = await requireOrgId();
+  const campaignId = await assertEventDetailInOrg(eventDetailId, orgId);
+
   const maxOrder = await db.runsheetEntry.aggregate({
     where: { eventDetailId },
     _max: { order: true },
@@ -74,25 +101,25 @@ export const addRunsheetEntry = action("addRunsheetEntry", async (formData: Form
     },
   });
 
-  const eventDetail = await db.eventDetail.findUnique({
-    where: { id: eventDetailId },
-    select: { campaignId: true },
-  });
-
-  const revalidate: string[] = [];
-  if (eventDetail) {
-    revalidate.push(
+  return {
+    revalidate: [
       "/events",
-      `/events/${eventDetail.campaignId}`,
-      `/campaigns/${eventDetail.campaignId}`
-    );
-  }
-  return { revalidate };
+      `/events/${campaignId}`,
+      `/campaigns/${campaignId}`,
+    ],
+  };
 });
 
 export const updateRunsheetEntry = action(
   "updateRunsheetEntry",
   async (entryId: string, formData: FormData) => {
+    const orgId = await requireOrgId();
+    const entry = await db.runsheetEntry.findFirst({
+      where: { id: entryId, eventDetail: { campaign: { organizationId: orgId } } },
+      include: { eventDetail: { select: { campaignId: true } } },
+    });
+    if (!entry) throw new Error("Runsheet entry not found");
+
     const time = formData.get("time") as string | null;
     const endTime = formData.get("endTime") as string | null;
     const activity = formData.get("activity") as string | null;
@@ -112,32 +139,23 @@ export const updateRunsheetEntry = action(
       },
     });
 
-    const entry = await db.runsheetEntry.findUnique({
-      where: { id: entryId },
-      include: { eventDetail: { select: { campaignId: true } } },
-    });
-
-    const revalidate: string[] = [];
-    if (entry) {
-      revalidate.push(
+    return {
+      revalidate: [
         "/events",
         `/events/${entry.eventDetail.campaignId}`,
-        `/campaigns/${entry.eventDetail.campaignId}`
-      );
-    }
-    return { revalidate };
+        `/campaigns/${entry.eventDetail.campaignId}`,
+      ],
+    };
   }
 );
 
 export const deleteRunsheetEntry = action("deleteRunsheetEntry", async (entryId: string) => {
-  const entry = await db.runsheetEntry.findUnique({
-    where: { id: entryId },
+  const orgId = await requireOrgId();
+  const entry = await db.runsheetEntry.findFirst({
+    where: { id: entryId, eventDetail: { campaign: { organizationId: orgId } } },
     include: { eventDetail: { select: { campaignId: true } } },
   });
-
-  if (!entry) {
-    throw new Error("Runsheet entry not found");
-  }
+  if (!entry) throw new Error("Runsheet entry not found");
 
   await db.runsheetEntry.delete({
     where: { id: entryId },
@@ -155,6 +173,18 @@ export const deleteRunsheetEntry = action("deleteRunsheetEntry", async (entryId:
 export const reorderRunsheetEntries = action(
   "reorderRunsheetEntries",
   async (entryIds: string[]) => {
+    if (entryIds.length === 0) return { revalidate: [] };
+    const orgId = await requireOrgId();
+
+    // Preflight: every entry must belong to caller's org.
+    const count = await db.runsheetEntry.count({
+      where: {
+        id: { in: entryIds },
+        eventDetail: { campaign: { organizationId: orgId } },
+      },
+    });
+    if (count !== entryIds.length) throw new Error("Runsheet entry not found");
+
     await db.$transaction(
       entryIds.map((id, i) =>
         db.runsheetEntry.update({
@@ -164,20 +194,18 @@ export const reorderRunsheetEntries = action(
       )
     );
 
-    const revalidate: string[] = [];
-    if (entryIds.length > 0) {
-      const entry = await db.runsheetEntry.findUnique({
-        where: { id: entryIds[0] },
-        include: { eventDetail: { select: { campaignId: true } } },
-      });
+    const first = await db.runsheetEntry.findUnique({
+      where: { id: entryIds[0] },
+      include: { eventDetail: { select: { campaignId: true } } },
+    });
 
-      if (entry) {
-        revalidate.push(
-          "/events",
-          `/events/${entry.eventDetail.campaignId}`,
-          `/campaigns/${entry.eventDetail.campaignId}`
-        );
-      }
+    const revalidate: string[] = [];
+    if (first) {
+      revalidate.push(
+        "/events",
+        `/events/${first.eventDetail.campaignId}`,
+        `/campaigns/${first.eventDetail.campaignId}`
+      );
     }
     return { revalidate };
   }
@@ -186,8 +214,9 @@ export const reorderRunsheetEntries = action(
 export const updateGuestRsvp = action(
   "updateGuestRsvp",
   async (campaignContactId: string, status: string) => {
-    const campaignContact = await db.campaignContact.findUnique({
-      where: { id: campaignContactId },
+    const orgId = await requireOrgId();
+    const campaignContact = await db.campaignContact.findFirst({
+      where: { id: campaignContactId, campaign: { organizationId: orgId } },
       select: { campaignId: true },
     });
 
