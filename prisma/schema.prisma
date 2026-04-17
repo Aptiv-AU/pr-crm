@@ -94,8 +94,22 @@ model Client {
   currency       String?
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]
+  contacts       ClientContact[]
 
   @@index([archivedAt])
+}
+
+model ClientContact {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  role      String?
+  email     String?
+  phone     String?
+  isPrimary Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
 }
 
 model Contact {
@@ -105,9 +119,10 @@ model Contact {
   name             String
   email            String?
   phone            String?
-  publication      String
-  beat             String
-  tier             String
+  outlet           String?
+  beat             String?
+  tier             String?
+  kind             String            @default("journalist")
   health           String            @default("warm")
   initials         String
   avatarBg         String
@@ -149,6 +164,7 @@ model SupplierContact {
   role       String?
   email      String?
   phone      String?
+  notes      String?
 }
 
 model Campaign {

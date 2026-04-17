@@ -14,9 +14,9 @@ interface Contact {
   avatarBg: string;
   avatarFg: string;
   photo?: string | null;
-  publication: string;
-  beat: string;
-  tier: string;
+  publication: string | null;
+  beat: string | null;
+  tier: string | null;
   health: string;
 }
 
@@ -210,8 +210,8 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                     {contact.publication}
                   </div>
                 </div>
-                <Badge variant={tierVariantMap[contact.tier] ?? "default"}>
-                  {contact.tier}
+                <Badge variant={tierVariantMap[contact.tier ?? ""] ?? "default"}>
+                  {contact.tier ?? "—"}
                 </Badge>
                 <Badge variant={healthVariantMap[contact.health] ?? "default"}>
                   {contact.health}

@@ -83,9 +83,9 @@ export async function POST(request: Request) {
             campaign.client.industry,
             {
               name: contact.name,
-              publication: contact.publication,
-              beat: contact.beat,
-              tier: contact.tier,
+              publication: contact.outlet ?? "",
+              beat: contact.beat ?? "",
+              tier: contact.tier ?? "",
             }
           );
 

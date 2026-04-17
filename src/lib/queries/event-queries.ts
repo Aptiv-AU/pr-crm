@@ -66,7 +66,7 @@ export async function getEventDetail(campaignId: string) {
               avatarBg: true,
               avatarFg: true,
               photo: true,
-              publication: true,
+              outlet: true,
               email: true,
             },
           },

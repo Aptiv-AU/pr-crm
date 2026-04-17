@@ -199,9 +199,9 @@ export async function suggestContacts(campaignId: string) {
       contacts.map((c) => ({
         id: c.id,
         name: c.name,
-        publication: c.publication,
-        beat: c.beat,
-        tier: c.tier,
+        publication: c.outlet ?? "",
+        beat: c.beat ?? "",
+        tier: c.tier ?? "",
       }))
     );
 

@@ -142,7 +142,7 @@ export async function generateFollowUps(
       const response = await generateText(config, {
         systemPrompt:
           "You are a PR professional writing a brief, friendly follow-up to a press pitch that hasn't received a response. Keep it under 100 words. Be warm, not pushy.",
-        userPrompt: `Original pitch subject: ${outreach.subject}\nOriginal pitch (first 200 chars): ${outreach.body.slice(0, 200)}...\nJournalist: ${outreach.contact.name} at ${outreach.contact.publication}\nThis is follow-up #${nextFollowUp}.\n\nWrite a subject line and follow-up email body.\nSUBJECT: ...\nBODY: ...`,
+        userPrompt: `Original pitch subject: ${outreach.subject}\nOriginal pitch (first 200 chars): ${outreach.body.slice(0, 200)}...\nJournalist: ${outreach.contact.name} at ${outreach.contact.outlet ?? "their outlet"}\nThis is follow-up #${nextFollowUp}.\n\nWrite a subject line and follow-up email body.\nSUBJECT: ...\nBODY: ...`,
         temperature: 0.7,
         maxTokens: 512,
       });

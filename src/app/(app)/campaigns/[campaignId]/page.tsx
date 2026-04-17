@@ -58,7 +58,7 @@ export default async function CampaignDetailPage({
       avatarBg: c.avatarBg,
       avatarFg: c.avatarFg,
       photo: c.photo,
-      publication: c.publication,
+      publication: c.outlet ?? "",
     }));
 
   // Filter available suppliers (not already in this campaign)
@@ -119,7 +119,7 @@ export default async function CampaignDetailPage({
       id: cc.id,
       contactId: cc.contactId,
       status: cc.status,
-      contact: cc.contact,
+      contact: { ...cc.contact, publication: cc.contact.outlet ?? "" },
     })),
     campaignSuppliers: campaign.campaignSuppliers.map((cs) => ({
       id: cs.id,
@@ -158,7 +158,7 @@ export default async function CampaignDetailPage({
       contactId: o.contactId,
       sentAt: o.sentAt ? o.sentAt.toISOString() : null,
       followUpNumber: o.followUpNumber,
-      contact: o.contact,
+      contact: { ...o.contact, publication: o.contact.outlet ?? "" },
     })),
   };
 

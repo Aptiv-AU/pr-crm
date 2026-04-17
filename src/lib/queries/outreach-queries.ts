@@ -5,7 +5,7 @@ export async function getAllOutreaches(organizationId: string) {
     where: { campaign: { organizationId } },
     include: {
       contact: {
-        select: { id: true, name: true, initials: true, avatarBg: true, avatarFg: true, photo: true, publication: true },
+        select: { id: true, name: true, initials: true, avatarBg: true, avatarFg: true, photo: true, outlet: true },
       },
       campaign: {
         select: {

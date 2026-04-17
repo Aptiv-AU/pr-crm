@@ -23,9 +23,9 @@ export default async function ContactsPage() {
     avatarBg: c.avatarBg,
     avatarFg: c.avatarFg,
     photo: c.photo,
-    publication: c.publication,
-    beat: c.beat,
-    tier: c.tier,
+    publication: c.outlet ?? "",
+    beat: c.beat ?? "",
+    tier: c.tier ?? "",
     health: c.health,
     createdAt: c.createdAt.toISOString(),
     lastContactDate: c.interactions[0]?.date?.toISOString() ?? null,
@@ -35,7 +35,7 @@ export default async function ContactsPage() {
     <ContactsListClient
       contacts={serializedContacts}
       stats={stats}
-      beats={["All", ...beats]}
+      beats={["All", ...beats.filter((b): b is string => !!b)]}
     />
   );
 }

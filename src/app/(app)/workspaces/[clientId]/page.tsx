@@ -37,7 +37,19 @@ export default async function ClientWorkspacePage({
       />
 
       <div style={{ marginTop: 20 }}>
-        <WorkspaceTabs campaigns={client.campaigns} />
+        <WorkspaceTabs
+          campaigns={client.campaigns.map((c) => ({
+            ...c,
+            campaignContacts: c.campaignContacts.map((cc) => ({
+              ...cc,
+              contact: { ...cc.contact, publication: cc.contact.outlet ?? "" },
+            })),
+            outreaches: c.outreaches.map((o) => ({
+              ...o,
+              contact: { ...o.contact, publication: o.contact.outlet ?? "" },
+            })),
+          }))}
+        />
       </div>
     </div>
   );
