@@ -7,38 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { Divider } from "@/components/ui/divider";
 import { APP_NAME } from "@/lib/constants";
 import { ClientSwitcher } from "@/components/clients/client-switcher";
-import type { IconName } from "@/components/ui/icon";
-
-interface NavItem {
-  label: string;
-  icon: IconName;
-  href: string;
-  badge?: string;
-}
-
-function buildGlobalItems(badgeCounts: BadgeCounts): NavItem[] {
-  return [
-    { label: "Dashboard", icon: "sparkle", href: "/dashboard" },
-    { label: "Clients", icon: "workspace", href: "/clients" },
-    { label: "Contacts", icon: "contacts", href: "/contacts", badge: badgeCounts.contacts > 0 ? String(badgeCounts.contacts) : undefined },
-    { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
-    { label: "Coverage", icon: "coverage", href: "/coverage" },
-  ];
-}
-
-function buildWorkspaceItems(badgeCounts: BadgeCounts): NavItem[] {
-  return [
-    { label: "Campaigns", icon: "campaigns", href: "/campaigns", badge: badgeCounts.campaigns > 0 ? String(badgeCounts.campaigns) : undefined },
-    { label: "Outreach", icon: "outreach", href: "/outreach", badge: badgeCounts.outreach > 0 ? String(badgeCounts.outreach) : undefined },
-    { label: "Events", icon: "events", href: "/events" },
-  ];
-}
-
-interface BadgeCounts {
-  contacts: number;
-  campaigns: number;
-  outreach: number;
-}
+import { buildGlobalItems, buildWorkspaceItems, type BadgeCounts } from "./nav-items";
 
 interface UserData {
   name: string;
