@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { titleCase } from "@/lib/format/title-case";
 
 interface ContactTabsProps {
   interactions: { id: string; type: string; date: Date | string; summary: string | null }[];
@@ -199,7 +200,7 @@ export function ContactTabs({ interactions, outreaches, coverages, notes }: Cont
                   {outreach.subject}
                 </div>
                 <Badge variant={outreachStatusVariantMap[outreach.status] ?? "default"}>
-                  {outreach.status}
+                  {titleCase(outreach.status)}
                 </Badge>
                 <div
                   style={{

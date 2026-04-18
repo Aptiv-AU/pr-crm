@@ -12,6 +12,7 @@ import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
 import { ClientBadge } from "@/components/shared/client-badge";
+import { titleCase } from "@/lib/format/title-case";
 
 interface CampaignRow {
   id: string;
@@ -195,7 +196,7 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
                 {/* Status + budget */}
                 <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
                   <Badge variant={statusVariantMap[campaign.status] ?? "default"}>
-                    {campaign.status}
+                    {titleCase(campaign.status)}
                   </Badge>
                   <span style={{ fontSize: 12, color: "var(--text-muted-custom)" }}>
                     {formatBudget(campaign.budget)}

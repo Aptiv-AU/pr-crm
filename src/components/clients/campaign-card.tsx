@@ -1,16 +1,24 @@
-import { Card } from "@/components/ui/card";
+import Link from "next/link";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { ClientBadge } from "@/components/shared/client-badge";
+import { titleCase } from "@/lib/format/title-case";
 
 interface CampaignCardProps {
   campaign: {
     id: string;
+    slug?: string;
     name: string;
-    type: string;
     status: string;
-    dueDate: Date | null;
     campaignContacts: { id: string }[];
     outreaches: { status: string }[];
     coverages: { id: string }[];
+  };
+  client?: {
+    name: string;
+    initials: string;
+    colour: string;
+    bgColour: string;
+    logo?: string | null;
   };
 }
 
@@ -18,47 +26,48 @@ const statusVariantMap: Record<string, BadgeVariant> = {
   active: "active",
   outreach: "outreach",
   draft: "draft",
+  approved: "outreach",
+  sent: "active",
+  replied: "warm",
 };
 
-export function CampaignCard({ campaign }: CampaignCardProps) {
-  const totalOutreaches = campaign.outreaches.length;
-  const nonDraftOutreaches = campaign.outreaches.filter(
-    (o) => o.status !== "draft"
-  ).length;
-  const progress =
-    totalOutreaches > 0
-      ? Math.round((nonDraftOutreaches / totalOutreaches) * 100)
-      : 0;
+export function CampaignCard({ campaign, client }: CampaignCardProps) {
+  const pitches = campaign.outreaches.length;
+  const responses = campaign.outreaches.filter((o) => o.status === "replied").length;
+  const coverage = campaign.coverages.length;
 
-  const repliedCount = campaign.outreaches.filter(
-    (o) => o.status === "replied"
-  ).length;
+  const href = `/campaigns/${campaign.slug ?? campaign.id}`;
 
-  const dueFormatted = campaign.dueDate
-    ? new Date(campaign.dueDate).toLocaleDateString("en-AU", {
-        month: "short",
-        day: "numeric",
-      })
-    : "\u2014";
+  const metaParts = [
+    `${pitches} ${pitches === 1 ? "pitch" : "pitches"}`,
+    `${responses} ${responses === 1 ? "response" : "responses"}`,
+    `${coverage} coverage`,
+  ];
 
   return (
-    <Card style={{ padding: "14px 16px" }}>
-      {/* Type label */}
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          color: "var(--text-muted-custom)",
-          marginBottom: 4,
-        }}
-      >
-        {campaign.type}
-      </div>
-
-      {/* Name + status */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+    <Link
+      href={href}
+      className="block"
+      style={{
+        display: "block",
+        padding: "14px 16px",
+        minHeight: 64,
+        borderRadius: 10,
+        border: "1px solid var(--border-custom)",
+        backgroundColor: "var(--card-bg)",
+        textDecoration: "none",
+        color: "inherit",
+        transition: "border-color 150ms ease, background-color 150ms ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--border-mid)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border-custom)";
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {client && <ClientBadge client={client} size={28} />}
         <div
           style={{
             fontSize: 14,
@@ -74,62 +83,21 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           {campaign.name}
         </div>
         <Badge variant={statusVariantMap[campaign.status] ?? "default"}>
-          {campaign.status}
+          {titleCase(campaign.status)}
         </Badge>
       </div>
 
-      {/* Progress bar */}
       <div
         style={{
-          height: 3,
-          borderRadius: 2,
-          backgroundColor: "var(--border-custom)",
-          marginBottom: 12,
-          overflow: "hidden",
+          marginTop: 6,
+          paddingLeft: client ? 38 : 0,
+          fontSize: 12,
+          color: "var(--text-muted-custom)",
+          lineHeight: 1.4,
         }}
       >
-        <div
-          style={{
-            height: "100%",
-            width: `${progress}%`,
-            borderRadius: 2,
-            backgroundColor: "var(--accent-custom)",
-            transition: "width 300ms ease",
-          }}
-        />
+        {metaParts.join(" · ")}
       </div>
-
-      {/* Metrics grid */}
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          { label: "Contacts", value: campaign.campaignContacts.length },
-          { label: "Replies", value: repliedCount },
-          { label: "Coverage", value: campaign.coverages.length },
-          { label: "Due", value: dueFormatted },
-        ].map((metric) => (
-          <div key={metric.label} style={{ textAlign: "center" }}>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text-primary)",
-                lineHeight: 1.3,
-              }}
-            >
-              {metric.value}
-            </div>
-            <div
-              style={{
-                fontSize: 10,
-                color: "var(--text-muted-custom)",
-                lineHeight: 1.3,
-              }}
-            >
-              {metric.label}
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
+    </Link>
   );
 }

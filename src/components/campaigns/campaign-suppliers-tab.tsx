@@ -6,6 +6,7 @@ import { addSupplierToCampaign, removeSupplierFromCampaign } from "@/actions/bud
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { titleCase } from "@/lib/format/title-case";
 
 interface CampaignSupplier {
   id: string;
@@ -276,7 +277,7 @@ export function CampaignSuppliersTab({
               <div style={{ fontSize: 12, color: "var(--text-sub)", flexShrink: 0 }}>
                 {cs.agreedCost != null ? formatCurrency(cs.agreedCost) : "\u2014"}
               </div>
-              <Badge variant={supplierStatusVariant[cs.status] ?? "default"}>{cs.status}</Badge>
+              <Badge variant={supplierStatusVariant[cs.status] ?? "default"}>{titleCase(cs.status)}</Badge>
               <button
                 onClick={() => handleRemove(cs.id)}
                 disabled={isPending}

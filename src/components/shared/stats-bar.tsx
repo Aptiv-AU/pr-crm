@@ -12,38 +12,38 @@ interface StatsBarProps {
 
 export function StatsBar({ stats }: StatsBarProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px]">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-[6px] md:gap-[10px]">
       {stats.map((stat) => (
-        <Card key={stat.label} style={{ padding: "14px 16px" }}>
+        <Card
+          key={stat.label}
+          className="px-[10px] py-[6px] md:px-4 md:py-[14px]"
+        >
           <div
             style={{
-              fontSize: 16,
               fontWeight: 700,
               color: "var(--text-primary)",
               letterSpacing: "-0.02em",
               lineHeight: 1.2,
             }}
-            className="md:text-[20px]"
+            className="text-[14px] md:text-[20px]"
           >
             {stat.value}
           </div>
           <div
             style={{
-              fontSize: 12,
               fontWeight: 500,
               color: "var(--text-sub)",
-              marginTop: 2,
             }}
+            className="text-[10px] md:text-[12px] mt-0 md:mt-[2px]"
           >
             {stat.label}
           </div>
           {stat.sublabel && (
             <div
               style={{
-                fontSize: 11,
                 color: "var(--text-muted-custom)",
-                marginTop: 1,
               }}
+              className="hidden md:block text-[11px] mt-[1px]"
             >
               {stat.sublabel}
             </div>

@@ -7,6 +7,7 @@ import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { titleCase } from "@/lib/format/title-case";
 
 interface CampaignContact {
   id: string;
@@ -179,7 +180,7 @@ export function CampaignContactsTab({
                   {cc.contact.outlet || "\u2014"}
                 </div>
               </div>
-              <Badge variant={contactStatusVariant[cc.status] ?? "default"}>{cc.status}</Badge>
+              <Badge variant={contactStatusVariant[cc.status] ?? "default"}>{titleCase(cc.status)}</Badge>
               <button
                 onClick={() => handleRemove(cc.id)}
                 disabled={isPending}

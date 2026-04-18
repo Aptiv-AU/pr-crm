@@ -7,6 +7,7 @@ import { suggestContacts } from "@/actions/outreach-actions";
 import { Button } from "@/components/ui/button";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Icon } from "@/components/ui/icon";
+import { titleCase } from "@/lib/format/title-case";
 
 interface ContactPickerProps {
   campaignId: string;
@@ -187,7 +188,7 @@ export function ContactPicker({
                       <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
                     </div>
                     <div style={{ fontSize: 12, fontStyle: "italic", color: "var(--text-sub)", marginTop: 2 }}>
-                      {s.reason}
+                      {titleCase(s.reason)}
                     </div>
                   </div>
                 </div>

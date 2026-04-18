@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { addSuppression, removeSuppression } from "@/actions/suppression-actions";
+import { titleCase } from "@/lib/format/title-case";
 
 interface SuppressionRow {
   id: string;
@@ -164,7 +165,7 @@ export function SuppressionManager({ suppressions }: Props) {
                     {s.email}
                   </td>
                   <td style={{ padding: "10px 12px", color: "var(--text-sub)" }}>
-                    {s.reason}
+                    {titleCase(s.reason)}
                   </td>
                   <td style={{ padding: "10px 12px", color: "var(--text-sub)" }}>
                     {s.note ?? ""}

@@ -4,6 +4,7 @@ import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { titleCase } from "@/lib/format/title-case";
 
 interface ContactHeroProps {
   contact: {
@@ -73,7 +74,7 @@ export function ContactHero({ contact, stats, onEdit }: ContactHeroProps) {
                 {contact.tier}
               </Badge>
               <Badge variant={healthVariantMap[contact.health] ?? "default"}>
-                {contact.health.charAt(0).toUpperCase() + contact.health.slice(1)}
+                {titleCase(contact.health)}
               </Badge>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { titleCase } from "@/lib/format/title-case";
 
 interface Campaign {
   id: string;
@@ -195,7 +196,7 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
                 {campaign.name}
               </span>
               <Badge variant={statusVariantMap[campaign.status] ?? "default"}>
-                {campaign.status}
+                {titleCase(campaign.status)}
               </Badge>
             </div>
           ))}

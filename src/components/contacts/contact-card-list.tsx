@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
+import { titleCase } from "@/lib/format/title-case";
 
 interface ContactRow {
   id: string;
@@ -33,7 +34,7 @@ function TierBadge({ tier }: { tier: string }) {
 function HealthBadge({ health }: { health: string }) {
   if (health === "warm") return <Badge variant="warm">Warm</Badge>;
   if (health === "cool") return <Badge variant="cool">Cool</Badge>;
-  return <Badge variant="default">{health.charAt(0).toUpperCase() + health.slice(1)}</Badge>;
+  return <Badge variant="default">{titleCase(health)}</Badge>;
 }
 
 export function ContactCardList({ contacts }: ContactCardListProps) {

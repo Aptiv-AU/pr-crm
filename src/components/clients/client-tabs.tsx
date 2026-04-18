@@ -14,6 +14,7 @@ import {
 } from "@/components/clients/client-contact-form";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { deleteClientContact } from "@/actions/client-actions";
+import { titleCase } from "@/lib/format/title-case";
 
 interface Contact {
   id: string;
@@ -402,7 +403,7 @@ export function ClientTabs({ clientId, campaigns, clientContacts }: ClientTabsPr
                   {contact.tier ?? "—"}
                 </Badge>
                 <Badge variant={healthVariantMap[contact.health] ?? "default"}>
-                  {contact.health}
+                  {titleCase(contact.health)}
                 </Badge>
                 <Icon name="chevronR" size={14} color="var(--text-muted-custom)" />
               </div>
@@ -459,7 +460,7 @@ export function ClientTabs({ clientId, campaigns, clientContacts }: ClientTabsPr
                     </span>
                   )}
                   <div className="ml-auto shrink-0">
-                    <Badge variant={STATUS_BADGE_VARIANT[o.status] ?? "default"}>{o.status}</Badge>
+                    <Badge variant={STATUS_BADGE_VARIANT[o.status] ?? "default"}>{titleCase(o.status)}</Badge>
                   </div>
                 </div>
                 <div className="flex items-center gap-[8px] mt-[6px]">

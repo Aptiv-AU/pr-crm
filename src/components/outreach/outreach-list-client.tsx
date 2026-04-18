@@ -8,6 +8,7 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { ClientBadge } from "@/components/shared/client-badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { EmptyState } from "@/components/shared/empty-state";
+import { titleCase } from "@/lib/format/title-case";
 
 interface OutreachContact {
   id: string;
@@ -137,7 +138,7 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
                 )}
                 <div className="ml-auto shrink-0">
                   <Badge variant={STATUS_BADGE_VARIANT[outreach.status] ?? "default"}>
-                    {outreach.status}
+                    {titleCase(outreach.status)}
                   </Badge>
                 </div>
               </div>

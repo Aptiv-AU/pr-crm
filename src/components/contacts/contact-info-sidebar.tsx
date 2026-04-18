@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
+import { titleCase } from "@/lib/format/title-case";
 
 interface CampaignContactData {
   id: string;
@@ -149,7 +150,7 @@ export function ContactInfoSidebar({ contact }: ContactInfoSidebarProps) {
                   {cc.campaign.name}
                 </div>
                 <Badge variant={campaignStatusVariantMap[cc.campaign.status] ?? "default"}>
-                  {cc.campaign.status}
+                  {titleCase(cc.campaign.status)}
                 </Badge>
               </div>
             ))}

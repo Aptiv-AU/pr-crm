@@ -6,6 +6,7 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { SupplierContactForm } from "@/components/suppliers/supplier-contact-form";
+import { titleCase } from "@/lib/format/title-case";
 
 interface SupplierContact {
   id: string;
@@ -274,7 +275,7 @@ export function SupplierTabs({
                   {formatCurrency(cs.agreedCost)}
                 </div>
                 <Badge variant={campaignSupplierStatusVariantMap[cs.status] ?? "default"}>
-                  {cs.status}
+                  {titleCase(cs.status)}
                 </Badge>
               </div>
             ))
