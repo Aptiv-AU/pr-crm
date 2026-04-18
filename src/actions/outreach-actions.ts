@@ -333,13 +333,17 @@ export const scheduleOutreach = action(
     }
     const existing = await db.outreach.findFirst({
       where: { id: outreachId, campaign: { organizationId: orgId } },
-      select: { campaignId: true, contactId: true },
+      select: { campaignId: true, contactId: true, status: true },
     });
     if (!existing) throw new Error("Outreach not found");
+    if (existing.status !== OutreachStatus.approved) {
+      // Scheduling must not bypass the approval gate; require the user to
+      // approve the draft explicitly before they can schedule a send.
+      throw new Error("Outreach must be approved before scheduling");
+    }
     await db.outreach.update({
       where: { id: outreachId },
       data: {
-        status: OutreachStatus.approved,
         scheduledAt,
         claimedAt: null,
       },
@@ -383,10 +387,19 @@ async function loadSendableOutreach(
   orgId: string
 ): Promise<SendableOutreach> {
   const outreach = await db.outreach.findFirst({
-    where: { id, campaign: { organizationId: orgId } },
+    where: {
+      id,
+      campaign: { organizationId: orgId },
+      // Race guard: a row currently being claimed by the cron worker (or a
+      // concurrent manual click) must not be picked up here. `claimedAt` is
+      // set atomically by `claimDueOutreaches` before any send happens.
+      claimedAt: null,
+    },
     include: { contact: true, campaign: true },
   });
-  if (!outreach) throw new Error("Outreach not found");
+  if (!outreach) {
+    throw new Error("Outreach not found or already being sent");
+  }
   if (outreach.status !== OutreachStatus.approved) {
     throw new Error("Outreach must be approved before sending");
   }
