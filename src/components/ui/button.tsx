@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ButtonHTMLAttributes } from "react";
+import { type CSSProperties, type ButtonHTMLAttributes, type Ref } from "react";
 import { Icon, type IconName } from "./icon";
 
 type ButtonVariant = "primary" | "default" | "ghost";
@@ -11,6 +11,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   icon?: IconName;
   children?: React.ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const variantStyles: Record<ButtonVariant, CSSProperties> = {
@@ -50,10 +51,12 @@ export function Button({
   children,
   className,
   style,
+  ref,
   ...props
 }: ButtonProps) {
   return (
     <button
+      ref={ref}
       className={`inline-flex items-center justify-center rounded-[7px] font-medium whitespace-nowrap cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${className ?? ""}`}
       style={{ ...variantStyles[variant], ...style }}
       {...props}
