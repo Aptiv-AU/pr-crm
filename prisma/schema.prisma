@@ -322,6 +322,7 @@ model Outreach {
   @@index([campaignId, contactId, followUpNumber])
   @@index([status, scheduledAt, claimedAt])
   @@index([threadId])
+  @@index([sentAt])
 }
 
 model Reply {
