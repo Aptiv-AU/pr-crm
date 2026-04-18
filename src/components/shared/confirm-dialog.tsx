@@ -28,7 +28,7 @@ export function ConfirmDialog({
       <div
         style={{
           backgroundColor: "var(--card-bg)", borderRadius: 12, padding: 24,
-          maxWidth: 380, width: "100%", margin: "0 16px",
+          maxWidth: 380, width: "calc(100% - 32px)", margin: "0 16px",
           border: "1px solid var(--border-custom)",
         }}
         onClick={(e) => e.stopPropagation()}

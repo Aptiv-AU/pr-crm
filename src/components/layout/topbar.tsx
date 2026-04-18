@@ -137,16 +137,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           >
             <Icon name="search" size={16} color="var(--text-sub)" />
           </button>
-          <button
-            className="flex items-center justify-center rounded-full border-none cursor-pointer"
-            style={{
-              width: 28,
-              height: 28,
-              backgroundColor: "var(--accent-custom)",
-            }}
-          >
-            <Icon name="plus" size={14} color="#fff" />
-          </button>
         </div>
       </header>
     </>

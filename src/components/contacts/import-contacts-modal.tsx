@@ -123,7 +123,7 @@ export function ImportContactsModal({
           borderRadius: 12,
           padding: 24,
           maxWidth: 720,
-          width: "100%",
+          width: "calc(100% - 32px)",
           margin: "0 16px",
           border: "1px solid var(--border-custom)",
           maxHeight: "90vh",
