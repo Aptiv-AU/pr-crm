@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 
 interface ContactTabsProps {
   interactions: { id: string; type: string; date: Date | string; summary: string | null }[];
-  outreaches: { id: string; subject: string; status: string; createdAt: Date | string }[];
+  outreaches: { id: string; subject: string; status: string; createdAt: Date | string; campaignId: string }[];
   coverages: {
     id: string;
     publication: string;
@@ -18,7 +19,7 @@ interface ContactTabsProps {
   notes: string | null;
 }
 
-const tabs = ["Timeline", "Pitches", "Coverage", "Notes"] as const;
+const tabs = ["Timeline", "Outreach", "Coverage", "Notes"] as const;
 type Tab = (typeof tabs)[number];
 
 const interactionTypeVariantMap: Record<string, BadgeVariant> = {
@@ -148,8 +149,8 @@ export function ContactTabs({ interactions, outreaches, coverages, notes }: Cont
         </div>
       )}
 
-      {/* Pitches */}
-      {activeTab === "Pitches" && (
+      {/* Outreach */}
+      {activeTab === "Outreach" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {outreaches.length === 0 ? (
             <div
@@ -160,17 +161,28 @@ export function ContactTabs({ interactions, outreaches, coverages, notes }: Cont
                 fontSize: 13,
               }}
             >
-              No pitches yet
+              No outreach yet
             </div>
           ) : (
             outreaches.map((outreach) => (
-              <div
+              <Link
                 key={outreach.id}
+                href={`/campaigns/${outreach.campaignId}?tab=Outreach`}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
-                  padding: "8px 0",
+                  padding: "8px 10px",
+                  margin: "0 -10px",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                  transition: "background-color 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--page-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
                 <div
@@ -198,7 +210,7 @@ export function ContactTabs({ interactions, outreaches, coverages, notes }: Cont
                 >
                   {formatDate(outreach.createdAt)}
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>
