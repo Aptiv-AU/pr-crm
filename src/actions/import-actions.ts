@@ -10,6 +10,13 @@ import { slugify, ensureUniqueSlug } from "@/lib/slug/slugify";
 
 const MAX_IMPORT_ROWS = 5000;
 const UPDATE_CHUNK = 100;
+/**
+ * Above this org-contact count, the O(M*N) fuzzy preview pass is too slow
+ * to block the import modal on. Email-based dedup still runs in
+ * `importContacts`, so users don't lose deduplication — they just lose the
+ * "possible name match" highlights for large orgs.
+ */
+const FUZZY_PREVIEW_MAX_CONTACTS = 20_000;
 
 type ExistingMergeRow = {
   id: string;
@@ -55,6 +62,14 @@ export const previewContactDedup = action(
     }
     const organizationId = await requireOrgId();
 
+    // Cheap pre-check: if the org has too many contacts to fuzzy-match
+    // synchronously, skip the preview entirely. The import modal still
+    // works — `importContacts` does email-based dedup independently.
+    const contactCount = await db.contact.count({ where: { organizationId } });
+    if (contactCount > FUZZY_PREVIEW_MAX_CONTACTS) {
+      return { data: { matches: [] as DedupPreviewMatch[], tooLargeForFuzzy: true } };
+    }
+
     const existing = await db.contact.findMany({
       where: { organizationId },
       select: { id: true, name: true, email: true, outlet: true },
@@ -75,7 +90,7 @@ export const previewContactDedup = action(
       existing: byId.get(m.matchId)!,
     }));
 
-    return { data: { matches: enriched } };
+    return { data: { matches: enriched, tooLargeForFuzzy: false } };
   }
 );
 

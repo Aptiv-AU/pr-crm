@@ -275,6 +275,7 @@ function PreviewStep({
 }) {
   const { valid, skipped } = mapRowsToContacts(rows, mapping);
   const [matches, setMatches] = useState<DedupPreviewMatch[] | null>(null);
+  const [tooLargeForFuzzy, setTooLargeForFuzzy] = useState(false);
   const [matchError, setMatchError] = useState<string | null>(null);
   // Per-row decisions; keys are indices into `valid`. Rows without a match
   // are implicit "create" and don't need a key.
@@ -291,6 +292,7 @@ function PreviewStep({
         return;
       }
       setMatches(res.matches);
+      setTooLargeForFuzzy(Boolean(res.tooLargeForFuzzy));
       // Initialise defaults: merge for email, create-new (highlighted) for fuzzy.
       const initial: Record<number, RowDecision> = {};
       for (const m of res.matches) {
@@ -328,6 +330,11 @@ function PreviewStep({
         <p style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 12 }}>
           {emailMatches} exact email match{emailMatches === 1 ? "" : "es"} ·{" "}
           {fuzzyMatches} possible name match{fuzzyMatches === 1 ? "" : "es"} (review)
+        </p>
+      )}
+      {tooLargeForFuzzy && (
+        <p style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 8 }}>
+          Fuzzy matching skipped — too many contacts. Email matches still apply.
         </p>
       )}
       {matchError && (
