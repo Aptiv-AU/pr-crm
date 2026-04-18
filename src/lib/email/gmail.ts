@@ -1,5 +1,41 @@
 import { google } from "googleapis";
+import type { gmail_v1 } from "googleapis";
 import { db } from "@/lib/db";
+import { htmlToText, stripQuotedReply } from "./reply-body";
+
+/**
+ * Walk a Gmail MIME payload tree and collect the first text/plain and
+ * text/html parts. Both top-level (no `parts`) and nested multipart messages
+ * are handled.
+ */
+function extractGmailBodies(
+  payload: gmail_v1.Schema$MessagePart | undefined,
+): { plain: string | null; html: string | null } {
+  let plain: string | null = null;
+  let html: string | null = null;
+
+  function decode(data: string | null | undefined): string {
+    if (!data) return "";
+    return Buffer.from(data, "base64url").toString("utf8");
+  }
+
+  function visit(part: gmail_v1.Schema$MessagePart | undefined) {
+    if (!part) return;
+    const mime = (part.mimeType ?? "").toLowerCase();
+    const data = part.body?.data;
+    if (mime === "text/plain" && plain === null && data) {
+      plain = decode(data);
+    } else if (mime === "text/html" && html === null && data) {
+      html = decode(data);
+    }
+    if (part.parts && part.parts.length) {
+      for (const child of part.parts) visit(child);
+    }
+  }
+
+  visit(payload);
+  return { plain, html };
+}
 
 const SCOPES = [
   "https://www.googleapis.com/auth/gmail.send",
@@ -174,8 +210,12 @@ export async function getGmailThreadReplies(
   {
     id: string;
     from: string;
+    fromName: string | null;
     receivedDateTime: string;
+    subject: string | null;
     bodyPreview: string;
+    bodyText: string;
+    bodyHtml: string | null;
   }[]
 > {
   const client = oauthClient("");
@@ -191,11 +231,11 @@ export async function getGmailThreadReplies(
     // fall through — if we can't get the profile, don't filter
   }
 
+  // Need full payload (not metadata) to decode body parts.
   const { data: thread } = await gmail.users.threads.get({
     userId: "me",
     id: threadId,
-    format: "metadata",
-    metadataHeaders: ["From", "Subject", "Date"],
+    format: "full",
   });
 
   const afterMs = afterDate.getTime();
@@ -205,19 +245,31 @@ export async function getGmailThreadReplies(
   return messages
     .map((msg) => {
       const headers = msg.payload?.headers ?? [];
-      const fromHeader =
-        headers.find((h) => h.name?.toLowerCase() === "from")?.value ?? "";
+      const headerVal = (name: string) =>
+        headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
+      const fromHeader = headerVal("from");
+      const subjectHeader = headerVal("subject");
+      const nameMatch = fromHeader.match(/^"?([^"<]+?)"?\s*<[^>]+>$/);
+      const fromName = nameMatch ? nameMatch[1].trim() : null;
       // Extract bare email from "Name <email@x>" form
       const fromEmail = (fromHeader.match(/<([^>]+)>/)?.[1] ?? fromHeader)
         .trim()
         .toLowerCase();
       const internalMs = msg.internalDate ? Number(msg.internalDate) : 0;
+
+      const { plain, html } = extractGmailBodies(msg.payload ?? undefined);
+      const rawText = plain ?? (html ? htmlToText(html) : "");
+      const bodyText = stripQuotedReply(rawText);
+
       return {
         id: msg.id ?? "",
         fromEmail,
-        fromDisplay: fromHeader,
+        fromName,
+        subject: subjectHeader || null,
         internalMs,
         snippet: msg.snippet ?? "",
+        bodyText,
+        bodyHtml: html,
       };
     })
     .filter((m) => m.internalMs > afterMs)
@@ -225,8 +277,12 @@ export async function getGmailThreadReplies(
     .sort((a, b) => b.internalMs - a.internalMs)
     .map((m) => ({
       id: m.id,
-      from: m.fromEmail || m.fromDisplay,
+      from: m.fromEmail,
+      fromName: m.fromName,
       receivedDateTime: new Date(m.internalMs).toISOString(),
+      subject: m.subject,
       bodyPreview: m.snippet,
+      bodyText: m.bodyText,
+      bodyHtml: m.bodyHtml,
     }));
 }

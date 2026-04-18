@@ -184,6 +184,14 @@ export default async function CampaignDetailPage({
       scheduledAt: o.scheduledAt ? o.scheduledAt.toISOString() : null,
       followUpNumber: o.followUpNumber,
       contact: { ...o.contact, outlet: o.contact.outlet ?? "" },
+      replies: o.replies.map((r) => ({
+        id: r.id,
+        fromEmail: r.fromEmail,
+        fromName: r.fromName,
+        receivedAt: r.receivedAt.toISOString(),
+        subject: r.subject,
+        bodyText: r.bodyText,
+      })),
     })),
   };
 

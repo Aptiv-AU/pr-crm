@@ -20,8 +20,15 @@ export type SendResult = {
 export type Reply = {
   id: string;
   from: string;
+  fromName: string | null;
   receivedDateTime: string;
+  subject: string | null;
   bodyPreview: string;
+  /** Cleaned plaintext (HTML-stripped + quoted-reply removed). Always populated. */
+  bodyText: string;
+  /** Raw HTML when the source message had an HTML part. Stored for future rich
+   * rendering — never inserted into the DOM as-is. */
+  bodyHtml: string | null;
 };
 
 export type TokenBundle = {

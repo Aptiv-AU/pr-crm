@@ -99,6 +99,14 @@ interface CampaignDetailClientProps {
         email: string | null;
         outlet: string | null;
       };
+      replies: {
+        id: string;
+        fromEmail: string;
+        fromName: string | null;
+        receivedAt: string;
+        subject: string | null;
+        bodyText: string;
+      }[];
     }[];
   };
   budgetStats: { spent: number; total: number | null };

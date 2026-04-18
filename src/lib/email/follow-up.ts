@@ -89,28 +89,62 @@ async function checkOne(
     );
 
     if (replies.length > 0) {
+      // Persist every reply (idempotent via the unique
+      // [outreachId, providerMessageId] index).
+      for (const reply of replies) {
+        await db.reply.upsert({
+          where: {
+            outreachId_providerMessageId: {
+              outreachId: outreach.id,
+              providerMessageId: reply.id,
+            },
+          },
+          create: {
+            outreachId: outreach.id,
+            providerMessageId: reply.id,
+            fromEmail: reply.from,
+            fromName: reply.fromName,
+            receivedAt: new Date(reply.receivedDateTime),
+            subject: reply.subject,
+            bodyText: reply.bodyText,
+            bodyHtml: reply.bodyHtml,
+          },
+          update: {},
+        });
+      }
+
+      // Only flip status + log interaction the first time we transition to
+      // replied. Subsequent reply ingestions just upsert the new rows.
+      const firstTransition = outreach.status !== OutreachStatus.replied;
       const firstReply = replies[0];
 
-      await db.outreach.update({
-        where: { id: outreach.id },
-        data: {
-          status: OutreachStatus.replied,
-          lastCheckedForReplyAt: new Date(),
-        },
-      });
+      if (firstTransition) {
+        await db.outreach.update({
+          where: { id: outreach.id },
+          data: {
+            status: OutreachStatus.replied,
+            lastCheckedForReplyAt: new Date(),
+          },
+        });
 
-      await db.interaction.create({
-        data: {
-          type: "reply_received",
-          contactId: outreach.contactId,
-          campaignId: outreach.campaignId,
-          organizationId: outreach.campaign.organizationId,
-          date: new Date(firstReply.receivedDateTime),
-          summary: `Reply received: ${firstReply.bodyPreview.slice(0, 100)}`,
-        },
-      });
+        await db.interaction.create({
+          data: {
+            type: "reply_received",
+            contactId: outreach.contactId,
+            campaignId: outreach.campaignId,
+            organizationId: outreach.campaign.organizationId,
+            date: new Date(firstReply.receivedDateTime),
+            summary: `Reply received: ${firstReply.bodyPreview.slice(0, 100)}`,
+          },
+        });
+      } else {
+        await db.outreach.update({
+          where: { id: outreach.id },
+          data: { lastCheckedForReplyAt: new Date() },
+        });
+      }
 
-      return true;
+      return firstTransition;
     }
 
     await db.outreach.update({
@@ -120,9 +154,11 @@ async function checkOne(
 
     return false;
   } catch (error) {
+    // Log id only — error message may contain provider response excerpts but
+    // never log the outreach/contact/reply objects themselves.
     console.error(
       `Failed to check replies for outreach ${outreach.id}:`,
-      error
+      error instanceof Error ? error.message : "unknown error"
     );
     // Still stamp so a broken thread doesn't get hammered every cron tick.
     await db.outreach

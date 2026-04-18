@@ -31,6 +31,14 @@ interface OutreachSendCardProps {
       email: string | null;
       outlet: string | null;
     };
+    replies?: {
+      id: string;
+      fromEmail: string;
+      fromName: string | null;
+      receivedAt: string;
+      subject: string | null;
+      bodyText: string;
+    }[];
   };
   emailConnected: boolean;
   isSuppressed?: boolean;
@@ -321,6 +329,63 @@ export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: Out
         <div className="text-[13px] font-medium" style={{ color: "var(--text-primary)", marginBottom: 10 }}>
           {outreach.subject}
         </div>
+        {outreach.replies && outreach.replies.length > 0 && (
+          <div className="flex flex-col gap-[10px]" style={{ marginBottom: 12 }}>
+            {outreach.replies.map((reply) => {
+              const senderLabel = reply.fromName?.trim()
+                ? `${reply.fromName} <${reply.fromEmail}>`
+                : reply.fromEmail;
+              const receivedLabel = new Date(reply.receivedAt).toLocaleString(
+                "en-AU",
+                {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }
+              );
+              return (
+                <div
+                  key={reply.id}
+                  style={{
+                    border: "1px solid var(--border-custom)",
+                    borderRadius: 8,
+                    padding: 10,
+                    backgroundColor: "var(--bg-subtle, rgba(255,255,255,0.02))",
+                  }}
+                >
+                  <div
+                    className="flex items-center justify-between"
+                    style={{ marginBottom: 6 }}
+                  >
+                    <span
+                      className="text-[12px] font-medium"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {senderLabel}
+                    </span>
+                    <span
+                      className="text-[11px]"
+                      style={{ color: "var(--text-muted-custom)" }}
+                    >
+                      {receivedLabel}
+                    </span>
+                  </div>
+                  <pre
+                    className="whitespace-pre-wrap text-sm"
+                    style={{
+                      color: "var(--text-sub)",
+                      fontFamily: "inherit",
+                      margin: 0,
+                    }}
+                  >
+                    {reply.bodyText}
+                  </pre>
+                </div>
+              );
+            })}
+          </div>
+        )}
         {contact.email && (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <Button

@@ -120,6 +120,17 @@ export async function getCampaignById(campaignId: string) {
               outlet: true,
             },
           },
+          replies: {
+            select: {
+              id: true,
+              fromEmail: true,
+              fromName: true,
+              receivedAt: true,
+              subject: true,
+              bodyText: true,
+            },
+            orderBy: { receivedAt: "asc" },
+          },
         },
       },
       coverages: {
