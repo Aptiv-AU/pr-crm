@@ -1,13 +1,13 @@
 import { db } from "@/lib/db";
 import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
 import { StatsBar } from "@/components/shared/stats-bar";
-import { ClientCard } from "@/components/workspaces/client-card";
-import { AddClientButton } from "@/components/workspaces/add-client-button";
+import { ClientCard } from "@/components/clients/client-card";
+import { AddClientButton } from "@/components/clients/add-client-button";
 import { EmptyState } from "@/components/shared/empty-state";
 
 export const dynamic = "force-dynamic";
 
-export default async function WorkspacesPage() {
+export default async function ClientsPage() {
   // Get or create default org
   let org = await db.organization.findFirst();
   if (!org) {
@@ -58,7 +58,7 @@ export default async function WorkspacesPage() {
             marginBottom: 10,
           }}
         >
-          Client workspaces
+          Clients
         </div>
 
         {clients.length > 0 ? (
@@ -75,7 +75,7 @@ export default async function WorkspacesPage() {
           <EmptyState
             icon="workspace"
             title="Welcome to Pressroom"
-            description="Add your first client workspace to start managing campaigns, contacts, and coverage."
+            description="Add your first client to start managing campaigns, contacts, and coverage."
           />
         )}
 

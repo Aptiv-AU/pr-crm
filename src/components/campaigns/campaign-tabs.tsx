@@ -93,6 +93,14 @@ interface CampaignTabsProps {
       email: string | null;
       outlet: string | null;
     };
+    replies: {
+      id: string;
+      fromEmail: string;
+      fromName: string | null;
+      receivedAt: string;
+      subject: string | null;
+      bodyText: string;
+    }[];
   }[];
   coverages?: {
     id: string;

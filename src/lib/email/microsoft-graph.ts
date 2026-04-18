@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { htmlToText, stripQuotedReply } from "./reply-body";
 
 const TENANT_ID = process.env.MICROSOFT_TENANT_ID || "common";
 const CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || "";
@@ -235,15 +236,25 @@ export async function getConversationReplies(
   {
     id: string;
     from: string;
+    fromName: string | null;
     receivedDateTime: string;
+    subject: string | null;
     bodyPreview: string;
+    bodyText: string;
+    bodyHtml: string | null;
   }[]
 > {
+  // Reject single-quote in conversationId — would break out of the OData
+  // single-quoted literal and inject filter clauses.
+  if (conversationId.includes("'")) {
+    throw new Error("Invalid conversationId");
+  }
+
   const filter = encodeURIComponent(
     `conversationId eq '${conversationId}' and receivedDateTime gt ${afterDate.toISOString()}`
   );
   const res = await fetch(
-    `${GRAPH_BASE}/me/messages?$filter=${filter}&$orderby=receivedDateTime desc&$top=10&$select=id,from,receivedDateTime,bodyPreview`,
+    `${GRAPH_BASE}/me/messages?$filter=${filter}&$orderby=receivedDateTime desc&$top=10&$select=id,from,receivedDateTime,subject,bodyPreview,body`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
 
@@ -273,10 +284,22 @@ export async function getConversationReplies(
       return fromEmail !== userEmail;
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((msg: any) => ({
-      id: msg.id,
-      from: msg.from?.emailAddress?.address ?? "",
-      receivedDateTime: msg.receivedDateTime,
-      bodyPreview: msg.bodyPreview ?? "",
-    }));
+    .map((msg: any) => {
+      const contentType: string = (msg.body?.contentType ?? "").toLowerCase();
+      const content: string = msg.body?.content ?? "";
+      const isHtml = contentType === "html";
+      const bodyHtml = isHtml ? content : null;
+      const rawText = isHtml ? htmlToText(content) : content;
+      const bodyText = stripQuotedReply(rawText);
+      return {
+        id: msg.id,
+        from: msg.from?.emailAddress?.address ?? "",
+        fromName: msg.from?.emailAddress?.name ?? null,
+        receivedDateTime: msg.receivedDateTime,
+        subject: msg.subject ?? null,
+        bodyPreview: msg.bodyPreview ?? "",
+        bodyText,
+        bodyHtml,
+      };
+    });
 }

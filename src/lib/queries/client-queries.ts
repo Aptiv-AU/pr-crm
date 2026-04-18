@@ -26,6 +26,9 @@ export async function getClientById(clientId: string) {
   const client = await db.client.findUnique({
     where: { id: clientId },
     include: {
+      contacts: {
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+      },
       campaigns: {
         include: {
           campaignContacts: {

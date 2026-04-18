@@ -36,7 +36,7 @@ export const createClient = action("createClient", async (formData: FormData) =>
 
   return {
     data: { clientId: client.id },
-    revalidate: ["/workspaces"],
+    revalidate: ["/clients"],
     revalidateTags: [
       `clients:${organizationId}`,
       `campaigns:${organizationId}`,
@@ -82,7 +82,7 @@ export const updateClient = action(
     });
 
     return {
-      revalidate: ["/workspaces", `/workspaces/${clientId}`],
+      revalidate: ["/clients", `/clients/${clientId}`],
       revalidateTags: [
         `clients:${organizationId}`,
         `campaigns:${organizationId}`,
@@ -107,7 +107,7 @@ export const archiveClient = action("archiveClient", async (clientId: string) =>
   ]);
 
   return {
-    revalidate: ["/workspaces", "/campaigns"],
+    revalidate: ["/clients", "/campaigns"],
     revalidateTags: [
       `clients:${organizationId}`,
       `campaigns:${organizationId}`,
@@ -115,6 +115,119 @@ export const archiveClient = action("archiveClient", async (clientId: string) =>
     ],
   };
 });
+
+export const createClientContact = action(
+  "createClientContact",
+  async (formData: FormData) => {
+    const clientId = formData.get("clientId") as string | null;
+    const name = formData.get("name") as string | null;
+    const role = formData.get("role") as string | null;
+    const email = formData.get("email") as string | null;
+    const phone = formData.get("phone") as string | null;
+    const notes = formData.get("notes") as string | null;
+    const isPrimary = formData.get("isPrimary") === "true";
+
+    if (!clientId || !name) {
+      throw new Error("Client and contact name are required");
+    }
+
+    const organizationId = await requireOrgId();
+    await assertClientInOrg(clientId, organizationId);
+
+    if (isPrimary) {
+      await db.clientContact.updateMany({
+        where: { clientId, isPrimary: true },
+        data: { isPrimary: false },
+      });
+    }
+
+    await db.clientContact.create({
+      data: {
+        clientId,
+        name,
+        role: role || null,
+        email: email || null,
+        phone: phone || null,
+        notes: notes || null,
+        isPrimary,
+      },
+    });
+
+    return { revalidate: [`/clients/${clientId}`] };
+  }
+);
+
+export const updateClientContact = action(
+  "updateClientContact",
+  async (clientContactId: string, formData: FormData) => {
+    const name = formData.get("name") as string | null;
+    const role = formData.get("role") as string | null;
+    const email = formData.get("email") as string | null;
+    const phone = formData.get("phone") as string | null;
+    const notes = formData.get("notes") as string | null;
+    const isPrimary = formData.get("isPrimary") === "true";
+
+    if (!name) {
+      throw new Error("Contact name is required");
+    }
+
+    const organizationId = await requireOrgId();
+    const existing = await db.clientContact.findFirst({
+      where: { id: clientContactId, client: { organizationId } },
+      select: { clientId: true },
+    });
+
+    if (!existing) {
+      throw new Error("Client contact not found");
+    }
+
+    if (isPrimary) {
+      await db.clientContact.updateMany({
+        where: {
+          clientId: existing.clientId,
+          isPrimary: true,
+          id: { not: clientContactId },
+        },
+        data: { isPrimary: false },
+      });
+    }
+
+    await db.clientContact.update({
+      where: { id: clientContactId },
+      data: {
+        name,
+        role: role || null,
+        email: email || null,
+        phone: phone || null,
+        notes: notes || null,
+        isPrimary,
+      },
+    });
+
+    return { revalidate: [`/clients/${existing.clientId}`] };
+  }
+);
+
+export const deleteClientContact = action(
+  "deleteClientContact",
+  async (clientContactId: string) => {
+    const organizationId = await requireOrgId();
+    const existing = await db.clientContact.findFirst({
+      where: { id: clientContactId, client: { organizationId } },
+      select: { clientId: true },
+    });
+
+    if (!existing) {
+      throw new Error("Client contact not found");
+    }
+
+    await db.clientContact.delete({
+      where: { id: clientContactId },
+    });
+
+    return { revalidate: [`/clients/${existing.clientId}`] };
+  }
+);
 
 export const restoreClient = action("restoreClient", async (clientId: string) => {
   const organizationId = await requireOrgId();
@@ -131,7 +244,7 @@ export const restoreClient = action("restoreClient", async (clientId: string) =>
     }),
   ]);
   return {
-    revalidate: ["/workspaces", "/campaigns"],
+    revalidate: ["/clients", "/campaigns"],
     revalidateTags: [
       `clients:${organizationId}`,
       `campaigns:${organizationId}`,

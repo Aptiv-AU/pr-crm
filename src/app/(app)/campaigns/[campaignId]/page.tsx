@@ -8,6 +8,12 @@ import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
+// unstable_cache serializes Date → string, so callers must handle either shape.
+function toIso(d: Date | string | null | undefined): string | null {
+  if (d == null) return null;
+  return typeof d === "string" ? d : d.toISOString();
+}
+
 export default async function CampaignDetailPage({
   params,
 }: {
@@ -112,7 +118,7 @@ export default async function CampaignDetailPage({
       eventDetailData = {
         id: ed.id,
         venue: ed.venue,
-        eventDate: ed.eventDate ? ed.eventDate.toISOString() : null,
+        eventDate: toIso(ed.eventDate),
         eventTime: ed.eventTime,
         guestCount: ed.guestCount,
         runsheetEntries: ed.runsheetEntries,
@@ -128,8 +134,8 @@ export default async function CampaignDetailPage({
     type: campaign.type,
     status: campaign.status,
     budget: campaign.budget ? Number(campaign.budget) : null,
-    startDate: campaign.startDate ? campaign.startDate.toISOString() : null,
-    dueDate: campaign.dueDate ? campaign.dueDate.toISOString() : null,
+    startDate: toIso(campaign.startDate),
+    dueDate: toIso(campaign.dueDate),
     brief: campaign.brief,
     clientId: campaign.clientId,
     client: campaign.client,
@@ -163,7 +169,7 @@ export default async function CampaignDetailPage({
     coverages: campaign.coverages.map((cov) => ({
       id: cov.id,
       publication: cov.publication,
-      date: cov.date ? cov.date.toISOString() : new Date().toISOString(),
+      date: toIso(cov.date) ?? new Date().toISOString(),
       type: cov.type,
       url: cov.url,
       mediaValue: cov.mediaValue ? Number(cov.mediaValue) : null,
@@ -180,9 +186,18 @@ export default async function CampaignDetailPage({
       status: o.status,
       generatedByAI: o.generatedByAI,
       contactId: o.contactId,
-      sentAt: o.sentAt ? o.sentAt.toISOString() : null,
+      sentAt: toIso(o.sentAt),
+      scheduledAt: toIso(o.scheduledAt),
       followUpNumber: o.followUpNumber,
       contact: { ...o.contact, outlet: o.contact.outlet ?? "" },
+      replies: o.replies.map((r) => ({
+        id: r.id,
+        fromEmail: r.fromEmail,
+        fromName: r.fromName,
+        receivedAt: toIso(r.receivedAt) ?? new Date().toISOString(),
+        subject: r.subject,
+        bodyText: r.bodyText,
+      })),
     })),
   };
 

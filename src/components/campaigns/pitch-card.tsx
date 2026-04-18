@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { updateOutreachDraft, approveOutreach, revertOutreachToDraft, deleteOutreach } from "@/actions/outreach-actions";
 import { listTemplates, applyTemplateToOutreach } from "@/actions/template-actions";
@@ -48,6 +49,41 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [templateError, setTemplateError] = useState<string | null>(null);
+  const templateButtonRef = useRef<HTMLButtonElement>(null);
+  const [templateMenuPos, setTemplateMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    if (!templatesOpen) {
+      setTemplateMenuPos(null);
+      return;
+    }
+    function updatePos() {
+      const btn = templateButtonRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      setTemplateMenuPos({ top: r.bottom + 4, left: r.left, width: Math.max(220, r.width) });
+    }
+    updatePos();
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [templatesOpen]);
+
+  useEffect(() => {
+    if (!templatesOpen) return;
+    function onDocClick(e: MouseEvent) {
+      const btn = templateButtonRef.current;
+      if (btn && btn.contains(e.target as Node)) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("[data-template-menu]")) return;
+      setTemplatesOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [templatesOpen]);
 
   useEffect(() => {
     if (!templatesOpen || templatesList !== null) return;
@@ -239,6 +275,7 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
             </Button>
             <div style={{ position: "relative" }}>
               <Button
+                ref={templateButtonRef}
                 variant="ghost"
                 size="sm"
                 icon="mail"
@@ -247,15 +284,15 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
               >
                 {applyingTemplate ? "Loading..." : "Load template"}
               </Button>
-              {templatesOpen && (
+              {templatesOpen && templateMenuPos && typeof document !== "undefined" && createPortal(
                 <div
+                  data-template-menu
                   style={{
-                    position: "absolute",
-                    left: 0,
-                    top: "100%",
-                    marginTop: 4,
-                    zIndex: 10,
-                    minWidth: 220,
+                    position: "fixed",
+                    top: templateMenuPos.top,
+                    left: templateMenuPos.left,
+                    zIndex: 1000,
+                    minWidth: templateMenuPos.width,
                     backgroundColor: "var(--card-bg)",
                     border: "1px solid var(--border-custom)",
                     borderRadius: 8,
@@ -303,7 +340,8 @@ export function PitchCard({ outreach, onRegenerate }: PitchCardProps) {
                         {t.name}
                       </button>
                     ))}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
             {templateError && (

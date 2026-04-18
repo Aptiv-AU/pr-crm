@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { Icon } from "@/components/ui/icon";
 import { Divider } from "@/components/ui/divider";
 import { APP_NAME } from "@/lib/constants";
-import { WorkspaceSwitcher } from "@/components/workspaces/workspace-switcher";
+import { ClientSwitcher } from "@/components/clients/client-switcher";
 import type { IconName } from "@/components/ui/icon";
 
 interface NavItem {
@@ -18,7 +18,8 @@ interface NavItem {
 
 function buildGlobalItems(badgeCounts: BadgeCounts): NavItem[] {
   return [
-    { label: "Workspaces", icon: "workspace", href: "/workspaces" },
+    { label: "Dashboard", icon: "sparkle", href: "/dashboard" },
+    { label: "Clients", icon: "workspace", href: "/clients" },
     { label: "Contacts", icon: "contacts", href: "/contacts", badge: badgeCounts.contacts > 0 ? String(badgeCounts.contacts) : undefined },
     { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
     { label: "Coverage", icon: "coverage", href: "/coverage" },
@@ -102,9 +103,9 @@ export function Sidebar({ clients, badgeCounts, userData }: SidebarProps) {
         </div>
       </div>
 
-      {/* Workspace switcher */}
+      {/* Client switcher */}
       <div className="pt-4 pb-1">
-        <WorkspaceSwitcher clients={clients} />
+        <ClientSwitcher clients={clients} />
       </div>
 
       {/* Nav items */}

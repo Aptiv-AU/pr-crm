@@ -27,7 +27,7 @@ interface ContactDetailClientProps {
     linkedin: string | null;
     notes: string | null;
     interactions: { id: string; type: string; date: string; summary: string | null }[];
-    outreaches: { id: string; subject: string; status: string; createdAt: string }[];
+    outreaches: { id: string; subject: string; status: string; createdAt: string; campaignId: string }[];
     coverages: { id: string; publication: string; date: string; type: string; mediaValue: any }[];
     campaignContacts: {
       id: string;

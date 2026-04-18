@@ -6,11 +6,7 @@ import { requireOrgId } from "@/lib/server/org";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
-import {
-  providerFor,
-  type OutgoingMessage,
-  type SendResult,
-} from "@/lib/email/provider";
+import { providerFor, type SendResult } from "@/lib/email/provider";
 import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 import { OutreachStatus, type EmailAccount, type Prisma } from "@prisma/client";
 
@@ -295,13 +291,29 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
   return { data: { suggestions } };
 });
 
-export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
-  const orgId = await requireOrgId();
+export async function sendOutreachForOrg(outreachId: string, orgId: string) {
+  const account = await requireEmailAccount(orgId);
+  const token = await providerFor(account).getValidToken(account.id);
+  return sendOutreachWithAccount(outreachId, orgId, account, token);
+}
+
+/**
+ * Per-row send variant used by the cron worker, which resolves
+ * `EmailAccount` + access token ONCE per org and reuses them across many
+ * sends to avoid the per-row `requireEmailAccount` + `getValidToken`
+ * roundtrips.
+ */
+export async function sendOutreachWithAccount(
+  outreachId: string,
+  orgId: string,
+  account: EmailAccount,
+  token: string
+) {
   const outreach = await loadSendableOutreach(outreachId, orgId);
   await assertNotSuppressed(outreach, orgId);
-  const account = await requireEmailAccount(outreach.campaign.organizationId);
   const bodyHtml = renderOutreachHtml(outreach.body, account);
-  const sent = await sendViaProvider(account, {
+  const provider = providerFor(account);
+  const sent = await provider.send(token, {
     to: outreach.contact.email!,
     subject: outreach.subject,
     bodyHtml,
@@ -317,17 +329,99 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
       `stats:${orgId}`,
     ],
   };
+}
+
+/** Resolves an org's email account + a fresh access token in one call. */
+export async function resolveOrgEmailAccount(
+  orgId: string
+): Promise<{ account: EmailAccount; token: string }> {
+  const account = await requireEmailAccount(orgId);
+  const token = await providerFor(account).getValidToken(account.id);
+  return { account, token };
+}
+
+export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
+  const orgId = await requireOrgId();
+  return sendOutreachForOrg(outreachId, orgId);
 });
+
+export const scheduleOutreach = action(
+  "scheduleOutreach",
+  async (outreachId: string, scheduledAtIso: string) => {
+    const orgId = await requireOrgId();
+    const scheduledAt = new Date(scheduledAtIso);
+    if (!isFinite(+scheduledAt) || scheduledAt <= new Date()) {
+      throw new Error("Scheduled time must be a valid future date");
+    }
+    const existing = await db.outreach.findFirst({
+      where: { id: outreachId, campaign: { organizationId: orgId } },
+      select: { campaignId: true, contactId: true, status: true },
+    });
+    if (!existing) throw new Error("Outreach not found");
+    if (existing.status !== OutreachStatus.approved) {
+      // Scheduling must not bypass the approval gate; require the user to
+      // approve the draft explicitly before they can schedule a send.
+      throw new Error("Outreach must be approved before scheduling");
+    }
+    await db.outreach.update({
+      where: { id: outreachId },
+      data: {
+        scheduledAt,
+        claimedAt: null,
+      },
+    });
+    return {
+      revalidate: [`/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+        `stats:${orgId}`,
+      ],
+    };
+  }
+);
+
+export const cancelScheduledOutreach = action(
+  "cancelScheduledOutreach",
+  async (outreachId: string) => {
+    const orgId = await requireOrgId();
+    const existing = await db.outreach.findFirst({
+      where: { id: outreachId, campaign: { organizationId: orgId } },
+      select: { campaignId: true, contactId: true },
+    });
+    if (!existing) throw new Error("Outreach not found");
+    await db.outreach.update({
+      where: { id: outreachId },
+      data: { scheduledAt: null, claimedAt: null },
+    });
+    return {
+      revalidate: [`/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+      ],
+    };
+  }
+);
 
 async function loadSendableOutreach(
   id: string,
   orgId: string
 ): Promise<SendableOutreach> {
   const outreach = await db.outreach.findFirst({
-    where: { id, campaign: { organizationId: orgId } },
+    where: {
+      id,
+      campaign: { organizationId: orgId },
+      // Race guard: a row currently being claimed by the cron worker (or a
+      // concurrent manual click) must not be picked up here. `claimedAt` is
+      // set atomically by `claimDueOutreaches` before any send happens.
+      claimedAt: null,
+    },
     include: { contact: true, campaign: true },
   });
-  if (!outreach) throw new Error("Outreach not found");
+  if (!outreach) {
+    throw new Error("Outreach not found or already being sent");
+  }
   if (outreach.status !== OutreachStatus.approved) {
     throw new Error("Outreach must be approved before sending");
   }
@@ -377,15 +471,6 @@ function renderOutreachHtml(body: string, account: EmailAccount): string {
     `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${inner}</div>`;
 
   return signature ? wrap(paragraphHtml) + wrap(signature) : wrap(paragraphHtml);
-}
-
-async function sendViaProvider(
-  account: EmailAccount,
-  msg: OutgoingMessage
-): Promise<SendResult> {
-  const p = providerFor(account);
-  const token = await p.getValidToken(account.id);
-  return p.send(token, msg);
 }
 
 async function markOutreachSent(

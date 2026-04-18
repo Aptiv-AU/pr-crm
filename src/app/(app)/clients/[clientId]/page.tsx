@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import { getClientById, getClientStats } from "@/lib/queries/client-queries";
-import { ClientHero } from "@/components/workspaces/client-hero";
-import { WorkspaceTabs } from "@/components/workspaces/workspace-tabs";
+import { ClientHero } from "@/components/clients/client-hero";
+import { ClientTabs } from "@/components/clients/client-tabs";
 import { db } from "@/lib/db";
 import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientWorkspacePage({
+export default async function ClientDetailPage({
   params,
 }: {
   params: Promise<{ clientId: string }>;
@@ -54,7 +54,17 @@ export default async function ClientWorkspacePage({
       />
 
       <div style={{ marginTop: 20 }}>
-        <WorkspaceTabs
+        <ClientTabs
+          clientId={client.id}
+          clientContacts={client.contacts.map((c) => ({
+            id: c.id,
+            name: c.name,
+            role: c.role,
+            email: c.email,
+            phone: c.phone,
+            notes: c.notes,
+            isPrimary: c.isPrimary,
+          }))}
           campaigns={client.campaigns.map((c) => ({
             ...c,
             campaignContacts: c.campaignContacts.map((cc) => ({

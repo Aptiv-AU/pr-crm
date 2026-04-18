@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
-import { ClientForm } from "@/components/workspaces/client-form";
+import { ClientForm } from "@/components/clients/client-form";
 
 interface ClientOption {
   id: string;
@@ -17,11 +17,11 @@ interface ClientOption {
   logo?: string | null;
 }
 
-interface WorkspaceSwitcherProps {
+interface ClientSwitcherProps {
   clients: ClientOption[];
 }
 
-export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
+export function ClientSwitcher({ clients }: ClientSwitcherProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -30,10 +30,10 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
 
   // Derive active client from URL (handle is either cuid or slug)
   const pathSegments = pathname.split("/");
-  const workspaceIndex = pathSegments.indexOf("workspaces");
+  const clientsIndex = pathSegments.indexOf("clients");
   const activeHandle =
-    workspaceIndex !== -1 && pathSegments.length > workspaceIndex + 1
-      ? pathSegments[workspaceIndex + 1]
+    clientsIndex !== -1 && pathSegments.length > clientsIndex + 1
+      ? pathSegments[clientsIndex + 1]
       : undefined;
 
   const activeClient = activeHandle
@@ -65,9 +65,9 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
   function handleSelect(handle?: string) {
     setOpen(false);
     if (handle) {
-      router.push(`/workspaces/${handle}`);
+      router.push(`/clients/${handle}`);
     } else {
-      router.push("/workspaces");
+      router.push("/clients");
     }
   }
 

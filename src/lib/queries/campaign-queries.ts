@@ -106,6 +106,7 @@ export async function getCampaignById(campaignId: string) {
           contactId: true,
           createdAt: true,
           sentAt: true,
+          scheduledAt: true,
           followUpNumber: true,
           contact: {
             select: {
@@ -118,6 +119,17 @@ export async function getCampaignById(campaignId: string) {
               email: true,
               outlet: true,
             },
+          },
+          replies: {
+            select: {
+              id: true,
+              fromEmail: true,
+              fromName: true,
+              receivedAt: true,
+              subject: true,
+              bodyText: true,
+            },
+            orderBy: { receivedAt: "asc" },
           },
         },
       },

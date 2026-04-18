@@ -313,10 +313,33 @@ model Outreach {
   threadId      String?
   sentAt         DateTime?
   lastCheckedForReplyAt DateTime?
+  claimedAt     DateTime?
   createdAt     DateTime  @default(now())
+
+  replies       Reply[]
 
   @@index([campaignId, status])
   @@index([campaignId, contactId, followUpNumber])
+  @@index([status, scheduledAt, claimedAt])
+  @@index([threadId])
+  @@index([sentAt])
+}
+
+model Reply {
+  id                String   @id @default(cuid())
+  outreachId        String
+  outreach          Outreach @relation(fields: [outreachId], references: [id], onDelete: Cascade)
+  providerMessageId String
+  fromEmail         String
+  fromName          String?
+  receivedAt        DateTime
+  subject           String?
+  bodyText          String   @db.Text
+  bodyHtml          String?  @db.Text
+  createdAt         DateTime @default(now())
+
+  @@unique([outreachId, providerMessageId])
+  @@index([outreachId])
 }
 
 model Coverage {

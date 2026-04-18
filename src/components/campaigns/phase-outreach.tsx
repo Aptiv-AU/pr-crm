@@ -15,6 +15,7 @@ interface OutreachPhaseProps {
     body: string;
     status: string;
     sentAt: string | null;
+    scheduledAt?: string | null;
     followUpNumber: number;
     contact: {
       id: string;
@@ -25,6 +26,14 @@ interface OutreachPhaseProps {
       email: string | null;
       outlet: string | null;
     };
+    replies: {
+      id: string;
+      fromEmail: string;
+      fromName: string | null;
+      receivedAt: string;
+      subject: string | null;
+      bodyText: string;
+    }[];
   }[];
   emailConnected: boolean;
   suppressedEmails?: string[];

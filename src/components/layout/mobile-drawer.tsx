@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import { Icon } from "@/components/ui/icon";
 import { Divider } from "@/components/ui/divider";
 import { APP_NAME } from "@/lib/constants";
-import { WorkspaceSwitcher } from "@/components/workspaces/workspace-switcher";
+import { ClientSwitcher } from "@/components/clients/client-switcher";
 import type { IconName } from "@/components/ui/icon";
 
 interface NavItem {
@@ -30,7 +30,7 @@ interface UserData {
 
 function buildGlobalItems(badgeCounts: BadgeCounts): NavItem[] {
   return [
-    { label: "Workspaces", icon: "workspace", href: "/workspaces" },
+    { label: "Clients", icon: "workspace", href: "/clients" },
     { label: "Contacts", icon: "contacts", href: "/contacts", badge: badgeCounts.contacts > 0 ? String(badgeCounts.contacts) : undefined },
     { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
     { label: "Coverage", icon: "coverage", href: "/coverage" },
@@ -154,9 +154,9 @@ export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: 
           </button>
         </div>
 
-        {/* Workspace switcher */}
+        {/* Client switcher */}
         <div className="pt-4 pb-1">
-          <WorkspaceSwitcher clients={clients} />
+          <ClientSwitcher clients={clients} />
         </div>
 
         {/* Nav items */}
