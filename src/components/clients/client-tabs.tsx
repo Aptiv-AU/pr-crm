@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { CampaignCard } from "@/components/clients/campaign-card";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import {
+  ClientContactForm,
+  type ClientContactFormContact,
+} from "@/components/clients/client-contact-form";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { deleteClientContact } from "@/actions/client-actions";
 
 interface Contact {
   id: string;
@@ -61,10 +69,12 @@ const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
 };
 
 interface ClientTabsProps {
+  clientId: string;
   campaigns: Campaign[];
+  clientContacts: ClientContactFormContact[];
 }
 
-const tabs = ["Campaigns", "Contacts", "Outreach", "Coverage"] as const;
+const tabs = ["Campaigns", "People", "Contacts", "Outreach", "Coverage"] as const;
 type Tab = (typeof tabs)[number];
 
 const tierVariantMap: Record<string, BadgeVariant> = {
@@ -79,8 +89,46 @@ const healthVariantMap: Record<string, BadgeVariant> = {
   hot: "active",
 };
 
-export function ClientTabs({ campaigns }: ClientTabsProps) {
+export function ClientTabs({ clientId, campaigns, clientContacts }: ClientTabsProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("Campaigns");
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [editingContact, setEditingContact] =
+    useState<ClientContactFormContact | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<ClientContactFormContact | null>(null);
+  const [isDeleting, startDelete] = useTransition();
+
+  function openAddContact() {
+    setEditingContact(null);
+    setContactModalOpen(true);
+  }
+
+  function openEditContact(contact: ClientContactFormContact) {
+    setEditingContact(contact);
+    setContactModalOpen(true);
+  }
+
+  function handleContactSuccess() {
+    setContactModalOpen(false);
+    setEditingContact(null);
+    router.refresh();
+  }
+
+  function confirmDelete() {
+    const target = deleteTarget;
+    if (!target) return;
+    startDelete(async () => {
+      const res = await deleteClientContact(target.id);
+      if ("error" in res) {
+        // Surface in alert as a last resort — form-level error UI is for the form
+        alert(res.error);
+        return;
+      }
+      setDeleteTarget(null);
+      router.refresh();
+    });
+  }
 
   // Deduplicate contacts across all campaigns
   const contactMap = new Map<string, Contact>();
@@ -151,6 +199,145 @@ export function ClientTabs({ campaigns }: ClientTabsProps) {
             campaigns.map((campaign) => (
               <CampaignCard key={campaign.id} campaign={campaign} />
             ))
+          )}
+        </div>
+      )}
+
+      {activeTab === "People" && (
+        <div>
+          <div style={{ marginBottom: 12 }}>
+            <Button
+              variant="default"
+              size="sm"
+              icon="plus"
+              onClick={openAddContact}
+            >
+              Add key contact
+            </Button>
+          </div>
+          {clientContacts.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 20px",
+                color: "var(--text-muted-custom)",
+                fontSize: 13,
+              }}
+            >
+              No key contacts yet. Add the main person you liaise with at this
+              client.
+            </div>
+          ) : (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              {clientContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid var(--border-custom)",
+                    backgroundColor: "var(--card-bg)",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {contact.name}
+                      </div>
+                      {contact.role && (
+                        <div
+                          style={{ fontSize: 12, color: "var(--text-sub)" }}
+                        >
+                          {contact.role}
+                        </div>
+                      )}
+                      {contact.isPrimary && (
+                        <Badge variant="accent">Primary</Badge>
+                      )}
+                    </div>
+                    {(contact.email || contact.phone) && (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 12,
+                          flexWrap: "wrap",
+                          marginTop: 4,
+                        }}
+                      >
+                        {contact.email && (
+                          <a
+                            href={`mailto:${contact.email}`}
+                            style={{
+                              fontSize: 12,
+                              color: "var(--text-primary)",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {contact.email}
+                          </a>
+                        )}
+                        {contact.phone && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {contact.phone}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {contact.notes && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-sub)",
+                          marginTop: 4,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {contact.notes}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    style={{ display: "flex", gap: 4, flexShrink: 0 }}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      icon="edit"
+                      onClick={() => openEditContact(contact)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      icon="close"
+                      onClick={() => setDeleteTarget(contact)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -317,6 +504,30 @@ export function ClientTabs({ campaigns }: ClientTabsProps) {
           </div>
         );
       })()}
+
+      <ClientContactForm
+        open={contactModalOpen}
+        clientId={clientId}
+        clientContact={editingContact}
+        onClose={() => {
+          setContactModalOpen(false);
+          setEditingContact(null);
+        }}
+        onSuccess={handleContactSuccess}
+      />
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete key contact?"
+          body={`Remove ${deleteTarget.name} from this client's key contacts. This can't be undone.`}
+          confirmLabel="Delete"
+          isPending={isDeleting}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            if (!isDeleting) setDeleteTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -55,6 +55,16 @@ export default async function ClientDetailPage({
 
       <div style={{ marginTop: 20 }}>
         <ClientTabs
+          clientId={client.id}
+          clientContacts={client.contacts.map((c) => ({
+            id: c.id,
+            name: c.name,
+            role: c.role,
+            email: c.email,
+            phone: c.phone,
+            notes: c.notes,
+            isPrimary: c.isPrimary,
+          }))}
           campaigns={client.campaigns.map((c) => ({
             ...c,
             campaignContacts: c.campaignContacts.map((cc) => ({
