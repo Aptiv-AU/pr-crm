@@ -295,8 +295,7 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
   return { data: { suggestions } };
 });
 
-export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
-  const orgId = await requireOrgId();
+export async function sendOutreachForOrg(outreachId: string, orgId: string) {
   const outreach = await loadSendableOutreach(outreachId, orgId);
   await assertNotSuppressed(outreach, orgId);
   const account = await requireEmailAccount(outreach.campaign.organizationId);
@@ -317,7 +316,67 @@ export const sendOutreach = action("sendOutreach", async (outreachId: string) =>
       `stats:${orgId}`,
     ],
   };
+}
+
+export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
+  const orgId = await requireOrgId();
+  return sendOutreachForOrg(outreachId, orgId);
 });
+
+export const scheduleOutreach = action(
+  "scheduleOutreach",
+  async (outreachId: string, scheduledAtIso: string) => {
+    const orgId = await requireOrgId();
+    const scheduledAt = new Date(scheduledAtIso);
+    if (!isFinite(+scheduledAt) || scheduledAt <= new Date()) {
+      throw new Error("Scheduled time must be a valid future date");
+    }
+    const existing = await db.outreach.findFirst({
+      where: { id: outreachId, campaign: { organizationId: orgId } },
+      select: { campaignId: true, contactId: true },
+    });
+    if (!existing) throw new Error("Outreach not found");
+    await db.outreach.update({
+      where: { id: outreachId },
+      data: {
+        status: OutreachStatus.approved,
+        scheduledAt,
+        claimedAt: null,
+      },
+    });
+    return {
+      revalidate: [`/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+        `stats:${orgId}`,
+      ],
+    };
+  }
+);
+
+export const cancelScheduledOutreach = action(
+  "cancelScheduledOutreach",
+  async (outreachId: string) => {
+    const orgId = await requireOrgId();
+    const existing = await db.outreach.findFirst({
+      where: { id: outreachId, campaign: { organizationId: orgId } },
+      select: { campaignId: true, contactId: true },
+    });
+    if (!existing) throw new Error("Outreach not found");
+    await db.outreach.update({
+      where: { id: outreachId },
+      data: { scheduledAt: null, claimedAt: null },
+    });
+    return {
+      revalidate: [`/campaigns/${existing.campaignId}`],
+      revalidateTags: [
+        `campaign:${existing.campaignId}`,
+        `contact:${existing.contactId}`,
+      ],
+    };
+  }
+);
 
 async function loadSendableOutreach(
   id: string,

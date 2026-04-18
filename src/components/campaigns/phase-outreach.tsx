@@ -15,6 +15,7 @@ interface OutreachPhaseProps {
     body: string;
     status: string;
     sentAt: string | null;
+    scheduledAt?: string | null;
     followUpNumber: number;
     contact: {
       id: string;

@@ -181,6 +181,7 @@ export default async function CampaignDetailPage({
       generatedByAI: o.generatedByAI,
       contactId: o.contactId,
       sentAt: o.sentAt ? o.sentAt.toISOString() : null,
+      scheduledAt: o.scheduledAt ? o.scheduledAt.toISOString() : null,
       followUpNumber: o.followUpNumber,
       contact: { ...o.contact, outlet: o.contact.outlet ?? "" },
     })),

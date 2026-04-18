@@ -4,8 +4,13 @@ import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
-import { sendOutreach, approveOutreach } from "@/actions/outreach-actions";
+import {
+  sendOutreach,
+  approveOutreach,
+  cancelScheduledOutreach,
+} from "@/actions/outreach-actions";
 import { addSuppression } from "@/actions/suppression-actions";
+import { ScheduleModal } from "@/components/outreach/schedule-modal";
 
 interface OutreachSendCardProps {
   outreach: {
@@ -14,6 +19,7 @@ interface OutreachSendCardProps {
     body: string;
     status: string;
     sentAt: string | null;
+    scheduledAt?: string | null;
     followUpNumber: number;
     contact: {
       id: string;
@@ -33,7 +39,23 @@ interface OutreachSendCardProps {
 export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: OutreachSendCardProps) {
   const [isPending, startTransition] = useTransition();
   const [suppressed, setSuppressed] = useState(!!isSuppressed);
+  const [showSchedule, setShowSchedule] = useState(false);
   const { contact } = outreach;
+
+  function handleCancelSchedule() {
+    startTransition(async () => {
+      await cancelScheduledOutreach(outreach.id);
+    });
+  }
+
+  const scheduledLabel = outreach.scheduledAt
+    ? new Date(outreach.scheduledAt).toLocaleString("en-AU", {
+        day: "numeric",
+        month: "short",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
 
   function handleAddToSuppression() {
     if (!contact.email) return;
@@ -171,15 +193,49 @@ export function OutreachSendCard({ outreach, emailConnected, isSuppressed }: Out
         >
           {outreach.subject}
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          icon="mail"
-          onClick={handleSend}
-          disabled={isPending || !contact.email || !emailConnected}
-        >
-          {isPending ? "Sending..." : "Send"}
-        </Button>
+        {scheduledLabel && (
+          <div
+            className="text-[12px]"
+            style={{ color: "var(--text-sub)", marginBottom: 10 }}
+          >
+            Scheduled for {scheduledLabel}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Button
+            variant="primary"
+            size="sm"
+            icon="mail"
+            onClick={handleSend}
+            disabled={isPending || !contact.email || !emailConnected}
+          >
+            {isPending ? "Sending..." : "Send now"}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setShowSchedule(true)}
+            disabled={isPending || !contact.email || !emailConnected}
+          >
+            {scheduledLabel ? "Reschedule" : "Schedule"}
+          </Button>
+          {scheduledLabel && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelSchedule}
+              disabled={isPending}
+            >
+              Cancel schedule
+            </Button>
+          )}
+        </div>
+        <ScheduleModal
+          open={showSchedule}
+          outreachId={outreach.id}
+          initialIso={outreach.scheduledAt ?? null}
+          onClose={() => setShowSchedule(false)}
+        />
       </div>
     );
   }

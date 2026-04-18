@@ -106,6 +106,7 @@ export async function getCampaignById(campaignId: string) {
           contactId: true,
           createdAt: true,
           sentAt: true,
+          scheduledAt: true,
           followUpNumber: true,
           contact: {
             select: {

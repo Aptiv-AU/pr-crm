@@ -88,6 +88,7 @@ interface CampaignDetailClientProps {
       generatedByAI: boolean;
       contactId: string;
       sentAt: string | null;
+      scheduledAt?: string | null;
       followUpNumber: number;
       contact: {
         id: string;
