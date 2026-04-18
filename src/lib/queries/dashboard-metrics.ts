@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { requireOrgId } from "@/lib/server/org";
-import { OutreachStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export { parseDate } from "./parse-date";
 
@@ -27,27 +27,15 @@ export async function getDashboardMetrics(
   const orgId = await requireOrgId();
   const { from, to, clientId } = filters;
 
-  const campaignFilter: Prisma.CampaignWhereInput = {
-    organizationId: orgId,
-    ...(clientId ? { clientId } : {}),
-  };
-  const sentAtRange =
-    from || to
-      ? { sentAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } }
-      : {};
-  const outreachWhere: Prisma.OutreachWhereInput = {
-    campaign: campaignFilter,
-    ...sentAtRange,
-  };
-
   const coverageDateRange =
     from || to
       ? { date: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } }
       : {};
 
-  const [sent, replied, coverages, byDay] = await Promise.all([
-    db.outreach.count({ where: { ...outreachWhere, status: OutreachStatus.sent } }),
-    db.outreach.count({ where: { ...outreachWhere, status: OutreachStatus.replied } }),
+  // Sent + replied totals are derived from `byDay` below — running separate
+  // count() queries duplicated the same scan twice. The byDay aggregate
+  // already partitions by status FILTER, so summing it is exact.
+  const [coverages, byDay] = await Promise.all([
     db.coverage.count({
       where: {
         organizationId: orgId,
@@ -73,15 +61,19 @@ export async function getDashboardMetrics(
     ),
   ]);
 
+  const byDayShaped = byDay.map((r) => ({
+    day: r.day,
+    sent: Number(r.sent_count),
+    replied: Number(r.replied_count),
+  }));
+  const sent = byDayShaped.reduce((s, r) => s + r.sent, 0);
+  const replied = byDayShaped.reduce((s, r) => s + r.replied, 0);
+
   return {
     sent,
     replied,
     coverages,
-    byDay: byDay.map((r) => ({
-      day: r.day,
-      sent: Number(r.sent_count),
-      replied: Number(r.replied_count),
-    })),
+    byDay: byDayShaped,
   };
 }
 
