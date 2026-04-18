@@ -1,25 +1,63 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
+import { generateSlug } from "@/lib/slug/generate";
 
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
+export const createClient = action("createClient", async (formData: FormData) => {
+  const name = formData.get("name") as string | null;
+  const industry = formData.get("industry") as string | null;
+  const colour = formData.get("colour") as string | null;
+  const bgColour = formData.get("bgColour") as string | null;
+  const initials = formData.get("initials") as string | null;
+  const logo = formData.get("logo") as string | null;
 
-  if (org) return org.id;
+  if (!name || !industry || !colour || !bgColour || !initials) {
+    throw new Error("All fields are required");
+  }
 
-  const newOrg = await db.organization.create({
+  const organizationId = await requireOrgId();
+
+  const slug = await generateSlug("client", organizationId, name);
+
+  const client = await db.client.create({
     data: {
-      name: "NWPR",
-      currency: "AUD",
+      organizationId,
+      name,
+      slug,
+      industry,
+      colour,
+      bgColour,
+      initials: initials.toUpperCase().slice(0, 2),
+      logo: logo || null,
     },
   });
 
-  return newOrg.id;
+  return {
+    data: { clientId: client.id },
+    revalidate: ["/workspaces"],
+    revalidateTags: [
+      `clients:${organizationId}`,
+      `campaigns:${organizationId}`,
+    ],
+  };
+});
+
+async function assertClientInOrg(clientId: string, orgId: string): Promise<void> {
+  const found = await db.client.findFirst({
+    where: { id: clientId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Client not found");
 }
 
-export async function createClient(formData: FormData) {
-  try {
+export const updateClient = action(
+  "updateClient",
+  async (clientId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+    await assertClientInOrg(clientId, organizationId);
+
     const name = formData.get("name") as string | null;
     const industry = formData.get("industry") as string | null;
     const colour = formData.get("colour") as string | null;
@@ -28,43 +66,7 @@ export async function createClient(formData: FormData) {
     const logo = formData.get("logo") as string | null;
 
     if (!name || !industry || !colour || !bgColour || !initials) {
-      return { error: "All fields are required" };
-    }
-
-    const organizationId = await getOrganizationId();
-
-    const client = await db.client.create({
-      data: {
-        organizationId,
-        name,
-        industry,
-        colour,
-        bgColour,
-        initials: initials.toUpperCase().slice(0, 2),
-        logo: logo || null,
-      },
-    });
-
-    revalidatePath("/workspaces");
-
-    return { success: true, clientId: client.id };
-  } catch (error) {
-    console.error("createClient error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to create client" };
-  }
-}
-
-export async function updateClient(clientId: string, formData: FormData) {
-  try {
-    const name = formData.get("name") as string | null;
-    const industry = formData.get("industry") as string | null;
-    const colour = formData.get("colour") as string | null;
-    const bgColour = formData.get("bgColour") as string | null;
-    const initials = formData.get("initials") as string | null;
-    const logo = formData.get("logo") as string | null;
-
-    if (!name || !industry || !colour || !bgColour || !initials) {
-      return { error: "All fields are required" };
+      throw new Error("All fields are required");
     }
 
     await db.client.update({
@@ -79,55 +81,61 @@ export async function updateClient(clientId: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/workspaces");
-    revalidatePath(`/workspaces/${clientId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("updateClient error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to update client" };
+    return {
+      revalidate: ["/workspaces", `/workspaces/${clientId}`],
+      revalidateTags: [
+        `clients:${organizationId}`,
+        `campaigns:${organizationId}`,
+      ],
+    };
   }
-}
+);
 
-export async function archiveClient(clientId: string) {
-  try {
-    await db.$transaction([
-      db.client.update({
-        where: { id: clientId },
-        data: { archivedAt: new Date() },
-      }),
-      db.campaign.updateMany({
-        where: { clientId },
-        data: { archivedAt: new Date() },
-      }),
-    ]);
+export const archiveClient = action("archiveClient", async (clientId: string) => {
+  const organizationId = await requireOrgId();
+  await assertClientInOrg(clientId, organizationId);
 
-    revalidatePath("/workspaces");
-    revalidatePath("/campaigns");
-    return { success: true };
-  } catch (error) {
-    console.error("archiveClient error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to archive client" };
-  }
-}
+  await db.$transaction([
+    db.client.update({
+      where: { id: clientId },
+      data: { archivedAt: new Date() },
+    }),
+    db.campaign.updateMany({
+      where: { clientId, organizationId },
+      data: { archivedAt: new Date() },
+    }),
+  ]);
 
-export async function restoreClient(clientId: string) {
-  try {
-    await db.$transaction([
-      db.client.update({
-        where: { id: clientId },
-        data: { archivedAt: null },
-      }),
-      db.campaign.updateMany({
-        where: { clientId },
-        data: { archivedAt: null },
-      }),
-    ]);
-    revalidatePath("/workspaces");
-    revalidatePath("/campaigns");
-    return { success: true };
-  } catch (error) {
-    console.error("restoreClient error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to restore client" };
-  }
-}
+  return {
+    revalidate: ["/workspaces", "/campaigns"],
+    revalidateTags: [
+      `clients:${organizationId}`,
+      `campaigns:${organizationId}`,
+      `stats:${organizationId}`,
+    ],
+  };
+});
+
+export const restoreClient = action("restoreClient", async (clientId: string) => {
+  const organizationId = await requireOrgId();
+  await assertClientInOrg(clientId, organizationId);
+
+  await db.$transaction([
+    db.client.update({
+      where: { id: clientId },
+      data: { archivedAt: null },
+    }),
+    db.campaign.updateMany({
+      where: { clientId, organizationId },
+      data: { archivedAt: null },
+    }),
+  ]);
+  return {
+    revalidate: ["/workspaces", "/campaigns"],
+    revalidateTags: [
+      `clients:${organizationId}`,
+      `campaigns:${organizationId}`,
+      `stats:${organizationId}`,
+    ],
+  };
+});

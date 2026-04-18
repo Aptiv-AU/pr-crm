@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addBudgetLineItem, deleteBudgetLineItem, confirmBudgetLineItem } from "@/actions/campaign-actions";
+import { addBudgetLineItem, deleteBudgetLineItem, confirmBudgetLineItem } from "@/actions/budget-actions";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 
@@ -67,7 +67,7 @@ export function CampaignBudget({ lineItems, campaignId, totalBudget }: CampaignB
       formData.set("amount", amount);
 
       const result = await addBudgetLineItem(formData);
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         setDescription("");

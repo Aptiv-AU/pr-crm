@@ -7,12 +7,13 @@ import { Icon } from "@/components/ui/icon";
 
 interface ContactRow {
   id: string;
+  slug: string;
   name: string;
   initials: string;
   avatarBg: string;
   avatarFg: string;
   photo?: string | null;
-  publication: string;
+  outlet: string;
   beat: string;
   tier: string;
   health: string;
@@ -93,7 +94,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
           >
             <td style={cellStyle}>
               <Link
-                href={`/contacts/${contact.id}`}
+                href={`/contacts/${contact.slug}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -109,34 +110,34 @@ export function ContactTable({ contacts }: ContactTableProps) {
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication}</span>
+              <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <Badge variant="default">{contact.beat}</Badge>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <TierBadge tier={contact.tier} />
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <HealthBadge health={contact.health} />
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span style={{ fontSize: 12, color: "var(--text-muted-custom)" }}>
                   {contact.lastContactDate ? relativeTime(contact.lastContactDate) : "—"}
                 </span>
               </Link>
             </td>
             <td style={cellStyle}>
-              <Link href={`/contacts/${contact.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link href={`/contacts/${contact.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <Icon name="chevronR" size={14} color="var(--text-muted-custom)" />
               </Link>
             </td>

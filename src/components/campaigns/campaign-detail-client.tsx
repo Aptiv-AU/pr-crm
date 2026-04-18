@@ -7,11 +7,13 @@ import { CampaignTabs } from "@/components/campaigns/campaign-tabs";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { updatePhaseStatus, revertToPhase, completeCampaign, reopenCampaign, archiveCampaign } from "@/actions/campaign-actions";
+import { updatePhaseStatus, revertToPhase } from "@/actions/phase-actions";
+import { completeCampaign, reopenCampaign, archiveCampaign } from "@/actions/campaign-actions";
 
 interface CampaignDetailClientProps {
   campaign: {
     id: string;
+    slug: string;
     name: string;
     type: string;
     status: string;
@@ -40,7 +42,7 @@ interface CampaignDetailClientProps {
         initials: string;
         avatarBg: string;
         avatarFg: string;
-        publication: string | null;
+        outlet: string | null;
         beat: string | null;
         tier: string | null;
         health: string | null;
@@ -94,7 +96,7 @@ interface CampaignDetailClientProps {
         avatarBg: string;
         avatarFg: string;
         email: string | null;
-        publication: string | null;
+        outlet: string | null;
       };
     }[];
   };
@@ -105,7 +107,7 @@ interface CampaignDetailClientProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    outlet: string | null;
   }[];
   availableSuppliers: {
     id: string;
@@ -114,6 +116,7 @@ interface CampaignDetailClientProps {
   }[];
   clients: { id: string; name: string; initials: string; colour: string; bgColour: string }[];
   emailConnected: boolean;
+  suppressedEmails?: string[];
   eventDetail?: {
     id: string;
     venue: string | null;
@@ -136,6 +139,7 @@ export function CampaignDetailClient({
   availableSuppliers,
   clients,
   emailConnected,
+  suppressedEmails,
   eventDetail,
 }: CampaignDetailClientProps) {
   const router = useRouter();
@@ -212,6 +216,7 @@ export function CampaignDetailClient({
         <CampaignTabs
           campaignContacts={campaign.campaignContacts}
           campaignId={campaign.id}
+          campaignSlug={campaign.slug}
           campaignType={campaign.type}
           availableContacts={availableContacts}
           campaignSuppliers={campaign.campaignSuppliers}
@@ -227,6 +232,7 @@ export function CampaignDetailClient({
           coverages={campaign.coverages}
           campaignName={campaign.name}
           emailConnected={emailConnected}
+          suppressedEmails={suppressedEmails}
           eventDetail={eventDetail}
         />
       </div>

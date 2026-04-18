@@ -75,7 +75,7 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
     setProfileSaved(false);
     const formData = new FormData();
     formData.set("name", profileName);
-    await updateUserProfile(currentUser.id, formData);
+    await updateUserProfile(formData);
     setProfileSaving(false);
     setProfileSaved(true);
     router.refresh();
@@ -331,7 +331,7 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
           className="text-[12px]"
           style={{ color: "var(--text-sub)", marginBottom: 16 }}
         >
-          Connect your Outlook account to send pitches directly
+          Connect Outlook or Gmail to send pitches directly
         </p>
 
         {emailAccount ? (
@@ -343,7 +343,7 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
               {emailAccount.email}
             </div>
             <div className="text-[12px]" style={{ color: "var(--text-sub)", marginBottom: 2 }}>
-              Microsoft Outlook
+              {emailAccount.provider === "google" ? "Google Gmail" : "Microsoft Outlook"}
             </div>
             <div className="text-[12px]" style={{ color: "var(--text-muted-custom)", marginBottom: 12 }}>
               Connected{" "}
@@ -367,22 +367,36 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
           </div>
         ) : (
           <div>
-            <a
-              href="/api/email/connect"
-              className="inline-flex items-center justify-center rounded-[7px] font-medium whitespace-nowrap cursor-pointer transition-opacity hover:opacity-80 h-[30px] px-[10px] text-[12px] gap-[5px]"
-              style={{
-                backgroundColor: "var(--accent-custom)",
-                color: "#fff",
-                border: "1px solid var(--accent-custom)",
-                textDecoration: "none",
-                marginBottom: 8,
-              }}
-            >
-              <Icon name="mail" size={13} />
-              Connect Outlook
-            </a>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+              <a
+                href="/api/email/connect"
+                className="inline-flex items-center justify-center rounded-[7px] font-medium whitespace-nowrap cursor-pointer transition-opacity hover:opacity-80 h-[30px] px-[10px] text-[12px] gap-[5px]"
+                style={{
+                  backgroundColor: "var(--accent-custom)",
+                  color: "#fff",
+                  border: "1px solid var(--accent-custom)",
+                  textDecoration: "none",
+                }}
+              >
+                <Icon name="mail" size={13} />
+                Connect Outlook
+              </a>
+              <a
+                href="/api/email/google/connect"
+                className="inline-flex items-center justify-center rounded-[7px] font-medium whitespace-nowrap cursor-pointer transition-opacity hover:opacity-80 h-[30px] px-[10px] text-[12px] gap-[5px]"
+                style={{
+                  backgroundColor: "transparent",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border-custom, #d1d5db)",
+                  textDecoration: "none",
+                }}
+              >
+                <Icon name="mail" size={13} />
+                Connect Gmail
+              </a>
+            </div>
             <div className="text-[12px]" style={{ color: "var(--text-muted-custom)", marginTop: 8 }}>
-              Requires Microsoft 365 or Outlook. Pitches will be sent from your email address.
+              Pitches are sent from your connected mailbox.
             </div>
           </div>
         )}

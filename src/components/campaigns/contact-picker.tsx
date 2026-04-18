@@ -4,8 +4,8 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addContactToCampaign, removeContactFromCampaign } from "@/actions/campaign-actions";
 import { suggestContacts } from "@/actions/outreach-actions";
-import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Icon } from "@/components/ui/icon";
 
 interface ContactPickerProps {
@@ -19,7 +19,8 @@ interface ContactPickerProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string | null;
+      photo?: string | null;
+      outlet: string | null;
       beat?: string | null;
       tier?: string | null;
     };
@@ -30,7 +31,8 @@ interface ContactPickerProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    photo?: string | null;
+    outlet: string | null;
     beat?: string | null;
     tier?: string | null;
   }[];
@@ -178,11 +180,11 @@ export function ContactPicker({
                     (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
                   }}
                 >
-                  <Avatar initials={contact.initials} bg={contact.avatarBg} fg={contact.avatarFg} size={22} />
+                  <ContactAvatar contact={contact} size={22} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{contact.name}</span>
-                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication}</span>
+                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
                     </div>
                     <div style={{ fontSize: 12, fontStyle: "italic", color: "var(--text-sub)", marginTop: 2 }}>
                       {s.reason}
@@ -217,9 +219,9 @@ export function ContactPicker({
                     (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
                   }}
                 >
-                  <Avatar initials={contact.initials} bg={contact.avatarBg} fg={contact.avatarFg} size={22} />
+                  <ContactAvatar contact={contact} size={22} />
                   <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{contact.name}</span>
-                  <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.publication}</span>
+                  <span style={{ fontSize: 12, color: "var(--text-sub)" }}>{contact.outlet}</span>
                 </div>
               ))
             )
@@ -252,12 +254,7 @@ export function ContactPicker({
                   opacity: isPending ? 0.6 : 1,
                 }}
               >
-                <Avatar
-                  initials={cc.contact.initials}
-                  bg={cc.contact.avatarBg}
-                  fg={cc.contact.avatarFg}
-                  size={26}
-                />
+                <ContactAvatar contact={cc.contact} size={26} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -271,7 +268,7 @@ export function ContactPicker({
                     {cc.contact.name}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-sub)" }}>
-                    {cc.contact.publication || "\u2014"}
+                    {cc.contact.outlet || "\u2014"}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>

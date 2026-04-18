@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getSupplierById } from "@/lib/queries/supplier-queries";
 import { SupplierDetailClient } from "@/components/suppliers/supplier-detail-client";
+import { db } from "@/lib/db";
+import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,22 @@ export default async function SupplierDetailPage({
 }: {
   params: Promise<{ supplierId: string }>;
 }) {
-  const { supplierId } = await params;
+  const { supplierId: handle } = await params;
+
+  let supplierId: string | null = null;
+  if (isCuid(handle)) {
+    supplierId = handle;
+  } else {
+    const org = await db.organization.findFirst({ select: { id: true } });
+    if (org) {
+      const found = await db.supplier.findFirst({
+        where: { organizationId: org.id, slug: handle },
+        select: { id: true },
+      });
+      supplierId = found?.id ?? null;
+    }
+  }
+  if (!supplierId) notFound();
 
   const supplier = await getSupplierById(supplierId);
 

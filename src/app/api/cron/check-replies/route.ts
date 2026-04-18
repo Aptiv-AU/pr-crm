@@ -2,10 +2,24 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { checkForReplies, generateFollowUps } from "@/lib/email/follow-up";
 
+const ORGS_CONCURRENCY = 3;
+
 export async function GET(request: Request) {
-  // Verify authorization
+  // Fail-closed: CRON_SECRET must be configured in non-dev environments.
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (!cronSecret) {
+    if (isDev) {
+      console.warn("[cron/check-replies] CRON_SECRET not set — allowing in dev only");
+    } else {
+      console.warn("[cron/check-replies] CRON_SECRET not configured — refusing");
+      return NextResponse.json(
+        { error: "CRON_SECRET not configured" },
+        { status: 500 }
+      );
+    }
+  } else {
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -30,11 +44,22 @@ export async function GET(request: Request) {
     let totalReplies = 0;
     let totalFollowUps = 0;
 
-    for (const org of orgsWithEmail) {
-      const replies = await checkForReplies(org.id);
-      const followUps = await generateFollowUps(org.id);
-      totalReplies += replies;
-      totalFollowUps += followUps;
+    // Parallelise across orgs in bounded batches. Within each org, replies
+    // must be detected before follow-ups are generated (so we don't follow-up
+    // on threads that actually got replies) — keep that step sequential.
+    for (let i = 0; i < orgsWithEmail.length; i += ORGS_CONCURRENCY) {
+      const batch = orgsWithEmail.slice(i, i + ORGS_CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (org) => {
+          const replies = await checkForReplies(org.id);
+          const followUps = await generateFollowUps(org.id);
+          return { replies, followUps };
+        })
+      );
+      for (const r of results) {
+        totalReplies += r.replies;
+        totalFollowUps += r.followUps;
+      }
     }
 
     return NextResponse.json({

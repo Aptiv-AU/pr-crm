@@ -7,6 +7,7 @@ import { EventsCalendar } from "./events-calendar";
 
 interface EventData {
   id: string;
+  slug: string;
   name: string;
   status: string;
   client: { name: string; initials: string; colour: string; bgColour: string };
@@ -79,7 +80,7 @@ export function EventsListClient({ events, upcoming }: EventsListClientProps) {
                 {upcoming.map((evt) => (
                   <Link
                     key={evt.id}
-                    href={`/events/${evt.id}`}
+                    href={`/events/${evt.slug}`}
                     className="flex items-start gap-[8px]"
                     style={{ textDecoration: "none" }}
                   >

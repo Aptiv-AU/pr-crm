@@ -73,7 +73,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
         ? await updateSupplier(supplier!.id, formData)
         : await createSupplier(formData);
 
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error);
       } else {
         onSuccess();

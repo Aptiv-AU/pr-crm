@@ -22,12 +22,13 @@ interface CampaignTabsProps {
       initials: string;
       avatarBg: string;
       avatarFg: string;
-      publication: string | null;
+      outlet: string | null;
       tier: string | null;
       health: string | null;
     };
   }[];
   campaignId: string;
+  campaignSlug: string;
   campaignType: string;
   availableContacts: {
     id: string;
@@ -35,7 +36,7 @@ interface CampaignTabsProps {
     initials: string;
     avatarBg: string;
     avatarFg: string;
-    publication: string | null;
+    outlet: string | null;
   }[];
   campaignSuppliers: {
     id: string;
@@ -90,7 +91,7 @@ interface CampaignTabsProps {
       avatarBg: string;
       avatarFg: string;
       email: string | null;
-      publication: string | null;
+      outlet: string | null;
     };
   }[];
   coverages?: {
@@ -108,6 +109,7 @@ interface CampaignTabsProps {
   }[];
   campaignName?: string;
   emailConnected?: boolean;
+  suppressedEmails?: string[];
   eventDetail?: {
     id: string;
     venue: string | null;
@@ -129,6 +131,7 @@ type Tab = (typeof baseTabs)[number] | "Event";
 export function CampaignTabs({
   campaignContacts,
   campaignId,
+  campaignSlug,
   campaignType,
   availableContacts,
   campaignSuppliers,
@@ -140,6 +143,7 @@ export function CampaignTabs({
   coverages,
   campaignName,
   emailConnected,
+  suppressedEmails,
   eventDetail,
 }: CampaignTabsProps) {
   const tabs: Tab[] = campaignType === "event"
@@ -209,6 +213,7 @@ export function CampaignTabs({
             campaignId={campaignId}
             outreaches={outreaches ?? []}
             emailConnected={emailConnected ?? false}
+            suppressedEmails={suppressedEmails ?? []}
           />
         </div>
       )}
@@ -337,7 +342,7 @@ export function CampaignTabs({
 
               {/* Link to full event page */}
               <Link
-                href={`/events/${campaignId}`}
+                href={`/events/${campaignSlug}`}
                 style={{
                   fontSize: 13,
                   fontWeight: 500,
@@ -357,7 +362,7 @@ export function CampaignTabs({
                 No event details configured yet.
               </div>
               <Link
-                href={`/events/${campaignId}`}
+                href={`/events/${campaignSlug}`}
                 style={{
                   fontSize: 13,
                   fontWeight: 500,

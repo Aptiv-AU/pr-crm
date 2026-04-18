@@ -1,4 +1,14 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
+import { buildSegmentWhere, type SegmentFilter } from "@/lib/segments/filter";
+
+export async function getContactsByFilter(orgId: string, filter: SegmentFilter) {
+  return db.contact.findMany({
+    where: buildSegmentWhere(orgId, filter),
+    include: { tags: { include: { tag: true } } },
+    orderBy: { name: "asc" },
+  });
+}
 
 export async function getContacts(organizationId: string, beat?: string) {
   const contacts = await db.contact.findMany({
@@ -82,6 +92,18 @@ export async function getContactById(contactId: string) {
   return contact;
 }
 
+/**
+ * Tag-scoped cached wrapper around `getContactById`.
+ * Busted by any mutation on the contact or its joined children
+ * (outreach, coverage, campaignContact, interaction, tag assignment).
+ */
+export const getContactByIdCached = (contactId: string) =>
+  unstable_cache(
+    async (id: string) => getContactById(id),
+    ["contact-detail", contactId],
+    { tags: [`contact:${contactId}`], revalidate: 3600 },
+  )(contactId);
+
 export async function getContactStats(organizationId: string) {
   const [total, aList, warm] = await Promise.all([
     db.contact.count({ where: { organizationId } }),
@@ -91,6 +113,13 @@ export async function getContactStats(organizationId: string) {
 
   return { total, aList, warm };
 }
+
+export const getContactStatsCached = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => getContactStats(id),
+    ["contact-stats", organizationId],
+    { tags: [`stats:${organizationId}`], revalidate: 60 },
+  )(organizationId);
 
 export async function getContactDetailStats(contactId: string) {
   const [coverageCount, campaignCount, outreaches] = await Promise.all([
@@ -128,3 +157,39 @@ export async function getContactBeats(organizationId: string) {
 
   return contacts.map((c) => c.beat);
 }
+
+/**
+ * Consolidated filter facets for the contacts list page:
+ * beats, outlets, tiers (all `distinct` queries). Tag-scoped by org
+ * so a contact create/update/delete flushes the dropdowns.
+ */
+export const getContactFilterFacets = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => {
+      const [beats, outletRows, tierRows] = await Promise.all([
+        db.contact.findMany({
+          where: { organizationId: id },
+          select: { beat: true },
+          distinct: ["beat"],
+          orderBy: { beat: "asc" },
+        }),
+        db.contact.findMany({
+          where: { organizationId: id },
+          select: { outlet: true },
+          distinct: ["outlet"],
+        }),
+        db.contact.findMany({
+          where: { organizationId: id },
+          select: { tier: true },
+          distinct: ["tier"],
+        }),
+      ]);
+      return {
+        beats: beats.map((b) => b.beat).filter((b): b is string => !!b),
+        outlets: outletRows.map((o) => o.outlet).filter((o): o is string => !!o),
+        tiers: tierRows.map((t) => t.tier).filter((t): t is string => !!t),
+      };
+    },
+    ["contact-filter-facets", organizationId],
+    { tags: [`contacts:${organizationId}`], revalidate: 300 },
+  )(organizationId);

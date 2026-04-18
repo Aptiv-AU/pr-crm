@@ -1,8 +1,10 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
+import { CampaignStatus } from "@prisma/client";
 
 export async function getCampaigns(
   organizationId: string,
-  filters?: { type?: string; status?: string; clientId?: string }
+  filters?: { type?: string; status?: CampaignStatus | "All"; clientId?: string }
 ) {
   const campaigns = await db.campaign.findMany({
     where: {
@@ -65,7 +67,7 @@ export async function getCampaignById(campaignId: string) {
               avatarBg: true,
               avatarFg: true,
               photo: true,
-              publication: true,
+              outlet: true,
               beat: true,
               tier: true,
               health: true,
@@ -112,8 +114,9 @@ export async function getCampaignById(campaignId: string) {
               initials: true,
               avatarBg: true,
               avatarFg: true,
+              photo: true,
               email: true,
-              publication: true,
+              outlet: true,
             },
           },
         },
@@ -145,16 +148,35 @@ export async function getCampaignById(campaignId: string) {
   return campaign;
 }
 
+/**
+ * Tag-scoped cached detail fetch. Busted by any mutation on the
+ * campaign or its joined children (phases, contacts, suppliers,
+ * budget line items, outreach, coverage).
+ */
+export const getCampaignByIdCached = (campaignId: string) =>
+  unstable_cache(
+    async (id: string) => getCampaignById(id),
+    ["campaign-detail", campaignId],
+    { tags: [`campaign:${campaignId}`], revalidate: 3600 },
+  )(campaignId);
+
 export async function getCampaignStats(organizationId: string) {
   const [total, active, draft, complete] = await Promise.all([
     db.campaign.count({ where: { organizationId, archivedAt: null } }),
-    db.campaign.count({ where: { organizationId, archivedAt: null, status: "active" } }),
-    db.campaign.count({ where: { organizationId, archivedAt: null, status: "draft" } }),
-    db.campaign.count({ where: { organizationId, archivedAt: null, status: "complete" } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: CampaignStatus.active } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: CampaignStatus.draft } }),
+    db.campaign.count({ where: { organizationId, archivedAt: null, status: CampaignStatus.complete } }),
   ]);
 
   return { total, active, draft, complete };
 }
+
+export const getCampaignStatsCached = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => getCampaignStats(id),
+    ["campaign-stats", organizationId],
+    { tags: [`stats:${organizationId}`], revalidate: 60 },
+  )(organizationId);
 
 export async function getCampaignFilters(organizationId: string) {
   const [typesRaw, clients] = await Promise.all([
@@ -176,3 +198,10 @@ export async function getCampaignFilters(organizationId: string) {
     clients,
   };
 }
+
+export const getCampaignFiltersCached = (organizationId: string) =>
+  unstable_cache(
+    async (id: string) => getCampaignFilters(id),
+    ["campaign-filters", organizationId],
+    { tags: [`campaigns:${organizationId}`], revalidate: 300 },
+  )(organizationId);

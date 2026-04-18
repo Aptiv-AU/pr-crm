@@ -8,6 +8,7 @@ import { ClientForm } from "@/components/workspaces/client-form";
 
 interface ClientOption {
   id: string;
+  slug: string;
   name: string;
   industry: string;
   colour: string;
@@ -27,17 +28,18 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
   const [slideOverOpen, setSlideOverOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Derive active client from URL
+  // Derive active client from URL (handle is either cuid or slug)
   const pathSegments = pathname.split("/");
   const workspaceIndex = pathSegments.indexOf("workspaces");
-  const activeClientId =
+  const activeHandle =
     workspaceIndex !== -1 && pathSegments.length > workspaceIndex + 1
       ? pathSegments[workspaceIndex + 1]
       : undefined;
 
-  const activeClient = activeClientId
-    ? clients.find((c) => c.id === activeClientId)
+  const activeClient = activeHandle
+    ? clients.find((c) => c.id === activeHandle || c.slug === activeHandle)
     : undefined;
+  const activeClientId = activeClient?.id;
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -60,10 +62,10 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
     setOpen(false);
   }, [pathname]);
 
-  function handleSelect(clientId?: string) {
+  function handleSelect(handle?: string) {
     setOpen(false);
-    if (clientId) {
-      router.push(`/workspaces/${clientId}`);
+    if (handle) {
+      router.push(`/workspaces/${handle}`);
     } else {
       router.push("/workspaces");
     }
@@ -195,7 +197,7 @@ export function WorkspaceSwitcher({ clients }: WorkspaceSwitcherProps) {
             return (
               <button
                 key={client.id}
-                onClick={() => handleSelect(client.id)}
+                onClick={() => handleSelect(client.slug)}
                 className="flex items-center gap-2 w-full px-2.5 py-[7px] cursor-pointer border-none text-left"
                 style={{
                   backgroundColor: isActive

@@ -1,4 +1,7 @@
 import { db } from "@/lib/db";
+import { OutreachStatus } from "@prisma/client";
+import { auth } from "@/lib/auth";
+import { requireOrgId } from "@/lib/server/org";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import {
@@ -7,7 +10,19 @@ import {
   parsePitchResponse,
 } from "@/lib/ai/prompts";
 
+const MAX_CONTACTS_PER_REQUEST = 50;
+
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const organizationId = await requireOrgId();
+
   const { campaignId, contactIds } = (await request.json()) as {
     campaignId: string;
     contactIds: string[];
@@ -20,6 +35,15 @@ export async function POST(request: Request) {
     });
   }
 
+  if (contactIds.length > MAX_CONTACTS_PER_REQUEST) {
+    return new Response(
+      JSON.stringify({
+        error: `Too many contacts: max ${MAX_CONTACTS_PER_REQUEST} per request`,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const config = await getAIConfig();
   if (!config) {
     return new Response(
@@ -28,8 +52,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const campaign = await db.campaign.findUnique({
-    where: { id: campaignId },
+  const campaign = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId },
     include: { client: true },
   });
 
@@ -48,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   const contacts = await db.contact.findMany({
-    where: { id: { in: contactIds } },
+    where: { id: { in: contactIds }, organizationId },
   });
 
   if (contacts.length === 0) {
@@ -70,6 +94,16 @@ export async function POST(request: Request) {
       const systemPrompt = buildPitchSystemPrompt(campaign.client.name, campaign.client.industry);
 
       for (const contact of contacts) {
+        // Defence-in-depth: both campaign and contact were already loaded scoped
+        // to organizationId, but assert here so a future refactor can't silently
+        // weaken this.
+        if (
+          campaign.organizationId !== organizationId ||
+          contact.organizationId !== organizationId
+        ) {
+          continue;
+        }
+
         try {
           send({
             type: "generating",
@@ -83,9 +117,9 @@ export async function POST(request: Request) {
             campaign.client.industry,
             {
               name: contact.name,
-              publication: contact.publication,
-              beat: contact.beat,
-              tier: contact.tier,
+              outlet: contact.outlet ?? "",
+              beat: contact.beat ?? "",
+              tier: contact.tier ?? "",
             }
           );
 
@@ -110,7 +144,7 @@ export async function POST(request: Request) {
           if (existing) {
             await db.outreach.update({
               where: { id: existing.id },
-              data: { subject, body, generatedByAI: true, status: "draft" },
+              data: { subject, body, generatedByAI: true, status: OutreachStatus.draft },
             });
           } else {
             await db.outreach.create({
@@ -121,7 +155,7 @@ export async function POST(request: Request) {
                 body,
                 generatedByAI: true,
                 followUpNumber: 0,
-                status: "draft",
+                status: OutreachStatus.draft,
               },
             });
           }

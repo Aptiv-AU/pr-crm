@@ -4,6 +4,7 @@ import { getEventDetail } from "@/lib/queries/event-queries";
 import { getContacts } from "@/lib/queries/contact-queries";
 import { createOrUpdateEventDetail } from "@/actions/event-actions";
 import { EventDetailClient } from "@/components/events/event-detail-client";
+import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,22 @@ export default async function EventDetailPage({
 }: {
   params: Promise<{ campaignId: string }>;
 }) {
-  const { campaignId } = await params;
+  const { campaignId: handle } = await params;
+
+  let campaignId: string | null = null;
+  if (isCuid(handle)) {
+    campaignId = handle;
+  } else {
+    const orgForLookup = await db.organization.findFirst({ select: { id: true } });
+    if (orgForLookup) {
+      const found = await db.campaign.findFirst({
+        where: { organizationId: orgForLookup.id, slug: handle },
+        select: { id: true },
+      });
+      campaignId = found?.id ?? null;
+    }
+  }
+  if (!campaignId) notFound();
 
   const campaign = await getEventDetail(campaignId);
 
@@ -53,7 +69,8 @@ export default async function EventDetailPage({
       initials: c.initials,
       avatarBg: c.avatarBg,
       avatarFg: c.avatarFg,
-      publication: c.publication,
+      photo: c.photo,
+      outlet: c.outlet ?? "",
     }));
 
   // Serialize data
@@ -106,7 +123,8 @@ export default async function EventDetailPage({
       initials: cc.contact.initials,
       avatarBg: cc.contact.avatarBg,
       avatarFg: cc.contact.avatarFg,
-      publication: cc.contact.publication,
+      photo: cc.contact.photo,
+      outlet: cc.contact.outlet ?? "",
       email: cc.contact.email,
     },
   }));

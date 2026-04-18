@@ -1,7 +1,37 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
+import { generateSlug } from "@/lib/slug/generate";
+import { promises as dns } from "node:dns";
+import net from "node:net";
+import { isPrivateV4, isPrivateV6 } from "@/lib/net/ip-cidr";
+
+/**
+ * Resolve `hostname` via DNS and refuse if ANY returned address is private
+ * or reserved. Throws (rather than returns) so callers using try/catch
+ * treat it like a fetch failure. Defuses DNS rebinding and
+ * `*.nip.io`-style tricks because we trust the resolver, not the string.
+ */
+async function assertPublicHost(hostname: string): Promise<void> {
+  const [v4, v6] = await Promise.all([
+    dns.resolve4(hostname).catch(() => [] as string[]),
+    dns.resolve6(hostname).catch(() => [] as string[]),
+  ]);
+  const addrs = [...v4, ...v6];
+  if (addrs.length === 0) {
+    throw new Error(`DNS resolution failed for ${hostname}`);
+  }
+  for (const addr of addrs) {
+    if (net.isIPv4(addr) && isPrivateV4(addr)) {
+      throw new Error(`Refusing private IPv4: ${addr}`);
+    }
+    if (net.isIPv6(addr) && isPrivateV6(addr)) {
+      throw new Error(`Refusing private IPv6: ${addr}`);
+    }
+  }
+}
 
 async function downloadAndStorePhoto(url: string): Promise<string | null> {
   try {
@@ -14,7 +44,7 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
     }
     if (parsed.protocol !== "https:") return null;
     const hostname = parsed.hostname.toLowerCase();
-    // Block private/local network ranges
+    // First-pass string denylist — cheap belt-and-braces before DNS.
     if (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
@@ -28,7 +58,14 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
       return null;
     }
 
-    const res = await fetch(url);
+    // Second pass: resolve to IPs and verify every returned address is public.
+    // Defuses DNS rebinding and hostnames that encode private IPs (e.g. nip.io).
+    await assertPublicHost(hostname);
+
+    // Pin redirects manually — refuse any 3xx so an allowed host can't hop
+    // to a private target mid-request.
+    const res = await fetch(url, { redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) return null;
     if (!res.ok) return null;
     const length = Number(res.headers.get("content-length") ?? 0);
     if (length > 5 * 1024 * 1024) return null;
@@ -51,85 +88,81 @@ async function resolvePhoto(photoInput: string | null): Promise<string | null> {
   return photoInput; // already a Vercel Blob URL from file upload
 }
 
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
+export const createContact = action("createContact", async (formData: FormData) => {
+  const name = formData.get("name") as string | null;
+  const email = formData.get("email") as string | null;
+  const phone = formData.get("phone") as string | null;
+  const outlet = formData.get("outlet") as string | null;
+  const beat = formData.get("beat") as string | null;
+  const tier = formData.get("tier") as string | null;
+  const initials = formData.get("initials") as string | null;
+  const avatarBg = formData.get("avatarBg") as string | null;
+  const avatarFg = formData.get("avatarFg") as string | null;
+  const instagram = formData.get("instagram") as string | null;
+  const twitter = formData.get("twitter") as string | null;
+  const linkedin = formData.get("linkedin") as string | null;
+  const notes = formData.get("notes") as string | null;
+  const photo = await resolvePhoto(formData.get("photo") as string | null);
 
-  if (!org) {
-    throw new Error("Organization not found");
+  if (
+    !name ||
+    !outlet ||
+    !beat ||
+    !tier ||
+    !initials ||
+    !avatarBg ||
+    !avatarFg
+  ) {
+    throw new Error("All required fields must be provided");
   }
 
-  return org.id;
-}
+  const organizationId = await requireOrgId();
 
-export async function createContact(formData: FormData) {
-  try {
-    const name = formData.get("name") as string | null;
-    const email = formData.get("email") as string | null;
-    const phone = formData.get("phone") as string | null;
-    const publication = formData.get("publication") as string | null;
-    const beat = formData.get("beat") as string | null;
-    const tier = formData.get("tier") as string | null;
-    const initials = formData.get("initials") as string | null;
-    const avatarBg = formData.get("avatarBg") as string | null;
-    const avatarFg = formData.get("avatarFg") as string | null;
-    const instagram = formData.get("instagram") as string | null;
-    const twitter = formData.get("twitter") as string | null;
-    const linkedin = formData.get("linkedin") as string | null;
-    const notes = formData.get("notes") as string | null;
-    const photo = await resolvePhoto(formData.get("photo") as string | null);
+  const slug = await generateSlug("contact", organizationId, name);
 
-    if (
-      !name ||
-      !publication ||
-      !beat ||
-      !tier ||
-      !initials ||
-      !avatarBg ||
-      !avatarFg
-    ) {
-      return { error: "All required fields must be provided" };
-    }
+  const contact = await db.contact.create({
+    data: {
+      organizationId,
+      name,
+      slug,
+      email: email || null,
+      phone: phone || null,
+      outlet,
+      beat,
+      tier,
+      health: "warm",
+      initials: initials.toUpperCase().slice(0, 2),
+      avatarBg,
+      avatarFg,
+      instagram: instagram || null,
+      twitter: twitter || null,
+      linkedin: linkedin || null,
+      notes: notes || null,
+      photo,
+    },
+  });
 
-    const organizationId = await getOrganizationId();
+  return {
+    data: { contactId: contact.id },
+    revalidate: ["/contacts"],
+    revalidateTags: [`contacts:${organizationId}`, `stats:${organizationId}`],
+  };
+});
 
-    const contact = await db.contact.create({
-      data: {
-        organizationId,
-        name,
-        email: email || null,
-        phone: phone || null,
-        publication,
-        beat,
-        tier,
-        health: "warm",
-        initials: initials.toUpperCase().slice(0, 2),
-        avatarBg,
-        avatarFg,
-        instagram: instagram || null,
-        twitter: twitter || null,
-        linkedin: linkedin || null,
-        notes: notes || null,
-        photo,
-      },
+export const updateContact = action(
+  "updateContact",
+  async (contactId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+    const existing = await db.contact.findFirst({
+      where: { id: contactId, organizationId },
+      select: { id: true },
     });
+    if (!existing) throw new Error("Contact not found");
 
-    revalidatePath("/contacts");
-
-    return { success: true, contactId: contact.id };
-  } catch (error) {
-    console.error("createContact error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to create contact",
-    };
-  }
-}
-
-export async function updateContact(contactId: string, formData: FormData) {
-  try {
     const name = formData.get("name") as string | null;
     const email = formData.get("email") as string | null;
     const phone = formData.get("phone") as string | null;
-    const publication = formData.get("publication") as string | null;
+    const outlet = formData.get("outlet") as string | null;
     const beat = formData.get("beat") as string | null;
     const tier = formData.get("tier") as string | null;
     const health = formData.get("health") as string | null;
@@ -144,7 +177,7 @@ export async function updateContact(contactId: string, formData: FormData) {
 
     if (
       !name ||
-      !publication ||
+      !outlet ||
       !beat ||
       !tier ||
       !health ||
@@ -152,7 +185,7 @@ export async function updateContact(contactId: string, formData: FormData) {
       !avatarBg ||
       !avatarFg
     ) {
-      return { error: "All required fields must be provided" };
+      throw new Error("All required fields must be provided");
     }
 
     await db.contact.update({
@@ -161,7 +194,7 @@ export async function updateContact(contactId: string, formData: FormData) {
         name,
         email: email || null,
         phone: phone || null,
-        publication,
+        outlet,
         beat,
         tier,
         health,
@@ -176,15 +209,13 @@ export async function updateContact(contactId: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/contacts");
-    revalidatePath(`/contacts/${contactId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("updateContact error:", error);
     return {
-      error:
-        error instanceof Error ? error.message : "Failed to update contact",
+      revalidate: ["/contacts", `/contacts/${contactId}`],
+      revalidateTags: [
+        `contact:${contactId}`,
+        `contacts:${organizationId}`,
+        `stats:${organizationId}`,
+      ],
     };
   }
-}
+);

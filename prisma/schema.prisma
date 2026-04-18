@@ -30,6 +30,10 @@ model Organization {
   campaigns     Campaign[]
   coverages     Coverage[]
   interactions  Interaction[]
+  contactTags     ContactTag[]
+  contactSegments ContactSegment[]
+  emailTemplates  EmailTemplate[]
+  suppressions    Suppression[]
 }
 
 model User {
@@ -92,10 +96,26 @@ model Client {
   logo           String?
   archivedAt     DateTime?
   currency       String?
+  slug           String
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]
+  contacts       ClientContact[]
 
+  @@unique([organizationId, slug])
   @@index([archivedAt])
+}
+
+model ClientContact {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  role      String?
+  email     String?
+  phone     String?
+  isPrimary Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
 }
 
 model Contact {
@@ -105,9 +125,10 @@ model Contact {
   name             String
   email            String?
   phone            String?
-  publication      String
-  beat             String
-  tier             String
+  outlet           String?
+  beat             String?
+  tier             String?
+  kind             String            @default("journalist")
   health           String            @default("warm")
   initials         String
   avatarBg         String
@@ -117,11 +138,56 @@ model Contact {
   twitter          String?
   linkedin         String?
   notes            String?
+  slug             String
   createdAt        DateTime          @default(now())
   campaignContacts CampaignContact[]
   outreaches       Outreach[]
   coverages        Coverage[]
   interactions     Interaction[]
+  tags             ContactTagAssignment[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, beat])
+  @@index([organizationId, tier])
+  @@index([organizationId, outlet])
+  @@index([organizationId, email])
+}
+
+model ContactTag {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  label          String
+  colorBg        String   @default("#374151")
+  colorFg        String   @default("#ffffff")
+  createdAt      DateTime @default(now())
+  assignments    ContactTagAssignment[]
+
+  @@unique([organizationId, label])
+}
+
+model ContactTagAssignment {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       ContactTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([contactId, tagId])
+  @@index([tagId])
+}
+
+model ContactSegment {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  filter         Json
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, name])
 }
 
 model Supplier {
@@ -135,10 +201,13 @@ model Supplier {
   website           String?
   notes             String?
   rating            Int?
+  slug              String
   createdAt         DateTime           @default(now())
   contacts          SupplierContact[]
   campaignSuppliers CampaignSupplier[]
   budgetLineItems   BudgetLineItem[]
+
+  @@unique([organizationId, slug])
 }
 
 model SupplierContact {
@@ -149,6 +218,7 @@ model SupplierContact {
   role       String?
   email      String?
   phone      String?
+  notes      String?
 }
 
 model Campaign {
@@ -159,13 +229,14 @@ model Campaign {
   client            Client             @relation(fields: [clientId], references: [id])
   name              String
   type              String
-  status            String             @default("draft")
+  status            CampaignStatus     @default(draft)
   currentPhase      String?
   budget            Decimal?
   startDate         DateTime?
   dueDate           DateTime?
   brief             String?
   archivedAt        DateTime?
+  slug              String
   createdAt         DateTime           @default(now())
   phases            CampaignPhase[]
   campaignContacts  CampaignContact[]
@@ -176,6 +247,7 @@ model Campaign {
   interactions      Interaction[]
   eventDetail       EventDetail?
 
+  @@unique([organizationId, slug])
   @@index([archivedAt])
 }
 
@@ -185,7 +257,7 @@ model CampaignPhase {
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   name       String
   order      Int
-  status     String   @default("pending")
+  status     PhaseStatus @default(pending)
 }
 
 model BudgetLineItem {
@@ -205,9 +277,10 @@ model CampaignContact {
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contactId  String
   contact    Contact  @relation(fields: [contactId], references: [id])
-  status     String   @default("added")
+  status     CampaignContactStatus @default(added)
 
   @@unique([campaignId, contactId])
+  @@index([contactId])
 }
 
 model CampaignSupplier {
@@ -218,7 +291,7 @@ model CampaignSupplier {
   supplier   Supplier  @relation(fields: [supplierId], references: [id])
   role       String
   agreedCost Decimal?
-  status     String    @default("pending")
+  status     SupplierStatus @default(pending)
 
   @@unique([campaignId, supplierId])
 }
@@ -231,15 +304,19 @@ model Outreach {
   contact       Contact   @relation(fields: [contactId], references: [id])
   subject       String
   body          String
-  status        String    @default("draft")
+  status        OutreachStatus @default(draft)
   generatedByAI  Boolean   @default(false)
   followUpNumber Int       @default(0)
   scheduledAt    DateTime?
   sentVia        String?
   messageId      String?
-  conversationId String?
+  threadId      String?
   sentAt         DateTime?
+  lastCheckedForReplyAt DateTime?
   createdAt     DateTime  @default(now())
+
+  @@index([campaignId, status])
+  @@index([campaignId, contactId, followUpNumber])
 }
 
 model Coverage {
@@ -257,7 +334,13 @@ model Coverage {
   mediaValue     Decimal?
   attachmentUrl  String?
   notes          String?
+  slug           String
   createdAt      DateTime      @default(now())
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, date])
+  @@index([campaignId, date])
+  @@index([contactId])
 }
 
 model Interaction {
@@ -272,6 +355,9 @@ model Interaction {
   campaignId     String?
   campaign       Campaign?    @relation(fields: [campaignId], references: [id])
   createdAt      DateTime     @default(now())
+
+  @@index([contactId, date])
+  @@index([organizationId, date])
 }
 
 model EventDetail {
@@ -299,14 +385,92 @@ model RunsheetEntry {
 }
 
 model EmailAccount {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider      String    @default("microsoft")
-  email         String
-  accessToken   String    @db.Text
-  refreshToken  String    @db.Text
-  expiresAt     DateTime
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        String           @default("microsoft")
+  email           String
+  accessToken     String           @db.Text
+  refreshToken    String           @db.Text
+  expiresAt       DateTime
+  signatureHtml   String?          @db.Text
+  signatureSource SignatureSource?
+  fontFamily      String?
+  fontSize        String?
+  styleResolvedAt DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+enum SignatureSource {
+  api
+  scraped
+  manual
+  default
+}
+
+model EmailTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  subject        String
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, name])
+}
+
+model Suppression {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  email          String
+  reason         SuppressionReason
+  note           String?
+  createdByUserId String?
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, email])
+}
+
+enum SuppressionReason {
+  reply_request
+  bounce
+  manual
+}
+
+enum CampaignStatus {
+  draft
+  active
+  complete
+}
+
+enum OutreachStatus {
+  draft
+  approved
+  sent
+  replied
+}
+
+enum PhaseStatus {
+  pending
+  active
+  complete
+}
+
+enum SupplierStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+enum CampaignContactStatus {
+  added
+  confirmed
+  declined
+  attended
 }

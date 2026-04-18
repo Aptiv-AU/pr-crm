@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { requireOrgId } from "@/lib/server/org";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { CampaignReport } from "@/lib/pdf/campaign-report";
@@ -7,10 +9,16 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ campaignId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const organizationId = await requireOrgId();
   const { campaignId } = await params;
 
-  const campaign = await db.campaign.findUnique({
-    where: { id: campaignId },
+  const campaign = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId },
     include: {
       client: {
         select: {
@@ -49,6 +57,7 @@ export async function GET(
   });
 
   if (!campaign) {
+    // 404 (not 403) so attackers can't enumerate IDs across orgs
     return new Response("Campaign not found", { status: 404 });
   }
 

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { CampaignCard } from "@/components/workspaces/campaign-card";
@@ -14,9 +13,10 @@ interface Contact {
   initials: string;
   avatarBg: string;
   avatarFg: string;
-  publication: string;
-  beat: string;
-  tier: string;
+  photo?: string | null;
+  outlet: string | null;
+  beat: string | null;
+  tier: string | null;
   health: string;
 }
 
@@ -37,12 +37,13 @@ interface WorkspaceOutreach {
     avatarBg: string;
     avatarFg: string;
     photo: string | null;
-    publication: string | null;
+    outlet: string | null;
   };
 }
 
 interface Campaign {
   id: string;
+  slug: string;
   name: string;
   type: string;
   status: string;
@@ -188,12 +189,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                     "transparent";
                 }}
               >
-                <Avatar
-                  initials={contact.initials}
-                  bg={contact.avatarBg}
-                  fg={contact.avatarFg}
-                  size={30}
-                />
+                <ContactAvatar contact={contact} size={30} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -212,11 +208,11 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                       lineHeight: 1.3,
                     }}
                   >
-                    {contact.publication}
+                    {contact.outlet}
                   </div>
                 </div>
-                <Badge variant={tierVariantMap[contact.tier] ?? "default"}>
-                  {contact.tier}
+                <Badge variant={tierVariantMap[contact.tier ?? ""] ?? "default"}>
+                  {contact.tier ?? "—"}
                 </Badge>
                 <Badge variant={healthVariantMap[contact.health] ?? "default"}>
                   {contact.health}
@@ -230,7 +226,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
 
       {activeTab === "Outreach" && (() => {
         const rows = campaigns.flatMap((c) =>
-          c.outreaches.map((o) => ({ ...o, campaign: { id: c.id, name: c.name } })),
+          c.outreaches.map((o) => ({ ...o, campaign: { id: c.id, slug: c.slug, name: c.name } })),
         ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         if (rows.length === 0) {
@@ -252,7 +248,7 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
             {rows.map((o) => (
               <Link
                 key={o.id}
-                href={`/campaigns/${o.campaign.id}?tab=outreach`}
+                href={`/campaigns/${o.campaign.slug}?tab=outreach`}
                 className="block rounded-[10px] p-3 transition-colors"
                 style={{
                   border: "1px solid var(--border-custom)",
@@ -270,9 +266,9 @@ export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
                   <span className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>
                     {o.contact.name}
                   </span>
-                  {o.contact.publication && (
+                  {o.contact.outlet && (
                     <span className="text-[12px] truncate shrink-0" style={{ color: "var(--text-sub)" }}>
-                      {o.contact.publication}
+                      {o.contact.outlet}
                     </span>
                   )}
                   <div className="ml-auto shrink-0">

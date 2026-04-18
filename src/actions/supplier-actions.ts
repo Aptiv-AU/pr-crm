@@ -1,58 +1,56 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { action } from "@/lib/server/action";
+import { requireOrgId } from "@/lib/server/org";
+import { generateSlug } from "@/lib/slug/generate";
 
-async function getOrganizationId(): Promise<string> {
-  const org = await db.organization.findFirst();
+export const createSupplier = action("createSupplier", async (formData: FormData) => {
+  const name = formData.get("name") as string | null;
+  const serviceCategory = formData.get("serviceCategory") as string | null;
+  const email = formData.get("email") as string | null;
+  const phone = formData.get("phone") as string | null;
+  const website = formData.get("website") as string | null;
+  const notes = formData.get("notes") as string | null;
 
-  if (!org) {
-    throw new Error("Organization not found");
+  if (!name || !serviceCategory) {
+    throw new Error("Name and service category are required");
   }
 
-  return org.id;
+  const organizationId = await requireOrgId();
+
+  const slug = await generateSlug("supplier", organizationId, name);
+
+  const supplier = await db.supplier.create({
+    data: {
+      organizationId,
+      name,
+      slug,
+      serviceCategory,
+      email: email || null,
+      phone: phone || null,
+      website: website || null,
+      notes: notes || null,
+    },
+  });
+
+  return { data: { supplierId: supplier.id }, revalidate: ["/suppliers"] };
+});
+
+async function assertSupplierInOrg(supplierId: string, orgId: string): Promise<void> {
+  const found = await db.supplier.findFirst({
+    where: { id: supplierId, organizationId: orgId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Supplier not found");
 }
 
-export async function createSupplier(formData: FormData) {
-  try {
-    const name = formData.get("name") as string | null;
-    const serviceCategory = formData.get("serviceCategory") as string | null;
-    const email = formData.get("email") as string | null;
-    const phone = formData.get("phone") as string | null;
-    const website = formData.get("website") as string | null;
-    const notes = formData.get("notes") as string | null;
+export const updateSupplier = action(
+  "updateSupplier",
+  async (supplierId: string, formData: FormData) => {
+    const organizationId = await requireOrgId();
+    await assertSupplierInOrg(supplierId, organizationId);
 
-    if (!name || !serviceCategory) {
-      return { error: "Name and service category are required" };
-    }
-
-    const organizationId = await getOrganizationId();
-
-    const supplier = await db.supplier.create({
-      data: {
-        organizationId,
-        name,
-        serviceCategory,
-        email: email || null,
-        phone: phone || null,
-        website: website || null,
-        notes: notes || null,
-      },
-    });
-
-    revalidatePath("/suppliers");
-
-    return { success: true, supplierId: supplier.id };
-  } catch (error) {
-    console.error("createSupplier error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to create supplier",
-    };
-  }
-}
-
-export async function updateSupplier(supplierId: string, formData: FormData) {
-  try {
     const name = formData.get("name") as string | null;
     const serviceCategory = formData.get("serviceCategory") as string | null;
     const email = formData.get("email") as string | null;
@@ -62,7 +60,7 @@ export async function updateSupplier(supplierId: string, formData: FormData) {
     const ratingStr = formData.get("rating") as string | null;
 
     if (!name || !serviceCategory) {
-      return { error: "Name and service category are required" };
+      throw new Error("Name and service category are required");
     }
 
     const rating = ratingStr ? parseInt(ratingStr, 10) : null;
@@ -80,20 +78,13 @@ export async function updateSupplier(supplierId: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/suppliers");
-    revalidatePath(`/suppliers/${supplierId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("updateSupplier error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to update supplier",
-    };
+    return { revalidate: ["/suppliers", `/suppliers/${supplierId}`] };
   }
-}
+);
 
-export async function createSupplierContact(formData: FormData) {
-  try {
+export const createSupplierContact = action(
+  "createSupplierContact",
+  async (formData: FormData) => {
     const supplierId = formData.get("supplierId") as string | null;
     const name = formData.get("name") as string | null;
     const role = formData.get("role") as string | null;
@@ -101,8 +92,11 @@ export async function createSupplierContact(formData: FormData) {
     const phone = formData.get("phone") as string | null;
 
     if (!supplierId || !name) {
-      return { error: "Supplier and contact name are required" };
+      throw new Error("Supplier and contact name are required");
     }
+
+    const organizationId = await requireOrgId();
+    await assertSupplierInOrg(supplierId, organizationId);
 
     await db.supplierContact.create({
       data: {
@@ -114,35 +108,30 @@ export async function createSupplierContact(formData: FormData) {
       },
     });
 
-    revalidatePath(`/suppliers/${supplierId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("createSupplierContact error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to create supplier contact",
-    };
+    return { revalidate: [`/suppliers/${supplierId}`] };
   }
-}
+);
 
-export async function updateSupplierContact(supplierContactId: string, formData: FormData) {
-  try {
+export const updateSupplierContact = action(
+  "updateSupplierContact",
+  async (supplierContactId: string, formData: FormData) => {
     const name = formData.get("name") as string | null;
     const role = formData.get("role") as string | null;
     const email = formData.get("email") as string | null;
     const phone = formData.get("phone") as string | null;
 
     if (!name) {
-      return { error: "Contact name is required" };
+      throw new Error("Contact name is required");
     }
 
-    const existing = await db.supplierContact.findUnique({
-      where: { id: supplierContactId },
+    const organizationId = await requireOrgId();
+    const existing = await db.supplierContact.findFirst({
+      where: { id: supplierContactId, supplier: { organizationId } },
       select: { supplierId: true },
     });
 
     if (!existing) {
-      return { error: "Supplier contact not found" };
+      throw new Error("Supplier contact not found");
     }
 
     await db.supplierContact.update({
@@ -155,39 +144,27 @@ export async function updateSupplierContact(supplierContactId: string, formData:
       },
     });
 
-    revalidatePath(`/suppliers/${existing.supplierId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("updateSupplierContact error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to update supplier contact",
-    };
+    return { revalidate: [`/suppliers/${existing.supplierId}`] };
   }
-}
+);
 
-export async function deleteSupplierContact(supplierContactId: string) {
-  try {
-    const existing = await db.supplierContact.findUnique({
-      where: { id: supplierContactId },
+export const deleteSupplierContact = action(
+  "deleteSupplierContact",
+  async (supplierContactId: string) => {
+    const organizationId = await requireOrgId();
+    const existing = await db.supplierContact.findFirst({
+      where: { id: supplierContactId, supplier: { organizationId } },
       select: { supplierId: true },
     });
 
     if (!existing) {
-      return { error: "Supplier contact not found" };
+      throw new Error("Supplier contact not found");
     }
 
     await db.supplierContact.delete({
       where: { id: supplierContactId },
     });
 
-    revalidatePath(`/suppliers/${existing.supplierId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("deleteSupplierContact error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to delete supplier contact",
-    };
+    return { revalidate: [`/suppliers/${existing.supplierId}`] };
   }
-}
+);

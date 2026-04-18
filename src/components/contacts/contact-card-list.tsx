@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar } from "@/components/ui/avatar";
+import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 
 interface ContactRow {
   id: string;
+  slug: string;
   name: string;
   initials: string;
   avatarBg: string;
   avatarFg: string;
-  publication: string;
+  photo?: string | null;
+  outlet: string;
   beat: string;
   tier: string;
   health: string;
@@ -40,7 +42,7 @@ export function ContactCardList({ contacts }: ContactCardListProps) {
       {contacts.map((contact) => (
         <Link
           key={contact.id}
-          href={`/contacts/${contact.id}`}
+          href={`/contacts/${contact.slug}`}
           style={{
             textDecoration: "none",
             color: "inherit",
@@ -60,18 +62,13 @@ export function ContactCardList({ contacts }: ContactCardListProps) {
             (e.currentTarget as HTMLElement).style.borderColor = "var(--border-custom)";
           }}
         >
-          <Avatar
-            initials={contact.initials}
-            bg={contact.avatarBg}
-            fg={contact.avatarFg}
-            size={36}
-          />
+          <ContactAvatar contact={contact} size={36} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
               {contact.name}
             </div>
             <div style={{ fontSize: 11, color: "var(--text-sub)", marginTop: 1 }}>
-              {contact.publication}
+              {contact.outlet}
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
               <TierBadge tier={contact.tier} />

@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 export async function POST() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    // Find the first user's email account (temporary — no multi-user auth yet)
-    const user = await db.user.findFirst({
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "No user found" }, { status: 404 });
-    }
-
-    // Delete all email accounts for this user
+    // Delete all email accounts for the authenticated user only
     await db.emailAccount.deleteMany({
-      where: { userId: user.id },
+      where: { userId: session.user.id },
     });
 
     const baseUrl =

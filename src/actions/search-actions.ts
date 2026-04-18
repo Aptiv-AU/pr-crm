@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { requireOrgId } from "@/lib/server/org";
 
 interface SearchResult {
   type: "client" | "contact" | "campaign" | "supplier";
@@ -11,24 +12,30 @@ interface SearchResult {
   initials?: string;
   colour?: string;
   bgColour?: string;
+  photo?: string | null;
 }
 
 export async function globalSearch(query: string): Promise<SearchResult[]> {
   if (!query || query.length < 2) return [];
-  const org = await db.organization.findFirst();
-  if (!org) return [];
+  let organizationId: string;
+  try {
+    organizationId = await requireOrgId();
+  } catch {
+    return [];
+  }
 
   const results: SearchResult[] = [];
 
   const [clients, contacts, campaigns, suppliers] = await Promise.all([
     db.client.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
       select: {
         id: true,
+        slug: true,
         name: true,
         industry: true,
         initials: true,
@@ -38,37 +45,44 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     }),
     db.contact.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         OR: [
           { name: { contains: query, mode: "insensitive" } },
-          { publication: { contains: query, mode: "insensitive" } },
+          { outlet: { contains: query, mode: "insensitive" } },
         ],
       },
       take: 5,
       select: {
         id: true,
+        slug: true,
         name: true,
-        publication: true,
+        outlet: true,
         initials: true,
         avatarBg: true,
         avatarFg: true,
+        photo: true,
       },
     }),
     db.campaign.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
-      include: { client: { select: { name: true } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        client: { select: { name: true } },
+      },
     }),
     db.supplier.findMany({
       where: {
-        organizationId: org.id,
+        organizationId,
         name: { contains: query, mode: "insensitive" },
       },
       take: 5,
-      select: { id: true, name: true, serviceCategory: true },
+      select: { id: true, slug: true, name: true, serviceCategory: true },
     }),
   ]);
 
@@ -78,7 +92,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: c.id,
       title: c.name,
       subtitle: c.industry,
-      href: `/workspaces/${c.id}`,
+      href: `/workspaces/${c.slug}`,
       initials: c.initials,
       colour: c.colour,
       bgColour: c.bgColour,
@@ -89,11 +103,12 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       type: "contact",
       id: c.id,
       title: c.name,
-      subtitle: c.publication,
-      href: `/contacts/${c.id}`,
+      subtitle: c.outlet ?? "",
+      href: `/contacts/${c.slug}`,
       initials: c.initials,
       colour: c.avatarFg,
       bgColour: c.avatarBg,
+      photo: c.photo,
     })
   );
   campaigns.forEach((c) =>
@@ -102,7 +117,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: c.id,
       title: c.name,
       subtitle: c.client.name,
-      href: `/campaigns/${c.id}`,
+      href: `/campaigns/${c.slug}`,
     })
   );
   suppliers.forEach((s) =>
@@ -111,7 +126,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: s.id,
       title: s.name,
       subtitle: s.serviceCategory,
-      href: `/suppliers/${s.id}`,
+      href: `/suppliers/${s.slug}`,
     })
   );
 

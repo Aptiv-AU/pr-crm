@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getCampaignById } from "@/lib/queries/campaign-queries";
+import { getCampaignByIdCached } from "@/lib/queries/campaign-queries";
 import { getContacts } from "@/lib/queries/contact-queries";
 import { getSuppliers } from "@/lib/queries/supplier-queries";
 import { CampaignDetailClient } from "@/components/campaigns/campaign-detail-client";
+import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +13,31 @@ export default async function CampaignDetailPage({
 }: {
   params: Promise<{ campaignId: string }>;
 }) {
-  const { campaignId } = await params;
+  const { campaignId: handle } = await params;
 
   let org = await db.organization.findFirst();
   if (!org) {
     org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
   }
 
-  const [campaign, orgContacts, orgSuppliers, allClients, emailAccount] = await Promise.all([
-    getCampaignById(campaignId),
+  // Resolve handle (cuid or slug) → cuid
+  let campaignId: string | null = null;
+  if (isCuid(handle)) {
+    campaignId = handle;
+  } else {
+    const found = await db.campaign.findFirst({
+      where: { organizationId: org.id, slug: handle },
+      select: { id: true },
+    });
+    campaignId = found?.id ?? null;
+  }
+
+  if (!campaignId) {
+    notFound();
+  }
+
+  const [campaign, orgContacts, orgSuppliers, allClients, emailAccount, suppressions] = await Promise.all([
+    getCampaignByIdCached(campaignId),
     getContacts(org.id),
     getSuppliers(org.id),
     db.client.findMany({
@@ -29,7 +46,13 @@ export default async function CampaignDetailPage({
       orderBy: { name: "asc" },
     }),
     db.emailAccount.findFirst(),
+    db.suppression.findMany({
+      where: { organizationId: org.id },
+      select: { email: true },
+    }),
   ]);
+
+  const suppressedEmails = suppressions.map((s) => s.email);
 
   if (!campaign) {
     notFound();
@@ -57,7 +80,8 @@ export default async function CampaignDetailPage({
       initials: c.initials,
       avatarBg: c.avatarBg,
       avatarFg: c.avatarFg,
-      publication: c.publication,
+      photo: c.photo,
+      outlet: c.outlet ?? "",
     }));
 
   // Filter available suppliers (not already in this campaign)
@@ -99,6 +123,7 @@ export default async function CampaignDetailPage({
   // Serialize campaign data (dates and Decimals)
   const serializedCampaign = {
     id: campaign.id,
+    slug: campaign.slug,
     name: campaign.name,
     type: campaign.type,
     status: campaign.status,
@@ -118,7 +143,7 @@ export default async function CampaignDetailPage({
       id: cc.id,
       contactId: cc.contactId,
       status: cc.status,
-      contact: cc.contact,
+      contact: { ...cc.contact, outlet: cc.contact.outlet ?? "" },
     })),
     campaignSuppliers: campaign.campaignSuppliers.map((cs) => ({
       id: cs.id,
@@ -157,7 +182,7 @@ export default async function CampaignDetailPage({
       contactId: o.contactId,
       sentAt: o.sentAt ? o.sentAt.toISOString() : null,
       followUpNumber: o.followUpNumber,
-      contact: o.contact,
+      contact: { ...o.contact, outlet: o.contact.outlet ?? "" },
     })),
   };
 
@@ -169,6 +194,7 @@ export default async function CampaignDetailPage({
       availableSuppliers={availableSuppliers}
       clients={allClients}
       emailConnected={!!emailAccount}
+      suppressedEmails={suppressedEmails}
       eventDetail={eventDetailData}
     />
   );
