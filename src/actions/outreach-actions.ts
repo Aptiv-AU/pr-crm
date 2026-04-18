@@ -6,11 +6,7 @@ import { requireOrgId } from "@/lib/server/org";
 import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
-import {
-  providerFor,
-  type OutgoingMessage,
-  type SendResult,
-} from "@/lib/email/provider";
+import { providerFor, type SendResult } from "@/lib/email/provider";
 import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 import { OutreachStatus, type EmailAccount, type Prisma } from "@prisma/client";
 
@@ -296,11 +292,28 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
 });
 
 export async function sendOutreachForOrg(outreachId: string, orgId: string) {
+  const account = await requireEmailAccount(orgId);
+  const token = await providerFor(account).getValidToken(account.id);
+  return sendOutreachWithAccount(outreachId, orgId, account, token);
+}
+
+/**
+ * Per-row send variant used by the cron worker, which resolves
+ * `EmailAccount` + access token ONCE per org and reuses them across many
+ * sends to avoid the per-row `requireEmailAccount` + `getValidToken`
+ * roundtrips.
+ */
+export async function sendOutreachWithAccount(
+  outreachId: string,
+  orgId: string,
+  account: EmailAccount,
+  token: string
+) {
   const outreach = await loadSendableOutreach(outreachId, orgId);
   await assertNotSuppressed(outreach, orgId);
-  const account = await requireEmailAccount(outreach.campaign.organizationId);
   const bodyHtml = renderOutreachHtml(outreach.body, account);
-  const sent = await sendViaProvider(account, {
+  const provider = providerFor(account);
+  const sent = await provider.send(token, {
     to: outreach.contact.email!,
     subject: outreach.subject,
     bodyHtml,
@@ -316,6 +329,15 @@ export async function sendOutreachForOrg(outreachId: string, orgId: string) {
       `stats:${orgId}`,
     ],
   };
+}
+
+/** Resolves an org's email account + a fresh access token in one call. */
+export async function resolveOrgEmailAccount(
+  orgId: string
+): Promise<{ account: EmailAccount; token: string }> {
+  const account = await requireEmailAccount(orgId);
+  const token = await providerFor(account).getValidToken(account.id);
+  return { account, token };
 }
 
 export const sendOutreach = action("sendOutreach", async (outreachId: string) => {
@@ -449,15 +471,6 @@ function renderOutreachHtml(body: string, account: EmailAccount): string {
     `<div style="font-family:${fontFamily};font-size:${fontSize};color:#1f2937">${inner}</div>`;
 
   return signature ? wrap(paragraphHtml) + wrap(signature) : wrap(paragraphHtml);
-}
-
-async function sendViaProvider(
-  account: EmailAccount,
-  msg: OutgoingMessage
-): Promise<SendResult> {
-  const p = providerFor(account);
-  const token = await p.getValidToken(account.id);
-  return p.send(token, msg);
 }
 
 async function markOutreachSent(
