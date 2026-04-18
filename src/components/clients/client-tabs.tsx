@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
-import { CampaignCard } from "@/components/workspaces/campaign-card";
+import { CampaignCard } from "@/components/clients/campaign-card";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 
 interface Contact {
@@ -25,7 +25,7 @@ interface CampaignContact {
   contact: Contact;
 }
 
-interface WorkspaceOutreach {
+interface ClientOutreach {
   id: string;
   subject: string;
   status: string;
@@ -49,7 +49,7 @@ interface Campaign {
   status: string;
   dueDate: Date | null;
   campaignContacts: CampaignContact[];
-  outreaches: WorkspaceOutreach[];
+  outreaches: ClientOutreach[];
   coverages: { id: string }[];
 }
 
@@ -60,7 +60,7 @@ const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
   replied: "warm",
 };
 
-interface WorkspaceTabsProps {
+interface ClientTabsProps {
   campaigns: Campaign[];
 }
 
@@ -79,7 +79,7 @@ const healthVariantMap: Record<string, BadgeVariant> = {
   hot: "active",
 };
 
-export function WorkspaceTabs({ campaigns }: WorkspaceTabsProps) {
+export function ClientTabs({ campaigns }: ClientTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Campaigns");
 
   // Deduplicate contacts across all campaigns

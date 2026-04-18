@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
-import { ClientForm } from "@/components/workspaces/client-form";
+import { ClientForm } from "@/components/clients/client-form";
 
 export function AddClientButton() {
   const [open, setOpen] = useState(false);
@@ -45,7 +45,7 @@ export function AddClientButton() {
             color: "var(--text-muted-custom)",
           }}
         >
-          Add new client workspace
+          Add new client
         </span>
       </button>
 

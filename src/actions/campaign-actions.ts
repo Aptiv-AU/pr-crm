@@ -76,7 +76,7 @@ export const createCampaign = action("createCampaign", async (formData: FormData
 
   return {
     data: { campaignId: campaign.id },
-    revalidate: ["/campaigns", "/workspaces"],
+    revalidate: ["/campaigns", "/clients"],
     revalidateTags: [`campaigns:${organizationId}`, `stats:${organizationId}`],
   };
 });
@@ -115,7 +115,7 @@ export const updateCampaign = action(
     });
 
     return {
-      revalidate: ["/campaigns", `/campaigns/${campaignId}`, "/workspaces"],
+      revalidate: ["/campaigns", `/campaigns/${campaignId}`, "/clients"],
       revalidateTags: [
         `campaign:${campaignId}`,
         `campaigns:${orgId}`,

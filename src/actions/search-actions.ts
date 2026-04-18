@@ -92,7 +92,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       id: c.id,
       title: c.name,
       subtitle: c.industry,
-      href: `/workspaces/${c.slug}`,
+      href: `/clients/${c.slug}`,
       initials: c.initials,
       colour: c.colour,
       bgColour: c.bgColour,

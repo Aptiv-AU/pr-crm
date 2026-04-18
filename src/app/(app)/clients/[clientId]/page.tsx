@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import { getClientById, getClientStats } from "@/lib/queries/client-queries";
-import { ClientHero } from "@/components/workspaces/client-hero";
-import { WorkspaceTabs } from "@/components/workspaces/workspace-tabs";
+import { ClientHero } from "@/components/clients/client-hero";
+import { ClientTabs } from "@/components/clients/client-tabs";
 import { db } from "@/lib/db";
 import { isCuid } from "@/lib/slug/resolve";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientWorkspacePage({
+export default async function ClientDetailPage({
   params,
 }: {
   params: Promise<{ clientId: string }>;
@@ -54,7 +54,7 @@ export default async function ClientWorkspacePage({
       />
 
       <div style={{ marginTop: 20 }}>
-        <WorkspaceTabs
+        <ClientTabs
           campaigns={client.campaigns.map((c) => ({
             ...c,
             campaignContacts: c.campaignContacts.map((cc) => ({

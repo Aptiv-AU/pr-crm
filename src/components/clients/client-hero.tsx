@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
-import { ClientForm } from "@/components/workspaces/client-form";
+import { ClientForm } from "@/components/clients/client-form";
 import { archiveClient } from "@/actions/client-actions";
 import { ClientBadge } from "@/components/shared/client-badge";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -40,7 +40,7 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
 
   async function handleArchiveConfirm() {
     await archiveClient(client.id);
-    router.push("/workspaces");
+    router.push("/clients");
   }
 
   return (

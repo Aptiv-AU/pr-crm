@@ -36,7 +36,7 @@ export const createClient = action("createClient", async (formData: FormData) =>
 
   return {
     data: { clientId: client.id },
-    revalidate: ["/workspaces"],
+    revalidate: ["/clients"],
     revalidateTags: [
       `clients:${organizationId}`,
       `campaigns:${organizationId}`,
@@ -82,7 +82,7 @@ export const updateClient = action(
     });
 
     return {
-      revalidate: ["/workspaces", `/workspaces/${clientId}`],
+      revalidate: ["/clients", `/clients/${clientId}`],
       revalidateTags: [
         `clients:${organizationId}`,
         `campaigns:${organizationId}`,
@@ -107,7 +107,7 @@ export const archiveClient = action("archiveClient", async (clientId: string) =>
   ]);
 
   return {
-    revalidate: ["/workspaces", "/campaigns"],
+    revalidate: ["/clients", "/campaigns"],
     revalidateTags: [
       `clients:${organizationId}`,
       `campaigns:${organizationId}`,
@@ -131,7 +131,7 @@ export const restoreClient = action("restoreClient", async (clientId: string) =>
     }),
   ]);
   return {
-    revalidate: ["/workspaces", "/campaigns"],
+    revalidate: ["/clients", "/campaigns"],
     revalidateTags: [
       `clients:${organizationId}`,
       `campaigns:${organizationId}`,

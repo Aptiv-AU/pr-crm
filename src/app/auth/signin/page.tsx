@@ -11,7 +11,7 @@ export default function SignInPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    await signIn("resend", { email, callbackUrl: "/workspaces" });
+    await signIn("resend", { email, callbackUrl: "/dashboard" });
   }
 
   return (

@@ -39,7 +39,7 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
 
   return (
     <Link
-      href={`/workspaces/${client.slug}`}
+      href={`/clients/${client.slug}`}
       className="block rounded-[10px] transition-colors"
       style={{
         border: "1px solid var(--border-custom)",
