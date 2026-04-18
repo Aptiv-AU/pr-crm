@@ -18,6 +18,7 @@ interface NavItem {
 
 function buildGlobalItems(badgeCounts: BadgeCounts): NavItem[] {
   return [
+    { label: "Dashboard", icon: "sparkle", href: "/dashboard" },
     { label: "Workspaces", icon: "workspace", href: "/workspaces" },
     { label: "Contacts", icon: "contacts", href: "/contacts", badge: badgeCounts.contacts > 0 ? String(badgeCounts.contacts) : undefined },
     { label: "Suppliers", icon: "suppliers", href: "/suppliers" },
