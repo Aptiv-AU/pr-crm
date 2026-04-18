@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { createTemplate, updateTemplate, deleteTemplate } from "@/actions/template-actions";
 import { availableTokens } from "@/lib/templates/render";
+import { Field } from "@/components/ui/field";
 
 interface Template {
   id: string;
@@ -187,37 +188,29 @@ export function TemplateForm({ templates }: TemplateFormProps) {
       {/* Editor */}
       <Card style={{ padding: 20 }}>
         <div style={{ marginBottom: 14 }}>
-          <label
-            className="block text-[12px] font-medium"
-            style={{ color: "var(--text-sub)", marginBottom: 4 }}
-          >
-            Name
-          </label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Initial outreach"
-            className="w-full rounded-[7px] px-[10px] py-[6px] text-[13px] outline-none"
-            style={inputStyle}
-          />
+          <Field label="Name">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Initial outreach"
+              className="w-full rounded-[7px] px-[10px] py-[6px] text-[13px] outline-none"
+              style={inputStyle}
+            />
+          </Field>
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label
-            className="block text-[12px] font-medium"
-            style={{ color: "var(--text-sub)", marginBottom: 4 }}
-          >
-            Subject
-          </label>
-          <input
-            ref={subjectRef}
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            onFocus={() => setLastEditor("subject")}
-            placeholder="e.g. {{client.name}} x {{contact.outlet}}"
-            className="w-full rounded-[7px] px-[10px] py-[6px] text-[13px] outline-none"
-            style={inputStyle}
-          />
+          <Field label="Subject">
+            <input
+              ref={subjectRef}
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              onFocus={() => setLastEditor("subject")}
+              placeholder="e.g. {{client.name}} x {{contact.outlet}}"
+              className="w-full rounded-[7px] px-[10px] py-[6px] text-[13px] outline-none"
+              style={inputStyle}
+            />
+          </Field>
         </div>
 
         <div style={{ marginBottom: 14 }}>

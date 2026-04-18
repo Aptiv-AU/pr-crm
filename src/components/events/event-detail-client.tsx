@@ -9,6 +9,7 @@ import { GuestList } from "./guest-list";
 import { EventInfoSidebar } from "./event-info-sidebar";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 
 interface EventDetailClientProps {
   campaign: {
@@ -186,12 +187,7 @@ export function EventDetailClient({
       >
         {editOpen && (
           <form onSubmit={handleEditSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div>
-              <label
-                style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", display: "block", marginBottom: 4 }}
-              >
-                Venue
-              </label>
+            <Field label="Venue">
               <input
                 name="venue"
                 type="text"
@@ -206,13 +202,8 @@ export function EventDetailClient({
                   color: "var(--text-primary)",
                 }}
               />
-            </div>
-            <div>
-              <label
-                style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", display: "block", marginBottom: 4 }}
-              >
-                Event Date
-              </label>
+            </Field>
+            <Field label="Event Date">
               <input
                 name="eventDate"
                 type="date"
@@ -231,13 +222,8 @@ export function EventDetailClient({
                   color: "var(--text-primary)",
                 }}
               />
-            </div>
-            <div>
-              <label
-                style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", display: "block", marginBottom: 4 }}
-              >
-                Event Time
-              </label>
+            </Field>
+            <Field label="Event Time">
               <input
                 name="eventTime"
                 type="time"
@@ -252,13 +238,8 @@ export function EventDetailClient({
                   color: "var(--text-primary)",
                 }}
               />
-            </div>
-            <div>
-              <label
-                style={{ fontSize: 12, fontWeight: 500, color: "var(--text-sub)", display: "block", marginBottom: 4 }}
-              >
-                Expected Guest Count
-              </label>
+            </Field>
+            <Field label="Expected Guest Count">
               <input
                 name="guestCount"
                 type="number"
@@ -274,7 +255,7 @@ export function EventDetailClient({
                   color: "var(--text-primary)",
                 }}
               />
-            </div>
+            </Field>
             <Button
               type="submit"
               variant="primary"
