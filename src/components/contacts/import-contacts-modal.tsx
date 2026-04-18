@@ -1,15 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { parseCsvHeader, parseCsvRows } from "@/lib/import/csv-parser";
 import {
   CONTACT_IMPORT_FIELDS,
   mapRowsToContacts,
   type ContactImportMapping,
+  type MappedContact,
 } from "@/lib/import/contact-import";
-import { importContacts } from "@/actions/import-actions";
+import {
+  importContacts,
+  previewContactDedup,
+  type DedupPreviewMatch,
+} from "@/actions/import-actions";
 
 type Step = "upload" | "map" | "preview" | "importing" | "done";
+
+// Per-row decision: "merge" reuses an existing contact id; "create" forces a
+// new contact even if dedup found a candidate. Email matches default to
+// "merge"; fuzzy-name-outlet matches default to "create" (highlighted).
+type RowDecision =
+  | { kind: "create" }
+  | { kind: "merge"; matchId: string };
 
 export function ImportContactsModal({
   open,
@@ -58,11 +70,19 @@ export function ImportContactsModal({
     setStep("preview");
   }
 
-  function runImport() {
+  function runImport(decisions: Record<number, RowDecision>) {
     const { valid } = mapRowsToContacts(rows, mapping);
+    const forceCreateIndices: number[] = [];
+    const forceMergeMap: Record<number, string> = {};
+    for (const [k, d] of Object.entries(decisions)) {
+      const idx = Number(k);
+      if (d.kind === "create") forceCreateIndices.push(idx);
+      else forceMergeMap[idx] = d.matchId;
+    }
+
     setStep("importing");
     startTransition(async () => {
-      const res = await importContacts(valid);
+      const res = await importContacts(valid, forceCreateIndices, forceMergeMap);
       if ("error" in res) {
         setError(res.error);
         setStep("map");
@@ -102,7 +122,7 @@ export function ImportContactsModal({
           backgroundColor: "var(--card-bg)",
           borderRadius: 12,
           padding: 24,
-          maxWidth: 640,
+          maxWidth: 720,
           width: "100%",
           margin: "0 16px",
           border: "1px solid var(--border-custom)",
@@ -227,7 +247,7 @@ export function ImportContactsModal({
             </p>
             <ul style={{ fontSize: 13, color: "var(--text-sub)", marginBottom: 16, paddingLeft: 16 }}>
               <li>Created: {result.created}</li>
-              <li>Updated (dedup by email): {result.updated}</li>
+              <li>Updated (merged into existing): {result.updated}</li>
               <li>Skipped: {result.skipped}</li>
             </ul>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -251,53 +271,181 @@ function PreviewStep({
   rows: Record<string, string>[];
   mapping: ContactImportMapping;
   onBack: () => void;
-  onConfirm: () => void;
+  onConfirm: (decisions: Record<number, RowDecision>) => void;
 }) {
   const { valid, skipped } = mapRowsToContacts(rows, mapping);
-  const preview = valid.slice(0, 5);
+  const [matches, setMatches] = useState<DedupPreviewMatch[] | null>(null);
+  const [matchError, setMatchError] = useState<string | null>(null);
+  // Per-row decisions; keys are indices into `valid`. Rows without a match
+  // are implicit "create" and don't need a key.
+  const [decisions, setDecisions] = useState<Record<number, RowDecision>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await previewContactDedup(valid);
+      if (cancelled) return;
+      if ("error" in res) {
+        setMatchError(res.error);
+        setMatches([]);
+        return;
+      }
+      setMatches(res.matches);
+      // Initialise defaults: merge for email, create-new (highlighted) for fuzzy.
+      const initial: Record<number, RowDecision> = {};
+      for (const m of res.matches) {
+        initial[m.incomingIndex] =
+          m.reason === "email"
+            ? { kind: "merge", matchId: m.matchId }
+            : { kind: "create" };
+      }
+      setDecisions(initial);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const matchByIdx = new Map<number, DedupPreviewMatch>();
+  if (matches) for (const m of matches) matchByIdx.set(m.incomingIndex, m);
+
+  const previewRows = valid.slice(0, 20);
+  const emailMatches = matches?.filter((m) => m.reason === "email").length ?? 0;
+  const fuzzyMatches = matches?.filter((m) => m.reason === "fuzzy-name-outlet").length ?? 0;
+
   return (
     <div>
-      <p style={{ fontSize: 13, color: "var(--text-primary)", marginBottom: 12 }}>
+      <p style={{ fontSize: 13, color: "var(--text-primary)", marginBottom: 8 }}>
         Ready to import <strong>{valid.length}</strong> contacts.
         {skipped.length > 0 && <> Skipping {skipped.length}.</>}
       </p>
-      <table
-        style={{
-          width: "100%",
-          fontSize: 13,
-          borderCollapse: "collapse",
-          border: "1px solid var(--border-custom)",
-          color: "var(--text-primary)",
-        }}
-      >
-        <thead>
-          <tr style={{ backgroundColor: "var(--bg-sub)" }}>
-            <th style={thStyle}>Name</th>
-            <th style={thStyle}>Email</th>
-            <th style={thStyle}>Outlet</th>
-          </tr>
-        </thead>
-        <tbody>
-          {preview.map((r, i) => (
-            <tr key={i}>
-              <td style={tdStyle}>{r.name}</td>
-              <td style={tdStyle}>{r.email ?? "—"}</td>
-              <td style={tdStyle}>{r.outlet ?? "—"}</td>
+      {matches === null ? (
+        <p style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 12 }}>
+          Checking for duplicates…
+        </p>
+      ) : (
+        <p style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 12 }}>
+          {emailMatches} exact email match{emailMatches === 1 ? "" : "es"} ·{" "}
+          {fuzzyMatches} possible name match{fuzzyMatches === 1 ? "" : "es"} (review)
+        </p>
+      )}
+      {matchError && (
+        <p style={{ fontSize: 12, color: "#ef4444", marginBottom: 8 }}>{matchError}</p>
+      )}
+      <div style={{ overflowX: "auto" }}>
+        <table
+          style={{
+            width: "100%",
+            fontSize: 13,
+            borderCollapse: "collapse",
+            border: "1px solid var(--border-custom)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <thead>
+            <tr style={{ backgroundColor: "var(--bg-sub)" }}>
+              <th style={thStyle}>Name</th>
+              <th style={thStyle}>Email</th>
+              <th style={thStyle}>Outlet</th>
+              <th style={thStyle}>Match</th>
+              <th style={thStyle}>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {previewRows.map((r, i) => {
+              const m = matchByIdx.get(i);
+              const decision = decisions[i];
+              const isFuzzy = m?.reason === "fuzzy-name-outlet";
+              return (
+                <tr
+                  key={i}
+                  style={
+                    isFuzzy
+                      ? {
+                          // Highlight fuzzy rows so the user notices them.
+                          backgroundColor: "rgba(234, 179, 8, 0.08)",
+                        }
+                      : undefined
+                  }
+                >
+                  <td style={tdStyle}>{r.name}</td>
+                  <td style={tdStyle}>{r.email ?? "—"}</td>
+                  <td style={tdStyle}>{r.outlet ?? "—"}</td>
+                  <td style={tdStyle}>
+                    {m ? (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: isFuzzy ? "#ca8a04" : "var(--text-sub)",
+                        }}
+                      >
+                        {isFuzzy ? "Possibly: " : "Email: "}
+                        {m.existing.name}
+                        {m.existing.outlet ? ` (${m.existing.outlet})` : ""}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>—</span>
+                    )}
+                  </td>
+                  <td style={tdStyle}>
+                    {m ? (
+                      <select
+                        value={decision?.kind ?? "create"}
+                        onChange={(e) => {
+                          const kind = e.target.value as "merge" | "create";
+                          setDecisions((d) => ({
+                            ...d,
+                            [i]:
+                              kind === "merge"
+                                ? { kind: "merge", matchId: m.matchId }
+                                : { kind: "create" },
+                          }));
+                        }}
+                        style={selectStyle}
+                      >
+                        <option value="merge">Merge into existing</option>
+                        <option value="create">Create new</option>
+                      </select>
+                    ) : (
+                      <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
+                        Create
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {valid.length > previewRows.length && (
+        <p style={{ fontSize: 12, color: "var(--text-sub)", marginTop: 8 }}>
+          Showing first {previewRows.length} of {valid.length}. Decisions for
+          rows beyond this preview use the defaults shown above (email →
+          merge, fuzzy → create new).
+        </p>
+      )}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 16 }}>
         <button type="button" onClick={onBack} style={buttonSecondary}>
           Back
         </button>
-        <button type="button" onClick={onConfirm} style={buttonPrimary}>
+        <button
+          type="button"
+          onClick={() => onConfirm(decisions)}
+          style={buttonPrimary}
+          disabled={matches === null}
+        >
           Import
         </button>
       </div>
     </div>
   );
 }
+
+// Suppress unused-import warning for MappedContact in environments where
+// types tree-shake aggressively; this keeps the runtime API clean.
+export type { MappedContact };
 
 const buttonPrimary: React.CSSProperties = {
   padding: "6px 14px",
@@ -331,4 +479,14 @@ const thStyle: React.CSSProperties = {
 const tdStyle: React.CSSProperties = {
   padding: 6,
   borderBottom: "1px solid var(--border-custom)",
+  verticalAlign: "top",
+};
+
+const selectStyle: React.CSSProperties = {
+  padding: "4px 6px",
+  fontSize: 12,
+  borderRadius: 4,
+  border: "1px solid var(--border-custom)",
+  backgroundColor: "var(--card-bg)",
+  color: "var(--text-primary)",
 };
