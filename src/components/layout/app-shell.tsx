@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { Topbar } from "@/components/layout/topbar";
 import { GlobalSearch } from "@/components/shared/global-search";
+import { Icon } from "@/components/ui/icon";
 
 interface ClientOption {
   id: string;
@@ -43,7 +44,7 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} clients={clients} badgeCounts={badgeCounts} userData={userData} />
       <GlobalSearch />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar onMenuClick={() => setDrawerOpen(true)} />
+        <Topbar />
         <main
           className="flex-1 overflow-y-auto"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
@@ -51,6 +52,27 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
           {children}
         </main>
       </div>
+
+      {/* Mobile floating menu button (drawer replaces the removed mobile topbar) */}
+      {!drawerOpen && (
+        <button
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open menu"
+          className="md:hidden fixed flex items-center justify-center rounded-full border-none cursor-pointer"
+          style={{
+            top: "calc(env(safe-area-inset-top, 0px) + 10px)",
+            left: 12,
+            width: 40,
+            height: 40,
+            backgroundColor: "var(--card-bg)",
+            border: "1px solid var(--border-custom)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            zIndex: 100,
+          }}
+        >
+          <Icon name="menu" size={18} color="var(--text-primary)" />
+        </button>
+      )}
     </div>
   );
 }

@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
 import { Icon } from "@/components/ui/icon";
-
-interface TopbarProps {
-  onMenuClick: () => void;
-}
 
 function getPageTitle(pathname: string): string {
   const segments = pathname.split("/").filter(Boolean);
@@ -16,16 +11,15 @@ function getPageTitle(pathname: string): string {
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
-export function Topbar({ onMenuClick }: TopbarProps) {
+export function Topbar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const segments = pathname.split("/").filter(Boolean);
   const pageTitle = getPageTitle(pathname);
   const isDetail = segments.length > 1;
 
   return (
     <>
-      {/* Desktop topbar */}
+      {/* Desktop topbar (hidden on mobile) */}
       <header
         className="hidden md:flex items-center justify-between px-6 shrink-0"
         style={{
@@ -89,55 +83,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             ⌘K
           </span>
         </button>
-      </header>
-
-      {/* Mobile topbar */}
-      <header
-        className="flex md:hidden items-center justify-between px-4 shrink-0"
-        style={{
-          height: 48,
-          borderBottom: "1px solid var(--border-custom)",
-          backgroundColor: "var(--page-bg)",
-        }}
-      >
-        {/* Left: hamburger */}
-        <button
-          onClick={onMenuClick}
-          className="flex items-center justify-center rounded-md p-1.5 border-none cursor-pointer"
-          style={{ backgroundColor: "transparent" }}
-        >
-          <Icon name="menu" size={18} color="var(--text-primary)" />
-        </button>
-
-        {/* Center: page title */}
-        <span
-          className="text-sm font-semibold"
-          style={{ color: "var(--text-primary)" }}
-        >
-          {pageTitle}
-        </span>
-
-        {/* Right: actions */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex items-center justify-center rounded-md p-1.5 border-none cursor-pointer"
-            style={{ backgroundColor: "transparent" }}
-          >
-            <Icon
-              name={theme === "dark" ? "sun" : "moon"}
-              size={16}
-              color="var(--text-sub)"
-            />
-          </button>
-          <button
-            onClick={() => window.dispatchEvent(new Event("open-search"))}
-            className="flex items-center justify-center rounded-md p-1.5 border-none cursor-pointer"
-            style={{ backgroundColor: "transparent" }}
-          >
-            <Icon name="search" size={16} color="var(--text-sub)" />
-          </button>
-        </div>
       </header>
     </>
   );

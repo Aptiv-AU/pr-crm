@@ -190,6 +190,18 @@ export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: 
 
         {/* Footer */}
         <div className="px-3 pb-3">
+          <button
+            onClick={() => {
+              window.dispatchEvent(new Event("open-search"));
+              onClose();
+            }}
+            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 w-full text-[13px] font-medium cursor-pointer border-none"
+            style={{ backgroundColor: "transparent", color: "var(--text-sub)" }}
+          >
+            <Icon name="search" size={14} color="var(--text-sub)" />
+            <span>Search</span>
+          </button>
+
           <Link
             href="/settings"
             className="flex items-center gap-2.5 rounded-md px-2 py-1.5 w-full text-[13px] font-medium no-underline"
