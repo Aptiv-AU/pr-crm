@@ -76,20 +76,19 @@ export function ClientSwitcher({ clients }: ClientSwitcherProps) {
       {/* Trigger */}
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-2 w-full rounded-lg px-2.5 py-[7px] cursor-pointer border"
+        className="flex items-center gap-2 w-full rounded-full px-3 py-2 cursor-pointer border-none"
         style={{
-          borderColor: "var(--border-custom)",
-          backgroundColor: open ? "var(--active-bg)" : "transparent",
+          backgroundColor: open ? "var(--active-bg)" : "var(--card-bg)",
           color: "var(--text-primary)",
         }}
         onMouseEnter={(e) => {
           if (!open) {
-            e.currentTarget.style.backgroundColor = "var(--hover-bg)";
+            e.currentTarget.style.backgroundColor = "var(--surface-container)";
           }
         }}
         onMouseLeave={(e) => {
           if (!open) {
-            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.backgroundColor = "var(--card-bg)";
           }
         }}
       >
@@ -136,13 +135,12 @@ export function ClientSwitcher({ clients }: ClientSwitcherProps) {
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute left-0 right-0 rounded-[9px] overflow-hidden"
+          className="absolute left-0 right-0 rounded-xl overflow-hidden"
           style={{
-            top: "calc(100% + 4px)",
+            top: "calc(100% + 6px)",
             zIndex: 300,
             backgroundColor: "var(--card-bg)",
-            border: "1px solid var(--border-custom)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.16)",
           }}
         >
           {/* All clients option */}

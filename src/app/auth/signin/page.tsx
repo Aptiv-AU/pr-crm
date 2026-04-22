@@ -15,16 +15,33 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ background: "var(--page-bg)" }}>
-      <div className="w-full max-w-sm rounded-xl p-8" style={{ background: "var(--card-bg)", border: "1px solid var(--border-custom)" }}>
-        <h1 className="mb-1 text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-          {APP_NAME}
-        </h1>
-        <p className="mb-6 text-sm" style={{ color: "var(--text-sub)" }}>
-          Sign in with your email to continue
+    <div className="flex min-h-screen items-center justify-center px-6" style={{ background: "var(--page-bg)" }}>
+      <div
+        className="w-full max-w-md rounded-2xl p-10"
+        style={{ background: "var(--card-bg)", boxShadow: "0 8px 32px rgba(15, 23, 42, 0.06)" }}
+      >
+        <div className="mb-2">
+          <div
+            className="text-[10px] font-bold uppercase tracking-[0.18em]"
+            style={{ color: "var(--text-muted-custom)" }}
+          >
+            Editorial CRM
+          </div>
+          <h1
+            className="mt-1 text-3xl font-extrabold tracking-tight"
+            style={{ color: "var(--accent-custom)" }}
+          >
+            {APP_NAME}
+          </h1>
+        </div>
+        <p className="mb-8 italic font-medium" style={{ color: "var(--text-sub)" }}>
+          Sign in to continue curating.
         </p>
         <form onSubmit={handleSubmit}>
-          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted-custom)" }}>
+          <label
+            className="mb-2 block text-[10px] font-extrabold uppercase tracking-[0.14em]"
+            style={{ color: "var(--text-muted-custom)" }}
+          >
             Email
           </label>
           <input
@@ -34,17 +51,17 @@ export default function SignInPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="mb-4 w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+            className="mb-6 w-full rounded-xl px-4 py-3 text-sm font-medium focus:outline-none"
             style={{
-              background: "var(--card-bg)",
-              border: "1px solid var(--border-custom)",
+              background: "var(--surface-container-low)",
+              border: "none",
               color: "var(--text-primary)",
             }}
           />
           <button
             type="submit"
             disabled={submitted}
-            className="w-full rounded-lg px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-full px-5 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
             style={{ background: "var(--accent-custom)" }}
           >
             {submitted ? "Sending..." : "Send magic link"}

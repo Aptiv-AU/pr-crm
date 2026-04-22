@@ -70,33 +70,36 @@ export function CampaignForm({ campaign, clients, onSuccess }: CampaignFormProps
 
   const inputStyle = {
     width: "100%",
-    height: 34,
-    padding: "0 10px",
+    height: 38,
+    padding: "0 14px",
     fontSize: 13,
-    borderRadius: 7,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    fontWeight: 500,
+    borderRadius: 10,
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-primary)",
     outline: "none",
   } as const;
 
   const labelStyle = {
-    fontSize: 12,
-    fontWeight: 500 as const,
-    color: "var(--text-sub)",
+    fontSize: 10,
+    fontWeight: 800 as const,
+    color: "var(--text-muted-custom)",
     marginBottom: 6,
     display: "block" as const,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.12em",
   };
 
   const toggleBtnBase = {
-    height: 30,
+    height: 32,
     padding: "0 14px",
     fontSize: 12,
-    fontWeight: 500 as const,
-    borderRadius: 7,
+    fontWeight: 700 as const,
+    borderRadius: 999,
     cursor: "pointer" as const,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-sub)",
     transition: "all 0.15s",
   };
@@ -105,7 +108,6 @@ export function CampaignForm({ campaign, clients, onSuccess }: CampaignFormProps
     ...toggleBtnBase,
     backgroundColor: "var(--accent-custom)",
     color: "#fff",
-    borderColor: "var(--accent-custom)",
   };
 
   return (

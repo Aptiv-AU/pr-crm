@@ -68,7 +68,10 @@ export function EventHero({ campaign, eventDetail, onEdit }: EventHeroProps) {
         >
           {campaign.client.initials}
         </div>
-        <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
+        <span
+          className="text-2xl md:text-[28px] font-extrabold tracking-tight"
+          style={{ color: "var(--text-primary)" }}
+        >
           {campaign.name}
         </span>
         <Badge variant="default">Event</Badge>

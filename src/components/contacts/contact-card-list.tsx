@@ -49,26 +49,26 @@ export function ContactCardList({ contacts }: ContactCardListProps) {
             color: "inherit",
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            padding: 12,
-            borderRadius: 10,
+            gap: 14,
+            padding: 16,
+            borderRadius: 12,
             backgroundColor: "var(--card-bg)",
-            border: "1px solid var(--border-custom)",
-            transition: "border-color 0.15s",
+            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+            transition: "box-shadow 0.15s",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-mid)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-custom)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
           }}
         >
-          <ContactAvatar contact={contact} size={36} />
+          <ContactAvatar contact={contact} size={44} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
+            <div className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
               {contact.name}
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-sub)", marginTop: 1 }}>
+            <div className="text-xs italic font-medium mt-0.5" style={{ color: "var(--text-sub)" }}>
               {contact.outlet}
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>

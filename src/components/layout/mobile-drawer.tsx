@@ -82,31 +82,19 @@ export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: 
         }}
       >
         {/* Header with close button */}
-        <div className="flex items-center justify-between px-4 pt-5 pb-1">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between px-4 pt-6 pb-2">
+          <div>
             <div
-              className="flex items-center justify-center rounded-lg"
-              style={{
-                width: 26,
-                height: 26,
-                backgroundColor: "var(--accent-custom)",
-              }}
+              className="font-extrabold tracking-tight leading-none"
+              style={{ color: "var(--accent-custom)", fontSize: 20 }}
             >
-              <Icon name="sparkle" size={14} color="#fff" />
+              {APP_NAME}
             </div>
-            <div>
-              <div
-                className="text-sm font-semibold leading-tight"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {APP_NAME}
-              </div>
-              <div
-                className="text-[11px] leading-tight"
-                style={{ color: "var(--text-muted-custom)" }}
-              >
-                Solo workspace
-              </div>
+            <div
+              className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "var(--text-muted-custom)" }}
+            >
+              Editorial CRM
             </div>
           </div>
           <button
@@ -144,13 +132,20 @@ export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: 
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors no-underline"
+                className="relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-semibold transition-colors no-underline"
                 style={{
                   backgroundColor: isActive ? "var(--active-bg)" : "transparent",
-                  color: isActive ? "var(--accent-text)" : "var(--text-sub)",
+                  color: isActive ? "var(--accent-custom)" : "var(--text-sub)",
                 }}
               >
-                <Icon name={item.icon} size={14} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
+                {isActive && (
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
+                    style={{ backgroundColor: "var(--accent-custom)" }}
+                  />
+                )}
+                <Icon name={item.icon} size={15} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
                 <span className="flex-1">{item.label}</span>
                 {item.badge && (
                   <span className="text-[11px] font-normal" style={{ color: "var(--text-muted-custom)" }}>{item.badge}</span>
@@ -172,13 +167,20 @@ export function MobileDrawer({ open, onClose, clients, badgeCounts, userData }: 
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors no-underline"
+                className="relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-semibold transition-colors no-underline"
                 style={{
                   backgroundColor: isActive ? "var(--active-bg)" : "transparent",
-                  color: isActive ? "var(--accent-text)" : "var(--text-sub)",
+                  color: isActive ? "var(--accent-custom)" : "var(--text-sub)",
                 }}
               >
-                <Icon name={item.icon} size={14} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
+                {isActive && (
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
+                    style={{ backgroundColor: "var(--accent-custom)" }}
+                  />
+                )}
+                <Icon name={item.icon} size={15} color={isActive ? "var(--accent-custom)" : "var(--text-sub)"} />
                 <span className="flex-1">{item.label}</span>
                 {item.badge && (
                   <span className="text-[11px] font-normal" style={{ color: "var(--text-muted-custom)" }}>{item.badge}</span>

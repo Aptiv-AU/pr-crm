@@ -104,11 +104,12 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
           color: "inherit",
           width: "100%",
           minHeight: 88,
-          border: "1px solid var(--border-custom)",
-          borderRadius: 10,
+          border: "none",
+          borderRadius: 12,
           backgroundColor: "var(--card-bg)",
+          boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
           opacity: isPending ? 0.5 : 1,
-          transition: "opacity 0.15s, border-color 0.15s, box-shadow 0.15s",
+          transition: "opacity 0.15s, box-shadow 0.15s",
           overflow: "hidden",
           display: "flex",
           alignItems: "stretch",
@@ -117,10 +118,10 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent-custom)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-custom)";
+          e.currentTarget.style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
         }}
       >
         {/* Content — left / main */}

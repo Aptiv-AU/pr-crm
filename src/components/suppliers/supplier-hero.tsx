@@ -40,9 +40,9 @@ export function SupplierHero({ supplier, stats, onEdit }: SupplierHeroProps) {
           <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
             <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 10,
+                width: 56,
+                height: 56,
+                borderRadius: 14,
                 backgroundColor: "var(--accent-bg)",
                 display: "flex",
                 alignItems: "center",
@@ -50,13 +50,14 @@ export function SupplierHero({ supplier, stats, onEdit }: SupplierHeroProps) {
                 flexShrink: 0,
               }}
             >
-              <Icon name="suppliers" size={22} color="var(--accent-custom)" />
+              <Icon name="suppliers" size={28} color="var(--accent-custom)" />
             </div>
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontSize: 18,
-                  fontWeight: 700,
+                  fontSize: 28,
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
                   color: "var(--text-primary)",
                   lineHeight: 1.3,
                 }}

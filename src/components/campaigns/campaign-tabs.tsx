@@ -179,9 +179,9 @@ export function CampaignTabs({
             type="button"
             onClick={() => setActiveTab(tab)}
             style={{
-              padding: "8px 16px",
+              padding: "12px 20px",
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 700,
               color:
                 activeTab === tab
                   ? "var(--accent-custom)"
@@ -190,8 +190,8 @@ export function CampaignTabs({
               border: "none",
               borderBottom:
                 activeTab === tab
-                  ? "2px solid var(--accent-custom)"
-                  : "2px solid transparent",
+                  ? "3px solid var(--accent-custom)"
+                  : "3px solid transparent",
               cursor: "pointer",
               marginBottom: -1,
               transition: "color 150ms ease, border-color 150ms ease",

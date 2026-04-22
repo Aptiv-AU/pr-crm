@@ -9,6 +9,7 @@ import { ClientBadge } from "@/components/shared/client-badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { EmptyState } from "@/components/shared/empty-state";
 import { titleCase } from "@/lib/format/title-case";
+import { PageContainer, PageHeader } from "@/components/layout/page-header";
 
 interface OutreachContact {
   id: string;
@@ -76,23 +77,22 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
   }, [outreaches, selectedStatus]);
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Stats */}
-      <div style={{ marginBottom: 16 }}>
-        <StatsBar
-          stats={[
-            { value: stats.total, label: "Total pitches" },
-            { value: stats.draft, label: "Draft" },
-            { value: stats.approved, label: "Approved" },
-            { value: stats.sent, label: "Sent" },
-          ]}
-        />
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Outreach"
+        subtitle="Pitches in motion, across every campaign."
+      />
 
-      {/* Filter pills */}
-      <div style={{ marginBottom: 12 }}>
-        <FilterPills options={STATUS_FILTERS} selected={selectedStatus} onChange={setSelectedStatus} />
-      </div>
+      <StatsBar
+        stats={[
+          { value: stats.total, label: "Total pitches" },
+          { value: stats.draft, label: "Draft" },
+          { value: stats.approved, label: "Approved" },
+          { value: stats.sent, label: "Sent" },
+        ]}
+      />
+
+      <FilterPills options={STATUS_FILTERS} selected={selectedStatus} onChange={setSelectedStatus} />
 
       {/* Outreach list */}
       {filtered.length === 0 ? (
@@ -107,16 +107,16 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
             <Link
               key={outreach.id}
               href={`/campaigns/${outreach.campaign.slug}?tab=outreach`}
-              className="block rounded-[10px] p-3 transition-colors"
+              className="block rounded-xl p-4 transition-colors"
               style={{
-                border: "1px solid var(--border-custom)",
                 backgroundColor: "var(--card-bg)",
+                boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-mid)";
+                e.currentTarget.style.backgroundColor = "var(--surface-container-low)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-custom)";
+                e.currentTarget.style.backgroundColor = "var(--card-bg)";
               }}
             >
               {/* Row 1: Contact info + status */}
@@ -163,6 +163,6 @@ export function OutreachListClient({ outreaches, stats }: OutreachListClientProp
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

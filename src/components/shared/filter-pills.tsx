@@ -19,13 +19,11 @@ export function FilterPills({ options, selected, onChange }: FilterPillsProps) {
             key={option}
             type="button"
             onClick={() => onChange(option)}
-            className="rounded-full px-[10px] py-[4px] text-[11px] font-medium shrink-0 cursor-pointer border"
+            className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider shrink-0 cursor-pointer border transition-colors"
             style={{
-              backgroundColor: isActive ? "var(--text-primary)" : "transparent",
-              color: isActive ? "var(--card-bg)" : "var(--text-sub)",
-              borderColor: isActive
-                ? "var(--text-primary)"
-                : "var(--border-custom)",
+              backgroundColor: isActive ? "var(--accent-custom)" : "transparent",
+              color: isActive ? "#fff" : "var(--text-sub)",
+              borderColor: isActive ? "var(--accent-custom)" : "var(--border-custom)",
             }}
           >
             {option}

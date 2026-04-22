@@ -4,6 +4,7 @@ import { StatsBar } from "@/components/shared/stats-bar";
 import { ClientCard } from "@/components/clients/client-card";
 import { AddClientButton } from "@/components/clients/add-client-button";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageContainer, PageHeader } from "@/components/layout/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -44,45 +45,32 @@ export default async function ClientsPage() {
   ];
 
   return (
-    <div style={{ padding: "16px" }} className="md:p-6">
+    <PageContainer>
+      <PageHeader
+        title="Clients"
+        subtitle="Your roster of stories worth telling."
+        actions={<AddClientButton />}
+      />
+
       <StatsBar stats={stats} />
 
-      <div style={{ marginTop: 24 }}>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            color: "var(--text-muted-custom)",
-            marginBottom: 10,
-          }}
-        >
-          Clients
+      {clients.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {clients.map((client, idx) => (
+            <ClientCard
+              key={client.id}
+              client={client}
+              contactCount={clientContactCounts[idx]}
+            />
+          ))}
         </div>
-
-        {clients.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {clients.map((client, idx) => (
-              <ClientCard
-                key={client.id}
-                client={client}
-                contactCount={clientContactCounts[idx]}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon="workspace"
-            title="Welcome to Pressroom"
-            description="Add your first client to start managing campaigns, contacts, and coverage."
-          />
-        )}
-
-        <div style={{ marginTop: 12 }}>
-          <AddClientButton />
-        </div>
-      </div>
-    </div>
+      ) : (
+        <EmptyState
+          icon="workspace"
+          title="Welcome to Pressroom"
+          description="Add your first client to start managing campaigns, contacts, and coverage."
+        />
+      )}
+    </PageContainer>
   );
 }

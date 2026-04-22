@@ -72,22 +72,25 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
 
   const inputStyle = {
     width: "100%",
-    height: 34,
-    padding: "0 10px",
+    height: 38,
+    padding: "0 14px",
     fontSize: 13,
-    borderRadius: 7,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    fontWeight: 500,
+    borderRadius: 10,
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-primary)",
     outline: "none",
   } as const;
 
   const labelStyle = {
-    fontSize: 12,
-    fontWeight: 500 as const,
-    color: "var(--text-sub)",
+    fontSize: 10,
+    fontWeight: 800 as const,
+    color: "var(--text-muted-custom)",
     marginBottom: 6,
     display: "block" as const,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.12em",
   };
 
   return (

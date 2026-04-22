@@ -127,14 +127,14 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
   }
 
   const toggleBtnBase = {
-    height: 30,
+    height: 32,
     padding: "0 14px",
     fontSize: 12,
-    fontWeight: 500 as const,
-    borderRadius: 7,
+    fontWeight: 700 as const,
+    borderRadius: 999,
     cursor: "pointer" as const,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-sub)",
     transition: "all 0.15s",
   };
@@ -143,7 +143,6 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
     ...toggleBtnBase,
     backgroundColor: "var(--accent-custom)",
     color: "#fff",
-    borderColor: "var(--accent-custom)",
   };
 
   return (
@@ -153,11 +152,10 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
+          gap: 12,
           padding: "14px 16px",
-          borderRadius: 10,
-          backgroundColor: "var(--page-bg)",
-          border: "1px solid var(--border-custom)",
+          borderRadius: 12,
+          backgroundColor: "var(--surface-container-low)",
         }}
       >
         <div
@@ -276,8 +274,8 @@ export function ContactForm({ contact, onSuccess }: ContactFormProps) {
                 type="button"
                 onClick={handlePhotoUrl}
                 style={{
-                  padding: "8px 12px", fontSize: 12, fontWeight: 500, borderRadius: 8,
-                  border: "1px solid var(--border-custom)", backgroundColor: "var(--hover-bg)",
+                  padding: "8px 14px", fontSize: 12, fontWeight: 700, borderRadius: 999,
+                  border: "none", backgroundColor: "var(--surface-container-low)",
                   color: "var(--text-sub)", cursor: "pointer",
                 }}
               >

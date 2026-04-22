@@ -51,24 +51,17 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
           <div className="flex flex-col md:flex-row md:items-center gap-3">
             <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
               {/* Logo or Initials badge */}
-              <ClientBadge client={client} size={44} />
+              <ClientBadge client={client} size={56} />
               <div style={{ minWidth: 0 }}>
                 <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    lineHeight: 1.3,
-                  }}
+                  className="text-2xl md:text-[28px] font-extrabold tracking-tight leading-tight"
+                  style={{ color: "var(--text-primary)" }}
                 >
                   {client.name}
                 </div>
                 <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted-custom)",
-                    lineHeight: 1.3,
-                  }}
+                  className="text-sm italic font-medium mt-1"
+                  style={{ color: "var(--text-sub)" }}
                 >
                   {client.industry}
                 </div>

@@ -13,12 +13,12 @@ export interface DashboardFiltersProps {
 
 const selectStyle: CSSProperties = {
   width: "100%",
-  height: 34,
-  padding: "0 10px",
+  height: 36,
+  padding: "0 12px",
   fontSize: 13,
-  borderRadius: 7,
-  border: "1px solid var(--border-custom)",
-  backgroundColor: "var(--page-bg)",
+  borderRadius: 999,
+  border: "none",
+  backgroundColor: "var(--surface-container-low)",
   color: "var(--text-primary)",
   outline: "none",
 };
@@ -57,11 +57,8 @@ export function DashboardFilters({ clients, initial }: DashboardFiltersProps) {
 
   return (
     <div
-      className="flex flex-wrap items-end gap-3 rounded-[10px] p-3"
-      style={{
-        border: "1px solid var(--border-custom)",
-        backgroundColor: "var(--card-bg)",
-      }}
+      className="flex flex-wrap items-end gap-3 rounded-2xl p-4"
+      style={{ backgroundColor: "var(--card-bg)", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)" }}
     >
       <div style={{ minWidth: 160 }}>
         <Field label="From">

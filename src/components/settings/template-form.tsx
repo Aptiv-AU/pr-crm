@@ -128,9 +128,10 @@ export function TemplateForm({ templates }: TemplateFormProps) {
   }
 
   const inputStyle = {
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-primary)",
+    fontWeight: 500,
   } as const;
 
   return (

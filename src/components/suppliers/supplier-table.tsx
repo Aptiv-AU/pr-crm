@@ -19,95 +19,106 @@ interface SupplierTableProps {
   suppliers: SupplierRow[];
 }
 
-const headerStyle = {
-  fontSize: 11,
-  fontWeight: 500 as const,
+const headerTh: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 900,
   color: "var(--text-muted-custom)",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.06em",
-  padding: "8px 12px",
-  textAlign: "left" as const,
-  borderBottom: "1px solid var(--border-custom)",
+  textTransform: "uppercase",
+  letterSpacing: "0.14em",
+  padding: "16px 20px",
+  textAlign: "left",
 };
 
-const cellStyle = {
-  padding: "10px 12px",
-  borderBottom: "1px solid var(--border-custom)",
-  verticalAlign: "middle" as const,
+const cellTd: React.CSSProperties = {
+  padding: "16px 20px",
+  verticalAlign: "middle",
 };
 
 export function SupplierTable({ suppliers }: SupplierTableProps) {
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" as const }}>
-      <thead>
-        <tr>
-          <th style={headerStyle}>Name</th>
-          <th style={headerStyle}>Category</th>
-          <th style={headerStyle}>Contact Person</th>
-          <th style={headerStyle}>Phone</th>
-          <th style={headerStyle}>Campaigns</th>
-          <th style={{ ...headerStyle, width: 32 }} />
-        </tr>
-      </thead>
-      <tbody>
-        {suppliers.map((supplier) => (
-          <tr
-            key={supplier.id}
-            style={{ cursor: "pointer" }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = "var(--hover-bg)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = "";
-            }}
-          >
-            <td style={cellStyle}>
-              <Link
-                href={`/suppliers/${supplier.slug}`}
+    <section
+      className="rounded-xl overflow-hidden"
+      style={{
+        backgroundColor: "var(--card-bg)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+      }}
+    >
+      <div className="overflow-x-auto">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ backgroundColor: "var(--surface-container-high)" }}>
+              <th style={{ ...headerTh, paddingLeft: 28 }}>Name</th>
+              <th style={headerTh}>Category</th>
+              <th style={headerTh}>Contact</th>
+              <th style={headerTh}>Phone</th>
+              <th style={headerTh}>Campaigns</th>
+              <th style={{ ...headerTh, textAlign: "right", paddingRight: 28 }} />
+            </tr>
+          </thead>
+          <tbody>
+            {suppliers.map((supplier, idx) => (
+              <tr
+                key={supplier.id}
                 style={{
-                  textDecoration: "none",
-                  color: "inherit",
-                  fontSize: 13,
-                  fontWeight: 500,
+                  cursor: "pointer",
+                  borderTop: idx === 0 ? "none" : "1px solid var(--surface-container)",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "var(--surface-container-low)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "";
                 }}
               >
-                <span style={{ color: "var(--text-primary)" }}>{supplier.name}</span>
-              </Link>
-            </td>
-            <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <Badge variant="default">{supplier.serviceCategory}</Badge>
-              </Link>
-            </td>
-            <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
-                  {supplier.contactName || "\u2014"}
-                </span>
-              </Link>
-            </td>
-            <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
-                  {supplier.phone || "\u2014"}
-                </span>
-              </Link>
-            </td>
-            <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <span style={{ fontSize: 12, color: "var(--text-sub)" }}>
-                  {supplier.campaignCount}
-                </span>
-              </Link>
-            </td>
-            <td style={cellStyle}>
-              <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <Icon name="chevronR" size={14} color="var(--text-muted-custom)" />
-              </Link>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+                <td style={{ ...cellTd, paddingLeft: 28 }}>
+                  <Link
+                    href={`/suppliers/${supplier.slug}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>
+                      {supplier.name}
+                    </span>
+                  </Link>
+                </td>
+                <td style={cellTd}>
+                  <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <Badge variant="default">{supplier.serviceCategory}</Badge>
+                  </Link>
+                </td>
+                <td style={cellTd}>
+                  <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <span className="text-xs italic font-medium" style={{ color: "var(--text-sub)" }}>
+                      {supplier.contactName || "\u2014"}
+                    </span>
+                  </Link>
+                </td>
+                <td style={cellTd}>
+                  <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <span className="text-xs font-medium" style={{ color: "var(--text-sub)" }}>
+                      {supplier.phone || "\u2014"}
+                    </span>
+                  </Link>
+                </td>
+                <td style={cellTd}>
+                  <Link href={`/suppliers/${supplier.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                      {supplier.campaignCount}
+                    </span>
+                  </Link>
+                </td>
+                <td style={{ ...cellTd, textAlign: "right", paddingRight: 28 }}>
+                  <Link
+                    href={`/suppliers/${supplier.slug}`}
+                    style={{ display: "inline-flex", textDecoration: "none", color: "var(--text-muted-custom)" }}
+                  >
+                    <Icon name="chevronR" size={16} color="var(--text-muted-custom)" />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

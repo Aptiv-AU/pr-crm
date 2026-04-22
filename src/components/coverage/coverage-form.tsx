@@ -94,14 +94,14 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
   }
 
   const toggleBtnBase = {
-    height: 30,
+    height: 32,
     padding: "0 14px",
     fontSize: 12,
-    fontWeight: 500 as const,
-    borderRadius: 7,
+    fontWeight: 700 as const,
+    borderRadius: 999,
     cursor: "pointer" as const,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-sub)",
     transition: "all 0.15s",
   };
@@ -110,7 +110,6 @@ export function CoverageForm({ coverage, campaigns, contacts, onSuccess }: Cover
     ...toggleBtnBase,
     backgroundColor: "var(--accent-custom)",
     color: "#fff",
-    borderColor: "var(--accent-custom)",
   };
 
   const selectStyle = {

@@ -70,11 +70,14 @@ export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, on
       : 0;
 
   return (
-    <Card style={{ padding: 20 }}>
+    <Card style={{ padding: 24 }}>
       {/* Top row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <ClientBadge client={campaign.client} size={36} />
-        <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
+      <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 4 }}>
+        <ClientBadge client={campaign.client} size={44} />
+        <span
+          className="text-2xl md:text-[28px] font-extrabold tracking-tight"
+          style={{ color: "var(--text-primary)" }}
+        >
           {campaign.name}
         </span>
         <Badge variant="default">{campaign.type}</Badge>
@@ -84,7 +87,7 @@ export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, on
       </div>
 
       {/* Client name */}
-      <div style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 14 }}>
+      <div className="text-sm italic font-medium" style={{ color: "var(--text-sub)", marginBottom: 18 }}>
         {campaign.client.name}
       </div>
 

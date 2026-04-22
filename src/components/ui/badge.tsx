@@ -57,7 +57,7 @@ const variantStyles: Record<BadgeVariant, CSSProperties> = {
 export function Badge({ variant = "default", children, className, style }: BadgeProps) {
   return (
     <span
-      className={`rounded-[5px] border px-[7px] py-[2px] text-[11px] font-medium inline-flex items-center ${className ?? ""}`}
+      className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider inline-flex items-center ${className ?? ""}`}
       style={{ ...variantStyles[variant], ...style }}
     >
       {children}

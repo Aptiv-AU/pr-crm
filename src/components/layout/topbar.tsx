@@ -21,68 +21,63 @@ export function Topbar() {
     <>
       {/* Desktop topbar (hidden on mobile) */}
       <header
-        className="hidden md:flex items-center justify-between px-6 shrink-0"
+        className="hidden md:flex items-center justify-between px-8 shrink-0 sticky top-0 z-40"
         style={{
-          height: 52,
-          borderBottom: "1px solid var(--border-custom)",
-          backgroundColor: "var(--page-bg)",
+          height: 64,
+          backgroundColor: "var(--card-bg)",
+          boxShadow: "0 1px 0 var(--border-custom)",
         }}
       >
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-sm">
-          {isDetail ? (
-            <>
-              <Link
-                href={`/${segments[0]}`}
-                className="no-underline font-medium"
-                style={{ color: "var(--text-sub)" }}
-              >
-                {pageTitle}
-              </Link>
-              <Icon name="chevronR" size={12} color="var(--text-muted-custom)" />
-              <span
-                className="font-medium"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Detail
-              </span>
-            </>
-          ) : (
-            <span
-              className="font-semibold"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {pageTitle}
-            </span>
-          )}
-        </div>
-
-        {/* Search placeholder */}
+        {/* Pill-shaped global search trigger */}
         <button
           onClick={() => window.dispatchEvent(new Event("open-search"))}
-          className="flex items-center gap-2 rounded-md px-3 py-1.5 cursor-pointer border-none"
+          className="flex items-center gap-2.5 rounded-full px-4 py-2 cursor-pointer border-none transition-colors"
           style={{
-            backgroundColor: "var(--card-bg)",
-            border: "1px solid var(--border-custom)",
+            backgroundColor: "var(--surface-container-low)",
+            width: 320,
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--surface-container)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--surface-container-low)"; }}
         >
-          <Icon name="search" size={13} color="var(--text-muted-custom)" />
+          <Icon name="search" size={14} color="var(--text-muted-custom)" />
           <span
-            className="text-[13px]"
+            className="text-[13px] font-medium flex-1 text-left"
             style={{ color: "var(--text-muted-custom)" }}
           >
-            Search...
+            Global search...
           </span>
           <span
-            className="text-[11px] font-medium rounded px-1.5 py-0.5 ml-4"
+            className="text-[10px] font-bold rounded px-1.5 py-0.5"
             style={{
-              backgroundColor: "var(--hover-bg)",
+              backgroundColor: "var(--card-bg)",
               color: "var(--text-muted-custom)",
             }}
           >
             ⌘K
           </span>
         </button>
+
+        {/* Page title centered — minimal, lets page headers shine */}
+        <div className="flex items-center gap-1.5 text-sm">
+          {isDetail && (
+            <>
+              <Link
+                href={`/${segments[0]}`}
+                className="no-underline font-semibold"
+                style={{ color: "var(--text-sub)" }}
+              >
+                {pageTitle}
+              </Link>
+              <Icon name="chevronR" size={12} color="var(--text-muted-custom)" />
+              <span className="font-bold" style={{ color: "var(--text-primary)" }}>
+                Detail
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Right: placeholder for future notifications/settings slot */}
+        <div className="w-[320px]" />
       </header>
     </>
   );

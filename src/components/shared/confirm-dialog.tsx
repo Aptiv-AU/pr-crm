@@ -27,26 +27,27 @@ export function ConfirmDialog({
     >
       <div
         style={{
-          backgroundColor: "var(--card-bg)", borderRadius: 12, padding: 24,
-          maxWidth: 380, width: "calc(100% - 32px)", margin: "0 16px",
-          border: "1px solid var(--border-custom)",
+          backgroundColor: "var(--card-bg)", borderRadius: 16, padding: 28,
+          maxWidth: 420, width: "calc(100% - 32px)", margin: "0 16px",
+          boxShadow: "0 20px 60px rgba(15, 23, 42, 0.18)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
+        <div className="text-lg font-extrabold tracking-tight" style={{ color: "var(--text-primary)", marginBottom: 8 }}>
           {title}
         </div>
-        <div style={{ fontSize: 13, color: "var(--text-sub)", marginBottom: 20 }}>
+        <div className="text-sm font-medium" style={{ color: "var(--text-sub)", marginBottom: 24 }}>
           {body}
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button
             type="button"
             onClick={onCancel}
+            className="rounded-full px-5 py-2 text-[13px] font-bold cursor-pointer"
             style={{
-              padding: "6px 14px", fontSize: 13, fontWeight: 500, borderRadius: 8,
-              border: "1px solid var(--border-custom)", backgroundColor: "transparent",
-              color: "var(--text-sub)", cursor: "pointer",
+              border: "none",
+              backgroundColor: "var(--surface-container-low)",
+              color: "var(--text-primary)",
             }}
           >
             {cancelLabel}
@@ -55,8 +56,8 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={isPending}
+            className="rounded-full px-5 py-2 text-[13px] font-bold"
             style={{
-              padding: "6px 14px", fontSize: 13, fontWeight: 500, borderRadius: 8,
               border: "none", backgroundColor: "var(--accent-custom)",
               color: "#fff", cursor: isPending ? "not-allowed" : "pointer",
               opacity: isPending ? 0.6 : 1,

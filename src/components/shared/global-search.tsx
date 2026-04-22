@@ -185,12 +185,11 @@ export function GlobalSearch() {
       <div
         style={{
           width: "100%",
-          maxWidth: 520,
-          maxHeight: 420,
-          borderRadius: 12,
+          maxWidth: 560,
+          maxHeight: 460,
+          borderRadius: 16,
           backgroundColor: "var(--card-bg)",
-          border: "1px solid var(--border-custom)",
-          boxShadow: "0 16px 48px rgba(0,0,0,0.2)",
+          boxShadow: "0 20px 60px rgba(15, 23, 42, 0.24)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",

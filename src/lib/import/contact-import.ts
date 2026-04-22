@@ -7,18 +7,41 @@ export const CONTACT_IMPORT_FIELDS: {
   label: string;
   required: boolean;
   hint?: string;
+  aliases?: string[];
 }[] = [
-  { key: "name", label: "Full name", required: true },
-  { key: "email", label: "Email", required: false, hint: "Lowercased on import" },
-  { key: "phone", label: "Phone", required: false },
-  { key: "outlet", label: "Outlet / publication", required: false },
-  { key: "beat", label: "Beat", required: false },
-  { key: "tier", label: "Tier", required: false, hint: "e.g. A, B, C" },
-  { key: "instagram", label: "Instagram", required: false },
-  { key: "twitter", label: "Twitter / X", required: false },
-  { key: "linkedin", label: "LinkedIn", required: false },
-  { key: "notes", label: "Notes", required: false },
+  { key: "name", label: "Full name", required: true, aliases: ["name", "fullname", "contact", "contactname", "journalist", "reporter"] },
+  { key: "email", label: "Email", required: false, hint: "Lowercased on import", aliases: ["email", "emailaddress", "e-mail", "mail"] },
+  { key: "phone", label: "Phone", required: false, aliases: ["phone", "mobile", "cell", "telephone", "tel", "phonenumber"] },
+  { key: "outlet", label: "Outlet / publication", required: false, aliases: ["outlet", "publication", "magazine", "masthead", "title", "media", "mediaoutlet", "company", "organisation", "organization"] },
+  { key: "beat", label: "Beat", required: false, aliases: ["beat", "section", "topic", "category", "coverage", "vertical"] },
+  { key: "tier", label: "Tier", required: false, hint: "e.g. A, B, C", aliases: ["tier", "priority", "rank"] },
+  { key: "instagram", label: "Instagram", required: false, aliases: ["instagram", "ig", "insta", "instagramhandle", "ighandle"] },
+  { key: "twitter", label: "Twitter / X", required: false, aliases: ["twitter", "x", "twitterhandle", "xhandle"] },
+  { key: "linkedin", label: "LinkedIn", required: false, aliases: ["linkedin", "linkedinurl", "linkedinprofile"] },
+  { key: "notes", label: "Notes", required: false, aliases: ["notes", "note", "comments", "comment", "description", "bio"] },
 ];
+
+function normalizeHeader(s: string): string {
+  return s.toLowerCase().replace(/[\s_\-/]+/g, "");
+}
+
+export function suggestMapping(headers: string[]): ContactImportMapping {
+  const mapping: ContactImportMapping = {};
+  const used = new Set<string>();
+  for (const field of CONTACT_IMPORT_FIELDS) {
+    const candidates = new Set<string>([
+      normalizeHeader(field.key),
+      normalizeHeader(field.label),
+      ...(field.aliases ?? []).map(normalizeHeader),
+    ]);
+    const match = headers.find((h) => !used.has(h) && candidates.has(normalizeHeader(h)));
+    if (match) {
+      mapping[field.key] = match;
+      used.add(match);
+    }
+  }
+  return mapping;
+}
 
 export type ContactImportMapping = Partial<Record<ContactImportFieldKey, string>>;
 

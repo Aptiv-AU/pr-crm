@@ -31,29 +31,29 @@ export function SupplierCardList({ suppliers }: SupplierCardListProps) {
             color: "inherit",
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            padding: 12,
-            borderRadius: 10,
+            gap: 14,
+            padding: 16,
+            borderRadius: 12,
             backgroundColor: "var(--card-bg)",
-            border: "1px solid var(--border-custom)",
-            transition: "border-color 0.15s",
+            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+            transition: "box-shadow 0.15s",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-mid)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-custom)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+            <div className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
               {supplier.name}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <div className="flex items-center gap-1.5 mt-2">
               <Badge variant="default">{supplier.serviceCategory}</Badge>
             </div>
             {supplier.contactName && (
-              <div style={{ fontSize: 11, color: "var(--text-sub)", marginTop: 4 }}>
+              <div className="text-xs italic font-medium mt-2" style={{ color: "var(--text-sub)" }}>
                 {supplier.contactName}
               </div>
             )}

@@ -1,5 +1,3 @@
-import { Card } from "@/components/ui/card";
-
 interface Stat {
   value: string | number;
   label: string;
@@ -12,43 +10,37 @@ interface StatsBarProps {
 
 export function StatsBar({ stats }: StatsBarProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-[6px] md:gap-[10px]">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
       {stats.map((stat) => (
-        <Card
+        <div
           key={stat.label}
-          className="px-[10px] py-[6px] md:px-4 md:py-[14px]"
+          className="rounded-xl px-4 py-4 md:px-5 md:py-5"
+          style={{
+            backgroundColor: "var(--card-bg)",
+            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+          }}
         >
           <div
-            style={{
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.2,
-            }}
-            className="text-[14px] md:text-[20px]"
-          >
-            {stat.value}
-          </div>
-          <div
-            style={{
-              fontWeight: 500,
-              color: "var(--text-sub)",
-            }}
-            className="text-[10px] md:text-[12px] mt-0 md:mt-[2px]"
+            className="text-[10px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--text-muted-custom)" }}
           >
             {stat.label}
           </div>
+          <div
+            className="text-2xl md:text-[32px] leading-none font-extrabold tracking-tight mt-2"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {stat.value}
+          </div>
           {stat.sublabel && (
             <div
-              style={{
-                color: "var(--text-muted-custom)",
-              }}
-              className="hidden md:block text-[11px] mt-[1px]"
+              className="hidden md:block text-[11px] italic font-medium mt-1.5"
+              style={{ color: "var(--accent-custom)" }}
             >
               {stat.sublabel}
             </div>
           )}
-        </Card>
+        </div>
       ))}
     </div>
   );

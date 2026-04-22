@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
 import { ClientBadge } from "@/components/shared/client-badge";
 import { titleCase } from "@/lib/format/title-case";
+import { PageContainer, PageHeader } from "@/components/layout/page-header";
 
 interface CampaignRow {
   id: string;
@@ -90,37 +91,33 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
   }
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Header row */}
-      <div className="flex items-center justify-end" style={{ marginBottom: 16 }}>
-        <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
-          New campaign
-        </Button>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Campaigns"
+        subtitle="Every pitch is a chapter."
+        actions={
+          <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
+            New campaign
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      <div style={{ marginBottom: 16 }}>
-        <StatsBar
-          stats={[
-            { value: stats.total, label: "Total" },
-            { value: stats.active, label: "Active" },
-            { value: stats.draft, label: "Draft" },
-            { value: stats.complete, label: "Complete" },
-          ]}
-        />
-      </div>
+      <StatsBar
+        stats={[
+          { value: stats.total, label: "Total" },
+          { value: stats.active, label: "Active" },
+          { value: stats.draft, label: "Draft" },
+          { value: stats.complete, label: "Complete" },
+        ]}
+      />
 
-      {/* Status filter chips */}
-      <div style={{ marginBottom: 16 }}>
-        <FilterPills
-          options={["In Progress", "Completed", "All"]}
-          selected={STATUS_LABELS[statusFilter]}
-          onChange={(v) => setStatusFilter(LABEL_TO_STATUS[v] ?? "active")}
-        />
-      </div>
+      <FilterPills
+        options={["In Progress", "Completed", "All"]}
+        selected={STATUS_LABELS[statusFilter]}
+        onChange={(v) => setStatusFilter(LABEL_TO_STATUS[v] ?? "active")}
+      />
 
-      {/* Filter row */}
-      <div className="flex items-center gap-3" style={{ marginBottom: 12 }}>
+      <div className="flex items-center gap-3 flex-wrap">
         <FilterPills
           options={["All", ...types]}
           selected={selectedType}
@@ -252,6 +249,6 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
       <SlideOverPanel open={addOpen} onClose={() => setAddOpen(false)} title="New Campaign">
         {addOpen && <CampaignForm clients={clients} onSuccess={handleSuccess} />}
       </SlideOverPanel>
-    </div>
+    </PageContainer>
   );
 }

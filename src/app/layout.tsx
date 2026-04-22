@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Lora, IBM_Plex_Mono } from "next/font/google";
+import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
+const manrope = Manrope({
   variable: "--font-sans",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
 });
 
-const lora = Lora({
+const manropeSerif = Manrope({
   variable: "--font-serif",
-  weight: ["400", "500", "600", "700"],
+  weight: ["600", "700", "800"],
   subsets: ["latin"],
 });
 
@@ -36,7 +36,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${jakarta.variable} ${lora.variable} ${ibmMono.variable} h-full antialiased`}
+      className={`${manrope.variable} ${manropeSerif.variable} ${ibmMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>

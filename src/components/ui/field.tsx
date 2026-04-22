@@ -11,11 +11,13 @@ interface FieldProps {
 }
 
 const labelStyle = {
-  fontSize: 12,
-  fontWeight: 500 as const,
-  color: "var(--text-sub)",
+  fontSize: 10,
+  fontWeight: 800 as const,
+  color: "var(--text-muted-custom)",
   marginBottom: 6,
   display: "block" as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.12em",
 };
 
 const hintStyle = {

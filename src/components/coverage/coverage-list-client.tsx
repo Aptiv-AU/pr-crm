@@ -9,6 +9,7 @@ import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CoverageForm } from "./coverage-form";
 import { CoverageCard } from "./coverage-card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageContainer, PageHeader } from "@/components/layout/page-header";
 
 interface CoverageListClientProps {
   coverages: {
@@ -74,62 +75,45 @@ export function CoverageListClient({
   }
 
   const selectStyle = {
-    height: 28,
-    padding: "0 28px 0 10px",
+    height: 32,
+    padding: "0 30px 0 14px",
     fontSize: 12,
-    fontWeight: 500 as const,
-    borderRadius: 7,
-    border: "1px solid var(--border-custom)",
-    backgroundColor: "var(--page-bg)",
+    fontWeight: 600 as const,
+    borderRadius: 999,
+    border: "none",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-sub)",
     outline: "none",
     appearance: "none" as const,
     backgroundImage:
       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
     backgroundRepeat: "no-repeat",
-    backgroundPosition: "right 8px center",
+    backgroundPosition: "right 10px center",
     cursor: "pointer" as const,
   };
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>Coverage</h1>
-        <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
-          Add coverage
-        </Button>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Coverage"
+        subtitle="Hits earned, press logged, value tracked."
+        actions={
+          <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
+            Add coverage
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      <div style={{ marginBottom: 16 }}>
-        <StatsBar
-          stats={[
-            { value: stats.total, label: "Total hits" },
-            { value: formatMediaValue(stats.totalMediaValue), label: "Media value" },
-            { value: stats.thisMonthCount, label: "This month" },
-            { value: stats.topPublication ?? "—", label: "Top publication" },
-          ]}
-        />
-      </div>
+      <StatsBar
+        stats={[
+          { value: stats.total, label: "Total hits" },
+          { value: formatMediaValue(stats.totalMediaValue), label: "Media value" },
+          { value: stats.thisMonthCount, label: "This month" },
+          { value: stats.topPublication ?? "—", label: "Top publication" },
+        ]}
+      />
 
-      {/* Filters */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 16,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="flex items-center gap-3 flex-wrap">
         <FilterPills options={TYPE_FILTERS} selected={typeFilter} onChange={setTypeFilter} />
         <select
           value={campaignFilter}
@@ -169,6 +153,6 @@ export function CoverageListClient({
           <CoverageForm campaigns={campaigns} contacts={contacts} onSuccess={handleSuccess} />
         )}
       </SlideOverPanel>
-    </div>
+    </PageContainer>
   );
 }

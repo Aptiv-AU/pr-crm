@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { updateAISettings, updateOrganizationSettings, updateUserProfile } from "@/actions/settings-actions";
 import { type AIProvider, PROVIDER_INFO, DEFAULT_MODELS } from "@/lib/ai/provider";
 import { LogoUpload } from "@/components/shared/logo-upload";
+import { PageContainer, PageHeader } from "@/components/layout/page-header";
 
 interface SettingsClientProps {
   org: {
@@ -107,7 +108,11 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <PageContainer>
+      <PageHeader
+        title="Settings"
+        subtitle="Configure your workspace, team, and integrations."
+      />
       {/* Profile section */}
       {currentUser && (
         <Card style={{ padding: 20, marginBottom: 16 }}>
@@ -477,6 +482,6 @@ export function SettingsClient({ org, currentUser, users, apiKeyStatus, emailAcc
           )}
         </div>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

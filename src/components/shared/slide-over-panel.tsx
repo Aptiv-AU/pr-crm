@@ -56,11 +56,11 @@ export function SlideOverPanel({ open, onClose, title, children }: SlideOverPane
           bottom: 0,
           zIndex: 101,
           width: "100%",
-          maxWidth: 400,
+          maxWidth: 440,
           backgroundColor: "var(--card-bg)",
-          borderLeft: "1px solid var(--border-custom)",
+          boxShadow: open ? "-24px 0 60px rgba(15, 23, 42, 0.12)" : "none",
           transform: open ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 240ms cubic-bezier(0.32, 0, 0.15, 1)",
+          transition: "transform 240ms cubic-bezier(0.32, 0, 0.15, 1), box-shadow 240ms ease",
           display: "flex",
           flexDirection: "column",
         }}
@@ -71,16 +71,12 @@ export function SlideOverPanel({ open, onClose, title, children }: SlideOverPane
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 20px",
-            borderBottom: "1px solid var(--border-custom)",
+            padding: "20px 24px",
           }}
         >
           <span
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-            }}
+            className="text-xl font-extrabold tracking-tight"
+            style={{ color: "var(--text-primary)" }}
           >
             {title}
           </span>
@@ -108,7 +104,7 @@ export function SlideOverPanel({ open, onClose, title, children }: SlideOverPane
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "20px",
+            padding: "8px 24px 24px",
           }}
         >
           {children}

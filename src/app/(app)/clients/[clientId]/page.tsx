@@ -39,7 +39,7 @@ export default async function ClientDetailPage({
   }
 
   return (
-    <div style={{ padding: "16px" }} className="md:p-6">
+    <div className="px-6 py-8 md:px-10 md:py-10 max-w-[1600px] mx-auto space-y-6">
       <ClientHero
         client={{
           id: client.id,
@@ -53,7 +53,7 @@ export default async function ClientDetailPage({
         stats={stats}
       />
 
-      <div style={{ marginTop: 20 }}>
+      <div>
         <ClientTabs
           clientId={client.id}
           clientContacts={client.contacts.map((c) => ({

@@ -6,7 +6,6 @@ import {
   type DashboardMetrics,
 } from "@/lib/queries/dashboard-metrics";
 import { DashboardFilters } from "@/components/dashboard/filters";
-import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -40,22 +39,30 @@ export default async function DashboardPage({
     }),
   ]);
 
+  const rangeLabel = filters.from || filters.to ? formatRange(filters.from, filters.to) : "All time";
+
   return (
-    <div className="space-y-6 p-6">
-      <header className="flex items-baseline justify-between">
-        <h1
-          className="text-2xl font-semibold"
-          style={{ color: "var(--text-primary)" }}
-        >
-          Dashboard
-        </h1>
-        <p
-          className="text-[12px]"
+    <div className="px-6 py-8 md:px-10 md:py-10 max-w-[1600px] mx-auto space-y-8">
+      {/* Editorial header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h2
+            className="text-4xl font-extrabold tracking-tight"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Dashboard
+          </h2>
+          <p className="font-medium italic" style={{ color: "var(--text-sub)" }}>
+            Campaign performance at a glance.
+          </p>
+        </div>
+        <span
+          className="text-[10px] font-bold uppercase tracking-[0.14em]"
           style={{ color: "var(--text-muted-custom)" }}
         >
-          {filters.from || filters.to ? formatRange(filters.from, filters.to) : "All time"}
-        </p>
-      </header>
+          {rangeLabel}
+        </span>
+      </div>
 
       <DashboardFilters
         clients={clients}
@@ -101,61 +108,77 @@ function MetricCard({
   hint?: string;
 }) {
   return (
-    <Card>
-      <div className="p-4">
-        <div
-          className="text-[11px] uppercase tracking-[0.08em]"
-          style={{ color: "var(--text-muted-custom)" }}
-        >
-          {label}
-        </div>
-        <div
-          className="text-3xl font-semibold mt-2"
-          style={{ color: "var(--text-primary)" }}
-        >
-          {value.toLocaleString()}
-        </div>
-        {hint && (
-          <div
-            className="text-[12px] mt-1"
-            style={{ color: "var(--text-sub)" }}
-          >
-            {hint}
-          </div>
-        )}
+    <div
+      className="rounded-xl p-6"
+      style={{
+        backgroundColor: "var(--card-bg)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+      }}
+    >
+      <div
+        className="text-[10px] font-black uppercase tracking-[0.14em]"
+        style={{ color: "var(--text-muted-custom)" }}
+      >
+        {label}
       </div>
-    </Card>
+      <div
+        className="text-[44px] leading-none font-extrabold tracking-tight mt-3"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {value.toLocaleString()}
+      </div>
+      {hint && (
+        <div
+          className="text-[12px] italic font-medium mt-2"
+          style={{ color: "var(--accent-custom)" }}
+        >
+          {hint}
+        </div>
+      )}
+    </div>
   );
 }
 
 function TrendChart({ byDay }: { byDay: DashboardMetrics["byDay"] }) {
   return (
-    <Card>
-      <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
+    <section
+      className="rounded-xl p-6 space-y-5"
+      style={{
+        backgroundColor: "var(--card-bg)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div>
           <div
-            className="text-[11px] uppercase tracking-[0.08em]"
+            className="text-[10px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--text-muted-custom)" }}
           >
             Activity over time
           </div>
-          <div className="flex items-center gap-3 text-[11px]" style={{ color: "var(--text-sub)" }}>
-            <LegendDot color="var(--accent-custom)" label="Sent" />
-            <LegendDot color="var(--text-sub)" label="Replied" />
-          </div>
-        </div>
-        {byDay.length === 0 ? (
-          <div
-            className="py-12 text-center text-[12px]"
-            style={{ color: "var(--text-muted-custom)" }}
+          <h3
+            className="text-xl font-extrabold tracking-tight mt-1"
+            style={{ color: "var(--text-primary)" }}
           >
-            No outreach in this range yet.
-          </div>
-        ) : (
-          <SparkLines byDay={byDay} />
-        )}
+            Outreach &amp; replies
+          </h3>
+        </div>
+        <div className="flex items-center gap-4 text-[11px] font-semibold" style={{ color: "var(--text-sub)" }}>
+          <LegendDot color="var(--accent-custom)" label="Sent" />
+          <LegendDot color="var(--text-sub)" label="Replied" />
+        </div>
       </div>
-    </Card>
+      {byDay.length === 0 ? (
+        <div
+          className="py-14 text-center text-[12px] italic font-medium"
+          style={{ color: "var(--text-muted-custom)" }}
+        >
+          No outreach in this range yet.
+        </div>
+      ) : (
+        <SparkLines byDay={byDay} />
+      )}
+    </section>
   );
 }
 

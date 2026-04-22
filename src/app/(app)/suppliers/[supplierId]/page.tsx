@@ -44,7 +44,7 @@ export default async function SupplierDetailPage({
   const serializedSupplier = JSON.parse(JSON.stringify(supplier));
 
   return (
-    <div style={{ padding: "16px" }} className="md:p-6">
+    <div className="px-6 py-8 md:px-10 md:py-10 max-w-[1600px] mx-auto">
       <SupplierDetailClient
         supplier={serializedSupplier}
         stats={{ contactCount, campaignCount, totalCost }}

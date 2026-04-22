@@ -21,9 +21,9 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
     border: "1px solid var(--accent-custom)",
   },
   default: {
-    backgroundColor: "var(--card-bg)",
+    backgroundColor: "var(--surface-container-low)",
     color: "var(--text-primary)",
-    border: "1px solid var(--border-custom)",
+    border: "none",
   },
   ghost: {
     backgroundColor: "transparent",
@@ -33,9 +33,9 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  xs: "h-[26px] px-[8px] text-[11px] gap-[4px]",
-  sm: "h-[30px] px-[10px] text-[12px] gap-[5px]",
-  md: "h-[34px] px-[14px] text-[13px] gap-[6px]",
+  xs: "h-[26px] px-3 text-[11px] font-bold gap-[4px]",
+  sm: "h-[32px] px-4 text-[12px] font-bold gap-[5px]",
+  md: "h-[38px] px-5 text-[13px] font-bold gap-[6px]",
 };
 
 const iconSizes: Record<ButtonSize, number> = {
@@ -57,7 +57,7 @@ export function Button({
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center rounded-[7px] font-medium whitespace-nowrap cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${className ?? ""}`}
+      className={`inline-flex items-center justify-center rounded-full whitespace-nowrap cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${className ?? ""}`}
       style={{ ...variantStyles[variant], ...style }}
       {...props}
     >

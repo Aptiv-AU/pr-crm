@@ -41,18 +41,18 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
   return (
     <Link
       href={`/clients/${client.slug}`}
-      className="block rounded-[10px] transition-colors"
+      className="block rounded-xl transition-all overflow-hidden"
       style={{
-        border: "1px solid var(--border-custom)",
         backgroundColor: "var(--card-bg)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
         textDecoration: "none",
         color: "inherit",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-mid)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-custom)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
       }}
     >
       {/* Client Header */}
@@ -125,44 +125,24 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
 
       {/* Stats Strip */}
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 1,
-          backgroundColor: "var(--border-custom)",
-          borderTop: "1px solid var(--border-custom)",
-          borderBottom: activeCampaigns.length > 0 ? "1px solid var(--border-custom)" : "none",
-        }}
+        className="grid grid-cols-3"
+        style={{ backgroundColor: "var(--surface-container-low)" }}
       >
         {[
           { label: "Contacts", value: contactCount },
           { label: "Campaigns", value: client._count.campaigns },
           { label: "Coverage", value: 0 },
         ].map((stat) => (
-          <div
-            key={stat.label}
-            style={{
-              backgroundColor: "var(--page-bg)",
-              padding: "8px 12px",
-              textAlign: "center" as const,
-            }}
-          >
+          <div key={stat.label} className="px-3 py-3 text-center">
             <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text-primary)",
-                lineHeight: 1.3,
-              }}
+              className="text-lg font-extrabold tracking-tight"
+              style={{ color: "var(--text-primary)" }}
             >
               {stat.value}
             </div>
             <div
-              style={{
-                fontSize: 10,
-                color: "var(--text-muted-custom)",
-                lineHeight: 1.3,
-              }}
+              className="text-[9px] font-bold uppercase tracking-[0.12em] mt-0.5"
+              style={{ color: "var(--text-muted-custom)" }}
             >
               {stat.label}
             </div>

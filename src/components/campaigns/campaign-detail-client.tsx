@@ -197,7 +197,7 @@ export function CampaignDetailClient({
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="px-6 py-8 md:px-10 md:py-10 max-w-[1600px] mx-auto space-y-6">
       <CampaignHero
         campaign={campaign}
         budgetStats={budgetStats}

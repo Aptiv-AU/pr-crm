@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
-import { Topbar } from "@/components/layout/topbar";
 import { GlobalSearch } from "@/components/shared/global-search";
 import { Icon } from "@/components/ui/icon";
 
@@ -43,15 +42,12 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
       <Sidebar clients={clients} badgeCounts={badgeCounts} userData={userData} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} clients={clients} badgeCounts={badgeCounts} userData={userData} />
       <GlobalSearch />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
-        <main
-          className="flex-1 overflow-y-auto"
-          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
-        >
-          {children}
-        </main>
-      </div>
+      <main
+        className="flex-1 overflow-y-auto"
+        style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      >
+        {children}
+      </main>
 
       {/* Mobile floating menu button (drawer replaces the removed mobile topbar) */}
       {!drawerOpen && (

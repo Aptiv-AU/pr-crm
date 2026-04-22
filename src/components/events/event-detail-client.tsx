@@ -104,8 +104,8 @@ export function EventDetailClient({
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row gap-4">
+    <div className="px-6 py-8 md:px-10 md:py-10 max-w-[1600px] mx-auto">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Left column */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <EventHero
@@ -130,9 +130,9 @@ export function EventDetailClient({
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 style={{
-                  padding: "8px 16px",
+                  padding: "12px 20px",
                   fontSize: 13,
-                  fontWeight: 500,
+                  fontWeight: 700,
                   color:
                     activeTab === tab
                       ? "var(--accent-custom)"
@@ -141,8 +141,8 @@ export function EventDetailClient({
                   border: "none",
                   borderBottom:
                     activeTab === tab
-                      ? "2px solid var(--accent-custom)"
-                      : "2px solid transparent",
+                      ? "3px solid var(--accent-custom)"
+                      : "3px solid transparent",
                   cursor: "pointer",
                   marginBottom: -1,
                   transition: "color 150ms ease, border-color 150ms ease",
