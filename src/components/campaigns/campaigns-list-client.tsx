@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { StatsBar } from "@/components/shared/stats-bar";
 import { FilterPills } from "@/components/shared/filter-pills";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -54,15 +53,18 @@ const LABEL_TO_STATUS: Record<string, "active" | "complete" | "all"> = {
   "All": "all",
 };
 
-function formatBudget(budget: number | null): string {
-  if (budget == null) return "\u2014";
-  return `$${budget.toLocaleString()} budget`;
-}
-
 function formatDueDate(dueDate: string | null): string | null {
   if (!dueDate) return null;
   const d = new Date(dueDate);
-  return `Due ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  return `Due ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+}
+
+function formatCurrencyShort(value: number): string {
+  if (value >= 1000) {
+    const k = value / 1000;
+    return `A$${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}k`;
+  }
+  return `A$${value.toLocaleString()}`;
 }
 
 export function CampaignsListClient({ campaigns, stats, types, clients }: CampaignsListClientProps) {
@@ -85,30 +87,52 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
     return result;
   }, [campaigns, selectedType, selectedClientId, statusFilter]);
 
+  const quarterBudget = useMemo(() => {
+    const total = campaigns
+      .filter((c) => c.status !== "complete")
+      .reduce((sum, c) => sum + (c.budget ?? 0), 0);
+    return total;
+  }, [campaigns]);
+
+  const meta = [
+    { label: "Active", value: String(stats.active) },
+    { label: "Draft", value: String(stats.draft) },
+    { label: "This quarter", value: formatCurrencyShort(quarterBudget) },
+  ];
+
   function handleSuccess() {
     setAddOpen(false);
     router.refresh();
   }
 
+  const activeStatusLabel = STATUS_LABELS[statusFilter];
+
   return (
     <PageContainer>
       <PageHeader
+        eyebrow="Workspace"
         title="Campaigns"
         subtitle="Every pitch is a chapter."
+        meta={meta}
         actions={
-          <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
-            New campaign
-          </Button>
+          <>
+            <Button
+              variant="default"
+              size="sm"
+              icon="filter"
+              onClick={() => {
+                const order: Array<"active" | "complete" | "all"> = ["active", "complete", "all"];
+                const i = order.indexOf(statusFilter);
+                setStatusFilter(order[(i + 1) % order.length]);
+              }}
+            >
+              {activeStatusLabel}
+            </Button>
+            <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
+              New campaign
+            </Button>
+          </>
         }
-      />
-
-      <StatsBar
-        stats={[
-          { value: stats.total, label: "Total" },
-          { value: stats.active, label: "Active" },
-          { value: stats.draft, label: "Draft" },
-          { value: stats.complete, label: "Complete" },
-        ]}
       />
 
       <FilterPills
@@ -152,80 +176,108 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
         </select>
       </div>
 
-      {/* Campaign cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {filtered.map((campaign) => {
           const dueDateFormatted = formatDueDate(campaign.dueDate);
+          const hasBudget = campaign.budget != null && campaign.budget > 0;
           return (
             <Link
               key={campaign.id}
               href={`/campaigns/${campaign.slug}`}
               style={{ textDecoration: "none" }}
             >
-              <Card
-                style={{
-                  padding: 16,
-                  cursor: "pointer",
-                  transition: "border-color 150ms ease",
-                }}
-                className="hover:!border-[var(--border-mid)]"
-              >
-                {/* Top row: client badge + name + type */}
-                <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-                  <ClientBadge client={campaign.client} size={28} />
+              <Card style={{ padding: 22, cursor: "pointer" }}>
+                <div
+                  className="flex items-center gap-3 flex-wrap"
+                  style={{ marginBottom: 4 }}
+                >
+                  <ClientBadge client={campaign.client} size={32} />
                   <span
                     style={{
-                      fontSize: 14,
-                      fontWeight: 600,
+                      fontSize: 17,
+                      fontWeight: 800,
+                      letterSpacing: "-0.01em",
                       color: "var(--text-primary)",
-                      flex: 1,
-                      minWidth: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
                     }}
                   >
                     {campaign.name}
                   </span>
-                  <Badge variant="default">{campaign.type}</Badge>
-                </div>
-
-                {/* Status + budget */}
-                <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
+                  <Badge variant="default">{titleCase(campaign.type)}</Badge>
                   <Badge variant={statusVariantMap[campaign.status] ?? "default"}>
                     {titleCase(campaign.status)}
                   </Badge>
-                  <span style={{ fontSize: 12, color: "var(--text-muted-custom)" }}>
-                    {formatBudget(campaign.budget)}
-                  </span>
                 </div>
 
-                {/* Due date */}
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontStyle: "italic",
+                    fontWeight: 500,
+                    color: "var(--text-sub)",
+                    marginBottom: 14,
+                  }}
+                >
+                  {campaign.client.name}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: hasBudget ? "var(--text-sub)" : "var(--text-muted-custom)",
+                  }}
+                >
+                  {hasBudget
+                    ? `Budget A$${(campaign.budget as number).toLocaleString()}`
+                    : "No budget set"}
+                </div>
+
                 {dueDateFormatted && (
-                  <div style={{ fontSize: 12, color: "var(--text-muted-custom)", marginBottom: 4 }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "var(--text-sub)",
+                      margin: "12px 0 4px",
+                    }}
+                  >
                     {dueDateFormatted}
                   </div>
                 )}
 
-                {/* Metrics */}
-                <div className="flex gap-4" style={{ marginTop: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    marginTop: 14,
+                    paddingTop: 14,
+                    borderTop: "1px solid var(--border-custom)",
+                  }}
+                >
                   {[
                     { label: "Contacts", value: campaign.contactCount },
                     { label: "Outreach", value: campaign.outreachCount },
                     { label: "Coverage", value: campaign.coverageCount },
                   ].map((metric) => (
-                    <div key={metric.label}>
+                    <div key={metric.label} style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                       <span
                         style={{
-                          fontSize: 13,
-                          fontWeight: 600,
+                          fontSize: 14,
+                          fontWeight: 700,
                           color: "var(--text-primary)",
-                          marginRight: 3,
                         }}
                       >
                         {metric.value}
                       </span>
-                      <span style={{ fontSize: 11, color: "var(--text-muted-custom)" }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                          color: "var(--text-muted-custom)",
+                        }}
+                      >
                         {metric.label}
                       </span>
                     </div>
@@ -245,7 +297,6 @@ export function CampaignsListClient({ campaigns, stats, types, clients }: Campai
         )
       )}
 
-      {/* Add campaign slide-over */}
       <SlideOverPanel open={addOpen} onClose={() => setAddOpen(false)} title="New Campaign">
         {addOpen && <CampaignForm clients={clients} onSuccess={handleSuccess} />}
       </SlideOverPanel>

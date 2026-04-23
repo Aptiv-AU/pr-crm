@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { ClientForm } from "@/components/clients/client-form";
 import { archiveClient } from "@/actions/client-actions";
@@ -26,9 +27,10 @@ interface ClientHeroProps {
     coverageCount: number;
     replyRate: number;
   };
+  hasActiveCampaigns?: boolean;
 }
 
-export function ClientHero({ client, stats }: ClientHeroProps) {
+export function ClientHero({ client, hasActiveCampaigns = true }: ClientHeroProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const router = useRouter();
@@ -45,81 +47,77 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
 
   return (
     <>
-      <Card style={{ padding: 0 }}>
-        <div className="p-5 md:p-6">
-          {/* Header row */}
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-              {/* Logo or Initials badge */}
-              <ClientBadge client={client} size={56} />
-              <div style={{ minWidth: 0 }}>
-                <div
-                  className="text-2xl md:text-[28px] font-extrabold tracking-tight leading-tight"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {client.name}
-                </div>
-                <div
-                  className="text-sm italic font-medium mt-1"
-                  style={{ color: "var(--text-sub)" }}
-                >
-                  {client.industry}
-                </div>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: 8 }} className="ml-0 md:ml-auto">
-              <Button variant="ghost" size="sm" onClick={() => setShowArchiveConfirm(true)}>
-                Archive
-              </Button>
-              <Button variant="default" size="sm" icon="settings" onClick={() => setSettingsOpen(true)}>
-                Settings
-              </Button>
-              <Button variant="primary" size="sm" icon="plus">
-                New campaign
-              </Button>
-            </div>
-          </div>
-
-          {/* Stats strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-            {[
-              { label: "Contacts", value: stats.contactCount },
-              { label: "Campaigns", value: stats.campaignCount },
-              { label: "Coverage hits", value: stats.coverageCount },
-              { label: "Reply rate", value: `${stats.replyRate}%` },
-            ].map((stat) => (
-              <div
-                key={stat.label}
+      <Card style={{ padding: 24 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 18,
+            flexWrap: "wrap",
+          }}
+        >
+          <ClientBadge client={client} size={56} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <span
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  backgroundColor: "var(--page-bg)",
-                  border: "1px solid var(--border-custom)",
+                  fontSize: 24,
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
+                  color: "var(--text-primary)",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {stat.value}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted-custom)",
-                    marginTop: 2,
-                  }}
-                >
-                  {stat.label}
-                </div>
-              </div>
-            ))}
+                {client.name}
+              </span>
+              {hasActiveCampaigns && (
+                <Badge variant="active">Active retainer</Badge>
+              )}
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                fontStyle: "italic",
+                color: "var(--text-sub)",
+                marginTop: 6,
+                fontWeight: 500,
+              }}
+            >
+              {client.industry}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginLeft: "auto",
+            }}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              icon="edit"
+              onClick={() => setSettingsOpen(true)}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowArchiveConfirm(true)}
+            >
+              Archive
+            </Button>
+            <Button variant="primary" size="sm" icon="plus">
+              New campaign
+            </Button>
           </div>
         </div>
       </Card>
@@ -134,7 +132,11 @@ export function ClientHero({ client, stats }: ClientHeroProps) {
         />
       )}
 
-      <SlideOverPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Edit Client">
+      <SlideOverPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        title="Edit Client"
+      >
         <ClientForm client={client} onSuccess={handleSuccess} />
       </SlideOverPanel>
     </>

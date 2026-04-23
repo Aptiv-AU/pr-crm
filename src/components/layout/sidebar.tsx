@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
 import { Icon } from "@/components/ui/icon";
-import { Divider } from "@/components/ui/divider";
 import { APP_NAME } from "@/lib/constants";
 import { ClientSwitcher } from "@/components/clients/client-switcher";
 import { buildGlobalItems, buildWorkspaceItems, type BadgeCounts, type NavItem as NavDef } from "./nav-items";
@@ -56,18 +54,8 @@ function SidebarItem({ item, active }: { item: NavDef; active: boolean }) {
   );
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w[0].toUpperCase())
-    .slice(0, 2)
-    .join("");
-}
-
-export function Sidebar({ clients, badgeCounts, userData }: SidebarProps) {
+export function Sidebar({ clients, badgeCounts, userData: _userData }: SidebarProps) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const globalItems = buildGlobalItems(badgeCounts);
   const workspaceItems = buildWorkspaceItems(badgeCounts);
 
@@ -95,35 +83,7 @@ export function Sidebar({ clients, badgeCounts, userData }: SidebarProps) {
         </div>
       </div>
 
-      {/* Global search trigger */}
-      <div className="px-3 pt-4">
-        <button
-          onClick={() => window.dispatchEvent(new Event("open-search"))}
-          className="w-full flex items-center gap-2.5 rounded-full px-3.5 py-2 cursor-pointer border-none transition-colors"
-          style={{ backgroundColor: "var(--card-bg)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--surface-container)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--card-bg)"; }}
-        >
-          <Icon name="search" size={13} color="var(--text-muted-custom)" />
-          <span
-            className="text-[12px] font-medium flex-1 text-left"
-            style={{ color: "var(--text-muted-custom)" }}
-          >
-            Search
-          </span>
-          <span
-            className="text-[9px] font-bold rounded px-1.5 py-0.5"
-            style={{
-              backgroundColor: "var(--surface-container)",
-              color: "var(--text-muted-custom)",
-            }}
-          >
-            ⌘K
-          </span>
-        </button>
-      </div>
-
-      {/* Client switcher */}
+      {/* Client switcher (search pill now lives in topbar) */}
       <div className="pt-3 pb-1">
         <ClientSwitcher clients={clients} />
       </div>
@@ -152,60 +112,6 @@ export function Sidebar({ clients, badgeCounts, userData }: SidebarProps) {
           <SidebarItem key={item.href} item={item} active={pathname.startsWith(item.href)} />
         ))}
       </nav>
-
-      {/* Footer */}
-      <div className="px-3 pb-4">
-        <SidebarItem
-          item={{ label: "Settings", icon: "settings", href: "/settings" }}
-          active={pathname.startsWith("/settings")}
-        />
-
-        {/* Theme toggle */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex items-center gap-2.5 rounded-md px-3 py-2 w-full text-[13px] font-semibold cursor-pointer border-none"
-          style={{
-            backgroundColor: "transparent",
-            color: "var(--text-sub)",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--hover-bg)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-        >
-          <Icon name={theme === "dark" ? "sun" : "moon"} size={15} color="var(--text-sub)" />
-          <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-        </button>
-
-        <Divider style={{ margin: "10px 0" }} />
-
-        {/* User row */}
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div
-            className="flex items-center justify-center rounded-full text-[11px] font-bold"
-            style={{
-              width: 30,
-              height: 30,
-              backgroundColor: "var(--accent-custom)",
-              color: "#fff",
-            }}
-          >
-            {getInitials(userData.name)}
-          </div>
-          <div className="min-w-0">
-            <div
-              className="text-[13px] font-bold leading-tight truncate"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {userData.name}
-            </div>
-            <div
-              className="text-[10px] font-semibold uppercase tracking-[0.08em] leading-tight mt-0.5"
-              style={{ color: "var(--text-muted-custom)" }}
-            >
-              {userData.orgName}
-            </div>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

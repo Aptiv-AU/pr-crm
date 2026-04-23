@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ClientBadge } from "@/components/shared/client-badge";
 import { CampaignPhaseStepper } from "@/components/campaigns/campaign-phase-stepper";
+import { titleCase } from "@/lib/format/title-case";
 
 interface CampaignHeroProps {
   campaign: {
@@ -34,6 +35,8 @@ interface CampaignHeroProps {
   isPending?: boolean;
 }
 
+const TEAL = "#006C49";
+
 const statusVariantMap: Record<string, BadgeVariant> = {
   active: "active",
   outreach: "outreach",
@@ -62,7 +65,7 @@ export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, on
   const dateDisplay =
     startFormatted && dueFormatted
       ? `${startFormatted} — ${dueFormatted}`
-      : startFormatted || dueFormatted || "No dates set";
+      : startFormatted || dueFormatted || null;
 
   const spentPercent =
     budgetStats.total && budgetStats.total > 0
@@ -71,83 +74,108 @@ export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, on
 
   return (
     <Card style={{ padding: 24 }}>
-      {/* Top row */}
-      <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 4 }}>
-        <ClientBadge client={campaign.client} size={44} />
+      <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 6 }}>
+        <ClientBadge client={campaign.client} size={40} />
         <span
-          className="text-2xl md:text-[28px] font-extrabold tracking-tight"
-          style={{ color: "var(--text-primary)" }}
+          style={{
+            fontSize: 22,
+            fontWeight: 800,
+            letterSpacing: "-0.015em",
+            color: "var(--text-primary)",
+          }}
         >
           {campaign.name}
         </span>
-        <Badge variant="default">{campaign.type}</Badge>
+        <Badge variant="default">{titleCase(campaign.type)}</Badge>
         <Badge variant={statusVariantMap[campaign.status] ?? "default"}>
-          {campaign.status === "complete" ? "Complete" : campaign.status}
+          {titleCase(campaign.status)}
         </Badge>
       </div>
 
-      {/* Client name */}
-      <div className="text-sm italic font-medium" style={{ color: "var(--text-sub)", marginBottom: 18 }}>
-        {campaign.client.name}
-      </div>
-
-      {/* Budget row */}
-      <div style={{ marginBottom: 10 }}>
-        {budgetStats.total && budgetStats.total > 0 ? (
-          <>
-            <div style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 4 }}>
-              Spent {formatCurrency(budgetStats.spent)} of {formatCurrency(budgetStats.total)}
-            </div>
-            <div
-              style={{
-                height: 3,
-                borderRadius: 2,
-                backgroundColor: "var(--border-custom)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${spentPercent}%`,
-                  backgroundColor: "var(--accent-custom)",
-                  borderRadius: 2,
-                  transition: "width 300ms ease",
-                }}
-              />
-            </div>
-          </>
-        ) : (
-          <div style={{ fontSize: 12, color: "var(--text-muted-custom)" }}>No budget set</div>
-        )}
-      </div>
-
-      {/* Date range */}
       <div
         style={{
-          fontSize: 12,
-          color: dateDisplay === "No dates set" ? "var(--text-muted-custom)" : "var(--text-sub)",
+          fontSize: 14,
+          fontStyle: "italic",
+          fontWeight: 500,
+          color: "var(--text-sub)",
           marginBottom: 16,
         }}
       >
-        {dateDisplay}
+        {campaign.client.name}
       </div>
 
-      {/* Actions */}
-      <div style={{ display: "flex", gap: 8 }}>
+      {budgetStats.total && budgetStats.total > 0 ? (
+        <>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              color: "var(--text-sub)",
+              marginBottom: 6,
+            }}
+          >
+            Spent {formatCurrency(budgetStats.spent)} of {formatCurrency(budgetStats.total)}
+          </div>
+          <div
+            style={{
+              height: 4,
+              borderRadius: 999,
+              backgroundColor: "var(--surface-container)",
+              overflow: "hidden",
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${spentPercent}%`,
+                backgroundColor: TEAL,
+                borderRadius: 999,
+                transition: "width 300ms ease",
+              }}
+            />
+          </div>
+        </>
+      ) : (
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-muted-custom)",
+            marginBottom: 12,
+          }}
+        >
+          No budget set
+        </div>
+      )}
+
+      {dateDisplay && (
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-sub)",
+            marginBottom: 18,
+          }}
+        >
+          {dateDisplay}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <Button variant="default" size="sm" icon="edit" onClick={onEdit}>
           Edit
         </Button>
         <Button
           variant="default"
           size="sm"
-          icon="campaigns"
+          icon="file"
           onClick={() => window.open(`/api/reports/${campaign.id}`, "_blank")}
         >
           Export report
         </Button>
         {campaign.status !== "complete" ? (
-          <Button variant="default" size="sm" onClick={onComplete}>
+          <Button variant="primary" size="sm" icon="check" onClick={onComplete}>
             Complete
           </Button>
         ) : (
@@ -159,8 +187,15 @@ export function CampaignHero({ campaign, budgetStats, onEdit, onAdvancePhase, on
           Archive
         </Button>
       </div>
+
       {campaign.phases.length > 0 && (
-        <div style={{ marginTop: 16, borderTop: "1px solid var(--border-custom)", paddingTop: 14 }}>
+        <div
+          style={{
+            marginTop: 20,
+            borderTop: "1px solid var(--border-custom)",
+            paddingTop: 18,
+          }}
+        >
           <CampaignPhaseStepper
             phases={campaign.phases}
             isPending={isPending}

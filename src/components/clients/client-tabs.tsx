@@ -148,38 +148,41 @@ export function ClientTabs({ clientId, campaigns, clientContacts }: ClientTabsPr
       <div
         style={{
           display: "flex",
-          gap: 0,
+          gap: 4,
           borderBottom: "1px solid var(--border-custom)",
-          marginBottom: 16,
+          marginBottom: 20,
         }}
       >
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "12px 20px",
-              fontSize: 13,
-              fontWeight: 700,
-              color:
-                activeTab === tab
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "10px 16px",
+                fontSize: 12,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: isActive
                   ? "var(--accent-custom)"
                   : "var(--text-muted-custom)",
-              backgroundColor: "transparent",
-              border: "none",
-              borderBottom:
-                activeTab === tab
-                  ? "3px solid var(--accent-custom)"
-                  : "3px solid transparent",
-              cursor: "pointer",
-              marginBottom: -1,
-              transition: "color 150ms ease, border-color 150ms ease",
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+                backgroundColor: "transparent",
+                border: "none",
+                borderBottom: isActive
+                  ? "2px solid var(--accent-custom)"
+                  : "2px solid transparent",
+                cursor: "pointer",
+                marginBottom: -1,
+                transition: "color 150ms ease, border-color 150ms ease",
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}

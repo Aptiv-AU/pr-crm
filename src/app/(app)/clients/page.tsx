@@ -1,15 +1,89 @@
 import { db } from "@/lib/db";
 import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
-import { StatsBar } from "@/components/shared/stats-bar";
 import { ClientCard } from "@/components/clients/client-card";
 import { AddClientButton } from "@/components/clients/add-client-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
+function MicroLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 800,
+        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: "var(--text-muted-custom)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface StatItem {
+  label: string;
+  value: string;
+  sub?: string;
+}
+
+function StatRow({ items }: { items: StatItem[] }) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
+        gap: 16,
+      }}
+    >
+      {items.map((it) => (
+        <Card key={it.label} style={{ padding: "18px 20px" }}>
+          <MicroLabel>{it.label}</MicroLabel>
+          <div
+            style={{
+              fontSize: 32,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              marginTop: 10,
+              lineHeight: 1.05,
+              color: "var(--text-primary)",
+            }}
+          >
+            {it.value}
+          </div>
+          {it.sub && (
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--text-sub)",
+                marginTop: 4,
+                fontWeight: 500,
+              }}
+            >
+              {it.sub}
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function avgTenureMonths(dates: Date[]): number {
+  if (dates.length === 0) return 0;
+  const now = Date.now();
+  const total = dates.reduce((sum, d) => {
+    const months =
+      (now - new Date(d).getTime()) / (1000 * 60 * 60 * 24 * 30.4375);
+    return sum + Math.max(0, months);
+  }, 0);
+  return Math.round(total / dates.length);
+}
+
 export default async function ClientsPage() {
-  // Get or create default org
   let org = await db.organization.findFirst();
   if (!org) {
     org = await db.organization.create({
@@ -17,13 +91,11 @@ export default async function ClientsPage() {
     });
   }
 
-  // Fetch clients and org stats in parallel
   const [clients, orgStats] = await Promise.all([
     getClients(org.id),
     getOrganizationStats(org.id),
   ]);
 
-  // For each client, count contacts via campaignContacts
   const clientContactCounts = await Promise.all(
     clients.map((client) =>
       db.campaignContact.count({
@@ -32,30 +104,44 @@ export default async function ClientsPage() {
     )
   );
 
-  // Format media value
   const mv = Number(orgStats.mediaValue);
   const mediaValueFormatted =
-    mv >= 1000 ? `$${Math.round(mv / 1000)}k` : `$${mv}`;
+    mv >= 1000 ? `A$${Math.round(mv / 1000)}k` : `A$${mv}`;
 
-  const stats = [
-    { value: orgStats.clientCount, label: "Active clients" },
-    { value: orgStats.contactCount, label: "Total contacts" },
-    { value: orgStats.campaignCount, label: "Live campaigns" },
-    { value: mediaValueFormatted, label: "Media value" },
+  const tenure = avgTenureMonths(clients.map((c) => c.createdAt));
+
+  const statItems: StatItem[] = [
+    { label: "On retainer", value: String(orgStats.clientCount) },
+    { label: "Active campaigns", value: String(orgStats.campaignCount) },
+    { label: "Contacts", value: String(orgStats.contactCount) },
+    { label: "Avg tenure", value: tenure > 0 ? `${tenure}mo` : "—" },
   ];
 
   return (
     <PageContainer>
       <PageHeader
+        eyebrow="Directory"
         title="Clients"
         subtitle="Your roster of stories worth telling."
+        meta={[
+          { label: "Active", value: String(orgStats.clientCount) },
+          { label: "Campaigns", value: String(orgStats.campaignCount) },
+          { label: "Media value", value: mediaValueFormatted },
+        ]}
         actions={<AddClientButton />}
       />
 
-      <StatsBar stats={stats} />
+      <StatRow items={statItems} />
 
       {clients.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 14,
+          }}
+          className="max-md:!grid-cols-1"
+        >
           {clients.map((client, idx) => (
             <ClientCard
               key={client.id}

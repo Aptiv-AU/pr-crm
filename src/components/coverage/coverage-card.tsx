@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import { ClientBadge } from "@/components/shared/client-badge";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CoverageForm } from "./coverage-form";
 import { deleteCoverage } from "@/actions/coverage-actions";
 
-interface CoverageCardProps {
+const TEAL2 = "#006C49";
+
+interface CoverageRowProps {
   coverage: {
     id: string;
     publication: string;
@@ -39,29 +39,32 @@ interface CoverageCardProps {
   };
   campaigns: { id: string; name: string }[];
   contacts: { id: string; name: string }[];
+  isFirst?: boolean;
 }
 
-const typeBadgeVariant: Record<string, BadgeVariant> = {
-  feature: "active",
-  mention: "default",
-  review: "accent",
-  social: "outreach",
-};
+function formatRelative(date: Date): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (hours < 1) return "now";
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 8) return `${weeks}w`;
+  const months = Math.floor(days / 30);
+  return `${months}mo`;
+}
 
-function formatShortDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function formatMediaValue(value: number): string {
   return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-function isImageUrl(url: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
-}
-
-export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProps) {
+export function CoverageRow({ coverage, campaigns, contacts, isFirst }: CoverageRowProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -73,8 +76,11 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
     });
   }
 
+  const dateObj = typeof coverage.date === "string" ? new Date(coverage.date) : coverage.date;
   const typeLabel = coverage.type.charAt(0).toUpperCase() + coverage.type.slice(1);
-  const hasImage = !!(coverage.attachmentUrl && isImageUrl(coverage.attachmentUrl));
+  const headline = coverage.notes?.trim() || coverage.publication;
+  const mediaValue = coverage.mediaValue != null ? Number(coverage.mediaValue) : null;
+  const hasValue = mediaValue != null && mediaValue > 0;
 
   const formCoverage = {
     id: coverage.id,
@@ -84,7 +90,7 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
       : coverage.date.toISOString().split("T")[0],
     type: coverage.type,
     url: coverage.url,
-    mediaValue: coverage.mediaValue ? Number(coverage.mediaValue) : null,
+    mediaValue,
     attachmentUrl: coverage.attachmentUrl,
     notes: coverage.notes,
     campaignId: coverage.campaignId,
@@ -103,155 +109,130 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
           font: "inherit",
           color: "inherit",
           width: "100%",
-          minHeight: 88,
           border: "none",
-          borderRadius: 12,
-          backgroundColor: "var(--card-bg)",
-          boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
-          opacity: isPending ? 0.5 : 1,
-          transition: "opacity 0.15s, box-shadow 0.15s",
-          overflow: "hidden",
+          background: "transparent",
           display: "flex",
-          alignItems: "stretch",
-          gap: 0,
-          padding: 0,
+          gap: 16,
+          padding: "18px 20px",
+          borderTop: isFirst ? "none" : "1px solid var(--border-custom)",
+          alignItems: "flex-start",
           cursor: "pointer",
+          opacity: isPending ? 0.5 : 1,
+          transition: "background-color 0.15s",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
+          e.currentTarget.style.backgroundColor = "var(--surface-container-low)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
+          e.currentTarget.style.backgroundColor = "transparent";
         }}
       >
-        {/* Content — left / main */}
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            padding: "12px 14px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-          }}
-        >
-          {/* Row 1: outlet + date */}
+        <div style={{ width: 56, flexShrink: 0 }}>
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              fontFamily: "var(--font-mono)",
+              color: "var(--text-primary)",
+              lineHeight: 1.05,
+            }}
+          >
+            {formatRelative(dateObj)}
+          </div>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--text-muted-custom)",
+              fontWeight: 600,
+              marginTop: 4,
+            }}
+          >
+            {formatShortDate(dateObj)}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 8,
-              fontSize: 11,
-              color: "var(--text-muted-custom)",
-              lineHeight: 1,
+              flexWrap: "wrap",
+              marginBottom: 4,
             }}
           >
             <span
               style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                minWidth: 0,
-                flex: 1,
+                fontSize: 10,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+                color: TEAL2,
               }}
             >
               {coverage.publication}
             </span>
-            <span style={{ flexShrink: 0 }}>{formatShortDate(coverage.date)}</span>
+            <Badge>{typeLabel}</Badge>
           </div>
-
-          {/* Row 2: title (notes as surrogate) — primary text */}
           <div
             style={{
-              fontSize: 14,
-              fontWeight: 600,
+              fontSize: 15,
+              fontWeight: 700,
+              letterSpacing: "-0.005em",
+              lineHeight: 1.3,
+              marginBottom: 6,
               color: "var(--text-primary)",
-              lineHeight: 1.35,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
               wordBreak: "break-word",
             }}
           >
-            {coverage.notes?.trim() || coverage.publication}
+            {headline}
           </div>
-
-          {/* Row 3: badges + media value */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              flexWrap: "wrap",
-              marginTop: 2,
-            }}
-          >
-            {coverage.campaign && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                <ClientBadge client={coverage.campaign.client} size={18} />
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-sub)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: 160,
-                  }}
-                >
-                  {coverage.campaign.client.name}
+          {(coverage.contact || coverage.campaign) && (
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--text-sub)",
+                fontWeight: 500,
+              }}
+            >
+              {coverage.contact && (
+                <>
+                  By <span style={{ fontStyle: "italic" }}>{coverage.contact.name}</span>
+                </>
+              )}
+              {coverage.campaign && (
+                <span style={{ color: "var(--text-muted-custom)" }}>
+                  {coverage.contact ? " " : ""}— for {coverage.campaign.name}
                 </span>
-              </div>
-            )}
-            <Badge variant={typeBadgeVariant[coverage.type] ?? "default"}>{typeLabel}</Badge>
-            {coverage.mediaValue != null && Number(coverage.mediaValue) > 0 && (
-              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green)" }}>
-                {formatMediaValue(Number(coverage.mediaValue))}
-              </span>
-            )}
-            {coverage.attachmentUrl && !hasImage && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 3,
-                  fontSize: 11,
-                  color: "var(--text-muted-custom)",
-                }}
-              >
-                <Icon name="campaigns" size={11} color="var(--text-muted-custom)" />
-                PDF
-              </span>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Thumbnail — right */}
-        {hasImage && (
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              flexShrink: 0,
-              alignSelf: "center",
-              marginRight: 12,
-              borderRadius: 8,
-              overflow: "hidden",
-              backgroundColor: "var(--page-bg)",
-              border: "1px solid var(--border-custom)",
-            }}
-          >
-            <img
-              src={coverage.attachmentUrl!}
-              alt=""
+        {hasValue && (
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
+                fontSize: 10,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: "var(--text-muted-custom)",
               }}
-            />
+            >
+              Value
+            </div>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                letterSpacing: "-0.01em",
+                marginTop: 4,
+              }}
+            >
+              {formatMediaValue(mediaValue)}
+            </div>
           </div>
         )}
       </button>
@@ -290,3 +271,5 @@ export function CoverageCard({ coverage, campaigns, contacts }: CoverageCardProp
     </>
   );
 }
+
+export { CoverageRow as CoverageCard };

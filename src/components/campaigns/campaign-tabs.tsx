@@ -9,7 +9,10 @@ import { DraftPitchesPhase } from "./phase-draft-pitches";
 import { OutreachPhase } from "./phase-outreach";
 import { CampaignCoverageTab } from "./campaign-coverage-tab";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { StatCard } from "@/components/dashboard/stat-card";
 
 interface CampaignTabsProps {
   campaignContacts: {
@@ -133,8 +136,33 @@ interface CampaignTabsProps {
   } | null;
 }
 
-const baseTabs = ["Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
+const baseTabs = ["Overview", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"] as const;
 type Tab = (typeof baseTabs)[number] | "Event";
+
+const TEAL = "#006C49";
+
+const outreachStatusVariant: Record<string, BadgeVariant> = {
+  draft: "draft",
+  scheduled: "outreach",
+  sent: "outreach",
+  replied: "active",
+  bounced: "coral",
+  failed: "coral",
+};
+
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return "—";
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return "now";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks}w`;
+}
 
 export function CampaignTabs({
   campaignContacts,
@@ -155,8 +183,8 @@ export function CampaignTabs({
   eventDetail,
 }: CampaignTabsProps) {
   const tabs: Tab[] = campaignType === "event"
-    ? ["Outreach", "Contacts", "Suppliers", "Budget", "Coverage", "Event"]
-    : ["Outreach", "Contacts", "Suppliers", "Budget", "Coverage"];
+    ? ["Overview", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage", "Event"]
+    : ["Overview", "Outreach", "Contacts", "Suppliers", "Budget", "Coverage"];
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
   const validInitialTab = (tabs as readonly string[]).includes(initialTab ?? "") ? (initialTab as Tab) : tabs[0];
@@ -168,41 +196,171 @@ export function CampaignTabs({
       <div
         style={{
           display: "flex",
-          gap: 0,
+          gap: 24,
           borderBottom: "1px solid var(--border-custom)",
-          marginBottom: 16,
+          marginBottom: 20,
+          fontSize: 12,
         }}
       >
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "12px 20px",
-              fontSize: 13,
-              fontWeight: 700,
-              color:
-                activeTab === tab
-                  ? "var(--accent-custom)"
-                  : "var(--text-muted-custom)",
-              backgroundColor: "transparent",
-              border: "none",
-              borderBottom:
-                activeTab === tab
-                  ? "3px solid var(--accent-custom)"
-                  : "3px solid transparent",
-              cursor: "pointer",
-              marginBottom: -1,
-              transition: "color 150ms ease, border-color 150ms ease",
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "14px 0",
+                fontSize: 12,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: isActive ? "var(--text-primary)" : "var(--text-muted-custom)",
+                backgroundColor: "transparent",
+                border: "none",
+                borderBottom: isActive ? `2px solid ${TEAL}` : "2px solid transparent",
+                cursor: "pointer",
+                marginBottom: -1,
+                transition: "color 150ms ease, border-color 150ms ease",
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}
+      {activeTab === "Overview" && (() => {
+        const all = outreaches ?? [];
+        const drafted = all.filter((o) => o.status === "draft").length;
+        const sent = all.filter((o) => o.status === "sent" || o.status === "replied").length;
+        const replied = all.filter((o) => o.status === "replied").length;
+        const coverageCount = (coverages ?? []).length;
+        const replyRate = sent > 0 ? Math.round((replied / sent) * 100) : null;
+        const recent = [...all]
+          .sort((a, b) => {
+            const ta = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+            const tb = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+            return tb - ta;
+          })
+          .slice(0, 5);
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <StatCard label="Drafted" value={drafted} />
+              <StatCard label="Sent" value={sent} />
+              <StatCard
+                label="Replies"
+                value={replied}
+                sublabel={replyRate != null ? `${replyRate}% reply rate` : undefined}
+              />
+              <StatCard label="Coverage" value={coverageCount} />
+            </div>
+
+            <Card style={{ padding: 20 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  color: "var(--text-muted-custom)",
+                  marginBottom: 16,
+                }}
+              >
+                Recent outreach
+              </div>
+              {recent.length === 0 ? (
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-muted-custom)",
+                    fontWeight: 500,
+                  }}
+                >
+                  No outreach yet.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {recent.map((o, i) => {
+                    const statusLabel =
+                      o.status === "replied"
+                        ? "Replied"
+                        : o.status === "sent"
+                          ? "Sent"
+                          : o.status === "draft"
+                            ? "Draft"
+                            : o.status.charAt(0).toUpperCase() + o.status.slice(1);
+                    return (
+                      <div
+                        key={o.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "12px 0",
+                          borderTop: i > 0 ? "1px solid var(--border-custom)" : "none",
+                        }}
+                      >
+                        <Icon name="mail" size={14} color={TEAL} />
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          {o.contact.name}
+                          {o.contact.outlet && (
+                            <span
+                              style={{
+                                color: "var(--text-sub)",
+                                fontWeight: 500,
+                                fontStyle: "italic",
+                              }}
+                            >
+                              {" "}
+                              · {o.contact.outlet}
+                            </span>
+                          )}
+                        </span>
+                        <Badge variant={outreachStatusVariant[o.status] ?? "default"}>
+                          {statusLabel}
+                        </Badge>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "var(--text-muted-custom)",
+                            minWidth: 34,
+                            textAlign: "right",
+                            fontWeight: 600,
+                            fontFamily: "var(--font-mono)",
+                          }}
+                        >
+                          {formatRelativeTime(o.sentAt)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+        );
+      })()}
+
       {activeTab === "Outreach" && campaign && (
         <div className="flex flex-col gap-[16px]">
           <DraftPitchesPhase

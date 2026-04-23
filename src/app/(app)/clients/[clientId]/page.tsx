@@ -51,6 +51,7 @@ export default async function ClientDetailPage({
           logo: client.logo,
         }}
         stats={stats}
+        hasActiveCampaigns={client.campaigns.some((c) => c.status !== "complete")}
       />
 
       <div>
@@ -67,6 +68,7 @@ export default async function ClientDetailPage({
           }))}
           campaigns={client.campaigns.map((c) => ({
             ...c,
+            budget: c.budget == null ? null : Number(c.budget),
             campaignContacts: c.campaignContacts.map((cc) => ({
               ...cc,
               contact: { ...cc.contact, outlet: cc.contact.outlet ?? "" },

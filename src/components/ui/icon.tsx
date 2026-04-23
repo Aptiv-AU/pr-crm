@@ -6,7 +6,7 @@ type IconName =
   | "contacts" | "campaigns" | "outreach" | "events" | "coverage"
   | "search" | "plus" | "back" | "check" | "edit" | "sparkle" | "mail"
   | "chevronR" | "chevronL" | "chevronD" | "filter" | "sun" | "moon" | "menu" | "close"
-  | "workspace" | "settings" | "tag" | "suppliers" | "upload" | "file";
+  | "workspace" | "settings" | "tag" | "suppliers" | "upload" | "file" | "bell";
 
 interface IconProps {
   name: IconName;
@@ -43,6 +43,7 @@ const paths: Record<IconName, (c: string) => React.ReactNode> = {
   suppliers: (c) => (<><rect x="2" y="6" width="12" height="8" rx="1.5" stroke={c} strokeWidth="1.35" fill="none" /><path d="M5 6V4a3 3 0 016 0v2" stroke={c} strokeWidth="1.35" fill="none" strokeLinecap="round" /><circle cx="8" cy="10" r="1.5" stroke={c} strokeWidth="1.2" fill="none" /></>),
   upload: (c) => (<><path d="M8 10V2.5M5 5.5L8 2.5l3 3" stroke={c} strokeWidth="1.35" fill="none" strokeLinecap="round" strokeLinejoin="round" /><path d="M2.5 10.5V13a1 1 0 001 1h9a1 1 0 001-1v-2.5" stroke={c} strokeWidth="1.35" fill="none" strokeLinecap="round" /></>),
   file: (c) => (<><path d="M4 2h5l3 3v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke={c} strokeWidth="1.35" fill="none" strokeLinejoin="round" /><path d="M9 2v3h3" stroke={c} strokeWidth="1.35" fill="none" strokeLinejoin="round" /></>),
+  bell: (c) => (<><path d="M4 11V7.5a4 4 0 018 0V11l1.2 1.4a0.6 0.6 0 01-.46 1H3.26a0.6 0.6 0 01-.46-1L4 11z" stroke={c} strokeWidth="1.35" fill="none" strokeLinejoin="round" /><path d="M6.5 13.8a1.5 1.5 0 003 0" stroke={c} strokeWidth="1.35" fill="none" strokeLinecap="round" /></>),
 };
 
 export function Icon({ name, size = 14, color = "currentColor", className, style }: IconProps) {

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { StatsBar } from "@/components/shared/stats-bar";
-import { FilterPills } from "@/components/shared/filter-pills";
+import { Card } from "@/components/ui/card";
 import { SlideOverPanel } from "@/components/shared/slide-over-panel";
 import { CoverageForm } from "./coverage-form";
-import { CoverageCard } from "./coverage-card";
-import { EmptyState } from "@/components/shared/empty-state";
+import { CoverageRow } from "./coverage-card";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 
 interface CoverageListClientProps {
@@ -47,10 +45,87 @@ interface CoverageListClientProps {
 }
 
 function formatMediaValue(value: number): string {
-  return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  if (value >= 1_000_000) return "$" + (value / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (value >= 1_000) return "$" + (value / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return "$" + value.toLocaleString("en-US");
 }
 
-const TYPE_FILTERS = ["All", "Feature", "Mention", "Review", "Social"];
+function formatDateRange(dates: Date[]): string | null {
+  if (dates.length === 0) return null;
+  const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const year = last.getFullYear();
+  if (first.getTime() === last.getTime()) return `${fmt(first)}, ${year}`;
+  return `${fmt(first)} — ${fmt(last)}, ${year}`;
+}
+
+function MicroLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 800,
+        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: "var(--text-muted-custom)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface StatItem {
+  label: string;
+  value: string;
+  sub?: string;
+}
+
+function StatRow({ items }: { items: StatItem[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
+        gap: 16,
+      }}
+    >
+      {items.map((it, i) => (
+        <Card key={i} style={{ padding: "18px 20px" }}>
+          <MicroLabel>{it.label}</MicroLabel>
+          <div
+            style={{
+              fontSize: 32,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              marginTop: 10,
+              lineHeight: 1.05,
+              color: "var(--text-primary)",
+            }}
+          >
+            {it.value}
+          </div>
+          {it.sub && (
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--text-sub)",
+                marginTop: 4,
+                fontWeight: 500,
+              }}
+            >
+              {it.sub}
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export function CoverageListClient({
   coverages,
@@ -59,95 +134,115 @@ export function CoverageListClient({
   contacts,
 }: CoverageListClientProps) {
   const [addOpen, setAddOpen] = useState(false);
-  const [typeFilter, setTypeFilter] = useState("All");
-  const [campaignFilter, setCampaignFilter] = useState("All");
   const router = useRouter();
-
-  const filtered = coverages.filter((c) => {
-    if (typeFilter !== "All" && c.type.toLowerCase() !== typeFilter.toLowerCase()) return false;
-    if (campaignFilter !== "All" && c.campaignId !== campaignFilter) return false;
-    return true;
-  });
 
   function handleSuccess() {
     setAddOpen(false);
     router.refresh();
   }
 
-  const selectStyle = {
-    height: 32,
-    padding: "0 30px 0 14px",
-    fontSize: 12,
-    fontWeight: 600 as const,
-    borderRadius: 999,
-    border: "none",
-    backgroundColor: "var(--surface-container-low)",
-    color: "var(--text-sub)",
-    outline: "none",
-    appearance: "none" as const,
-    backgroundImage:
-      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "right 10px center",
-    cursor: "pointer" as const,
-  };
+  const { thisQuarterCount, dateRange } = useMemo(() => {
+    const now = new Date();
+    const quarter = Math.floor(now.getMonth() / 3);
+    const quarterStart = new Date(now.getFullYear(), quarter * 3, 1);
+    const dates = coverages.map((c) => new Date(c.date));
+    const qCount = dates.filter((d) => d >= quarterStart).length;
+    return { thisQuarterCount: qCount, dateRange: formatDateRange(dates) };
+  }, [coverages]);
+
+  const statItems: StatItem[] = [
+    {
+      label: "Placements",
+      value: String(stats.total),
+      sub: thisQuarterCount > 0 ? `${thisQuarterCount} this quarter` : undefined,
+    },
+  ];
+  if (stats.totalMediaValue > 0) {
+    statItems.push({ label: "Media value", value: formatMediaValue(stats.totalMediaValue) });
+  }
+  if (stats.thisMonthCount > 0) {
+    statItems.push({ label: "This month", value: String(stats.thisMonthCount) });
+  }
+  if (stats.topPublication) {
+    statItems.push({ label: "Top outlet", value: stats.topPublication });
+  }
+
+  const metaItems = [
+    { label: "Placements", value: String(stats.total) },
+  ];
+  if (stats.totalMediaValue > 0) {
+    metaItems.push({ label: "Media value", value: formatMediaValue(stats.totalMediaValue) });
+  }
+  if (stats.thisMonthCount > 0) {
+    metaItems.push({ label: "This month", value: String(stats.thisMonthCount) });
+  }
 
   return (
     <PageContainer>
       <PageHeader
+        eyebrow="Directory"
         title="Coverage"
-        subtitle="Hits earned, press logged, value tracked."
+        subtitle="Everything placed, in order of pickup."
+        meta={metaItems}
         actions={
           <Button variant="primary" size="sm" icon="plus" onClick={() => setAddOpen(true)}>
-            Add coverage
+            Log coverage
           </Button>
         }
       />
 
-      <StatsBar
-        stats={[
-          { value: stats.total, label: "Total hits" },
-          { value: formatMediaValue(stats.totalMediaValue), label: "Media value" },
-          { value: stats.thisMonthCount, label: "This month" },
-          { value: stats.topPublication ?? "—", label: "Top publication" },
-        ]}
-      />
+      <StatRow items={statItems} />
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <FilterPills options={TYPE_FILTERS} selected={typeFilter} onChange={setTypeFilter} />
-        <select
-          value={campaignFilter}
-          onChange={(e) => setCampaignFilter(e.target.value)}
-          style={selectStyle}
+      <Card style={{ padding: 0 }}>
+        <div
+          style={{
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--border-custom)",
+          }}
         >
-          <option value="All">All campaigns</option>
-          {campaigns.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <MicroLabel>Recent placements</MicroLabel>
+          {dateRange && (
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-muted-custom)",
+                fontWeight: 600,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {dateRange}
+            </span>
+          )}
+        </div>
 
-      {/* Coverage cards */}
-      {filtered.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {filtered.map((coverage) => (
-            <CoverageCard
-              key={coverage.id}
-              coverage={coverage}
+        {coverages.length === 0 ? (
+          <div
+            style={{
+              padding: "32px 20px",
+              fontSize: 13,
+              color: "var(--text-muted-custom)",
+              textAlign: "center",
+              fontStyle: "italic",
+            }}
+          >
+            No placements logged yet.
+          </div>
+        ) : (
+          coverages.map((c, i) => (
+            <CoverageRow
+              key={c.id}
+              coverage={c}
               campaigns={campaigns}
               contacts={contacts}
+              isFirst={i === 0}
             />
-          ))}
-        </div>
-      ) : coverages.length === 0 ? (
-        <EmptyState icon="coverage" title="No coverage logged yet" description="Log your first media hit to start tracking coverage." />
-      ) : (
-        <EmptyState icon="coverage" title="No coverage matches these filters" description="Try adjusting the type or campaign filter." />
-      )}
+          ))
+        )}
+      </Card>
 
-      {/* Add coverage panel */}
       <SlideOverPanel open={addOpen} onClose={() => setAddOpen(false)} title="Add Coverage">
         {addOpen && (
           <CoverageForm campaigns={campaigns} contacts={contacts} onSuccess={handleSuccess} />

@@ -1,347 +1,414 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, type CSSProperties } from "react";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { titleCase } from "@/lib/format/title-case";
 
+const TEAL = "#006C49";
+
 interface ContactTabsProps {
-  interactions: { id: string; type: string; date: Date | string; summary: string | null }[];
-  outreaches: { id: string; subject: string; status: string; createdAt: Date | string; campaignId: string }[];
+  contact: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+    instagram: string | null;
+    twitter: string | null;
+    linkedin: string | null;
+    notes: string | null;
+  };
+  stats: {
+    coverageCount: number;
+    replyRate: number;
+    campaignCount: number;
+  };
+  outreaches: {
+    id: string;
+    subject: string;
+    status: string;
+    createdAt: Date | string;
+    campaignId: string;
+    campaignName?: string | null;
+  }[];
   coverages: {
     id: string;
     publication: string;
     date: Date | string;
     type: string;
-    mediaValue: any;
-    url?: string | null;
-    attachmentUrl?: string | null;
+    mediaValue: unknown;
+    headline?: string | null;
+    reach?: number | null;
   }[];
-  notes: string | null;
+  lastContact?: string | null;
 }
 
-const tabs = ["Timeline", "Outreach", "Coverage", "Notes"] as const;
+const tabs = ["Overview", "Outreach", "Coverage", "Notes"] as const;
 type Tab = (typeof tabs)[number];
-
-const interactionTypeVariantMap: Record<string, BadgeVariant> = {
-  email_sent: "accent",
-  reply_received: "active",
-  meeting: "default",
-  call: "default",
-  coverage: "outreach",
-};
 
 const outreachStatusVariantMap: Record<string, BadgeVariant> = {
   draft: "draft",
   approved: "accent",
   sent: "outreach",
   replied: "active",
+  declined: "cool",
 };
+
+function MicroLabel({ children, style }: { children: React.ReactNode; style?: CSSProperties }) {
+  return (
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 800,
+        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: "var(--text-muted-custom)",
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
+  return (
+    <Card style={{ padding: "18px 20px" }}>
+      <MicroLabel>{label}</MicroLabel>
+      <div
+        style={{
+          fontSize: 32,
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          marginTop: 10,
+          lineHeight: 1.05,
+          color: "var(--text-primary)",
+        }}
+      >
+        {value}
+      </div>
+      {sub && (
+        <div style={{ fontSize: 12, color: "var(--text-sub)", marginTop: 4, fontWeight: 500 }}>
+          {sub}
+        </div>
+      )}
+    </Card>
+  );
+}
 
 function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function formatCurrency(value: any): string {
-  if (value == null) return "\u2014";
-  const num = typeof value === "string" ? parseFloat(value) : Number(value);
-  if (isNaN(num)) return "\u2014";
-  return `$${num.toLocaleString("en-US")}`;
+function relativeTime(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${Math.max(1, mins)}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo`;
+  const years = Math.floor(days / 365);
+  return `${years}y`;
 }
 
-export function ContactTabs({ interactions, outreaches, coverages, notes }: ContactTabsProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("Timeline");
+function formatReach(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return String(n);
+}
+
+export function ContactTabs({
+  contact,
+  stats,
+  outreaches,
+  coverages,
+  lastContact,
+}: ContactTabsProps) {
+  const [activeTab, setActiveTab] = useState<Tab>("Overview");
+
+  const channelRows: { label: string; value: string }[] = [];
+  if (contact.email) channelRows.push({ label: "Email", value: contact.email });
+  if (contact.phone) channelRows.push({ label: "Desk phone", value: contact.phone });
+  if (contact.twitter) channelRows.push({ label: "X / Twitter", value: contact.twitter });
+  if (contact.linkedin) channelRows.push({ label: "LinkedIn", value: contact.linkedin });
+  if (contact.instagram) channelRows.push({ label: "Instagram", value: contact.instagram });
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       {/* Tab bar */}
       <div
         style={{
           display: "flex",
-          gap: 0,
+          gap: 24,
           borderBottom: "1px solid var(--border-custom)",
-          marginBottom: 16,
+          fontSize: 12,
         }}
       >
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "12px 20px",
-              fontSize: 13,
-              fontWeight: 700,
-              color:
-                activeTab === tab
-                  ? "var(--accent-custom)"
-                  : "var(--text-muted-custom)",
-              backgroundColor: "transparent",
-              border: "none",
-              borderBottom:
-                activeTab === tab
-                  ? "3px solid var(--accent-custom)"
-                  : "3px solid transparent",
-              cursor: "pointer",
-              marginBottom: -1,
-              transition: "color 150ms ease, border-color 150ms ease",
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {tabs.map((t) => {
+          const on = activeTab === t;
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setActiveTab(t)}
+              style={{
+                padding: "14px 0",
+                fontWeight: 800,
+                fontSize: 12,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: on ? "var(--text-primary)" : "var(--text-muted-custom)",
+                borderBottom: on ? `2px solid ${TEAL}` : "2px solid transparent",
+                background: "transparent",
+                border: "none",
+                borderTop: "none",
+                borderLeft: "none",
+                borderRight: "none",
+                marginBottom: -1,
+                cursor: "pointer",
+              }}
+            >
+              {t}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Timeline */}
-      {activeTab === "Timeline" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {interactions.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "40px 20px",
-                color: "var(--text-muted-custom)",
-                fontSize: 13,
-              }}
-            >
-              No interactions recorded yet
-            </div>
-          ) : (
-            interactions.map((interaction) => (
+      {activeTab === "Overview" && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            <StatCard label="Pitches sent" value={outreaches.length} sub="Last 12 months" />
+            <StatCard label="Reply rate" value={`${stats.replyRate}%`} />
+            <StatCard label="Placements" value={stats.coverageCount} />
+            <StatCard label="Last contact" value={lastContact ?? "—"} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <Card style={{ padding: 20 }}>
+              <MicroLabel style={{ marginBottom: 12 }}>Pitch preferences</MicroLabel>
+              <div style={{ fontSize: 12, color: "var(--text-muted-custom)", fontStyle: "italic", fontWeight: 500 }}>
+                No preferences recorded
+              </div>
+            </Card>
+            <Card style={{ padding: 20 }}>
+              <MicroLabel style={{ marginBottom: 12 }}>Channels</MicroLabel>
+              {channelRows.length === 0 ? (
+                <div style={{ fontSize: 12, color: "var(--text-muted-custom)", fontStyle: "italic", fontWeight: 500 }}>
+                  No channels on file
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {channelRows.map((r) => (
+                    <div
+                      key={r.label}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: "var(--text-sub)", fontWeight: 500 }}>
+                        {r.label}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          textAlign: "right",
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        {r.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          <Card style={{ padding: 20 }}>
+            <MicroLabel style={{ marginBottom: 12 }}>Notes</MicroLabel>
+            {contact.notes ? (
               <div
-                key={interaction.id}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 0",
+                  fontSize: 13,
+                  color: "var(--text-primary)",
+                  lineHeight: 1.55,
+                  fontWeight: 500,
+                  whiteSpace: "pre-wrap",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted-custom)",
-                    flexShrink: 0,
-                    width: 90,
-                  }}
-                >
-                  {formatDate(interaction.date)}
-                </div>
-                <Badge variant={interactionTypeVariantMap[interaction.type] ?? "default"}>
-                  {interaction.type.replace(/_/g, " ")}
-                </Badge>
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {interaction.summary || "\u2014"}
-                </div>
+                {contact.notes}
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              <div style={{ fontSize: 12, color: "var(--text-muted-custom)", fontStyle: "italic", fontWeight: 500 }}>
+                No notes yet
+              </div>
+            )}
+          </Card>
+        </>
       )}
 
-      {/* Outreach */}
       {activeTab === "Outreach" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <Card style={{ padding: 0 }}>
+          <div
+            style={{
+              padding: "16px 20px",
+              borderBottom: "1px solid var(--border-custom)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <MicroLabel>Pitch history</MicroLabel>
+            <span style={{ fontSize: 11, color: "var(--text-muted-custom)", fontWeight: 600 }}>
+              {outreaches.length} pitches · last 12 months
+            </span>
+          </div>
           {outreaches.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "40px 20px",
-                color: "var(--text-muted-custom)",
-                fontSize: 13,
-              }}
-            >
+            <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted-custom)", fontSize: 13 }}>
               No outreach yet
             </div>
           ) : (
-            outreaches.map((outreach) => (
-              <Link
-                key={outreach.id}
-                href={`/campaigns/${outreach.campaignId}?tab=Outreach`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 10px",
-                  margin: "0 -10px",
-                  borderRadius: 6,
-                  textDecoration: "none",
-                  transition: "background-color 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--page-bg)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {outreach.subject}
-                </div>
-                <Badge variant={outreachStatusVariantMap[outreach.status] ?? "default"}>
-                  {titleCase(outreach.status)}
-                </Badge>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted-custom)",
-                    flexShrink: 0,
-                  }}
-                >
-                  {formatDate(outreach.createdAt)}
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Coverage */}
-      {activeTab === "Coverage" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {coverages.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "40px 20px",
-                color: "var(--text-muted-custom)",
-                fontSize: 13,
-              }}
-            >
-              No coverage yet
-            </div>
-          ) : (
-            coverages.map((coverage) => {
-              const typeLabel = coverage.type.charAt(0).toUpperCase() + coverage.type.slice(1);
-              const typeBadgeVariant: Record<string, BadgeVariant> = {
-                feature: "active",
-                mention: "default",
-                review: "accent",
-                social: "outreach",
-              };
-              const hasImage = coverage.attachmentUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(coverage.attachmentUrl);
-
+            outreaches.map((r, i) => {
+              const variant = outreachStatusVariantMap[r.status] ?? "default";
               return (
                 <div
-                  key={coverage.id}
+                  key={r.id}
                   style={{
-                    border: "1px solid var(--border-custom)",
-                    borderRadius: 10,
-                    backgroundColor: "var(--card-bg)",
-                    overflow: "hidden",
                     display: "flex",
-                    flexDirection: hasImage ? "row" : "column",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "14px 20px",
+                    borderTop: i === 0 ? "none" : "1px solid var(--border-custom)",
                   }}
                 >
-                  {/* Clipping image */}
-                  {hasImage && (
-                    <a
-                      href={coverage.attachmentUrl!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        width: 120,
-                        minHeight: 90,
-                        flexShrink: 0,
-                        display: "block",
-                        overflow: "hidden",
-                        backgroundColor: "var(--page-bg)",
-                      }}
-                    >
-                      <img
-                        src={coverage.attachmentUrl!}
-                        alt={`${coverage.publication} clipping`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      />
-                    </a>
-                  )}
-
-                  {/* Content */}
-                  <div style={{ flex: 1, padding: 12, display: "flex", flexDirection: "column", gap: 4 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {coverage.publication}
+                  <Icon name="mail" size={14} color={TEAL} />
+                  <span style={{ fontSize: 13, fontWeight: 700, flex: 1, minWidth: 0, color: "var(--text-primary)" }}>
+                    {r.subject}
+                    {r.campaignName && (
+                      <span style={{ fontStyle: "italic", color: "var(--text-sub)", fontWeight: 500 }}>
+                        {" · for "}
+                        {r.campaignName}
                       </span>
-                      <Badge variant={typeBadgeVariant[coverage.type] ?? "default"}>
-                        {typeLabel}
-                      </Badge>
-                      <span style={{ fontSize: 11, color: "var(--text-muted-custom)", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        {formatDate(coverage.date)}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-                      {coverage.mediaValue != null && Number(coverage.mediaValue) > 0 && (
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>
-                          {formatCurrency(coverage.mediaValue)}
-                        </span>
-                      )}
-                      {coverage.url && (
-                        <a
-                          href={coverage.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ fontSize: 11, color: "var(--accent-custom)", textDecoration: "none" }}
-                        >
-                          View article →
-                        </a>
-                      )}
-                    </div>
-                  </div>
+                    )}
+                  </span>
+                  <Badge variant={variant}>{titleCase(r.status)}</Badge>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "var(--text-muted-custom)",
+                      width: 36,
+                      textAlign: "right",
+                      fontWeight: 600,
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {relativeTime(r.createdAt)}
+                  </span>
                 </div>
               );
             })
           )}
-        </div>
+        </Card>
       )}
 
-      {/* Notes */}
-      {activeTab === "Notes" && (
-        <div>
-          {notes ? (
-            <div
-              style={{
-                fontSize: 13,
-                color: "var(--text-primary)",
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.6,
-              }}
-            >
-              {notes}
+      {activeTab === "Coverage" && (
+        <Card style={{ padding: 0 }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-custom)" }}>
+            <MicroLabel>Placements from {contact.name.split(" ")[0]}</MicroLabel>
+          </div>
+          {coverages.length === 0 ? (
+            <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted-custom)", fontSize: 13 }}>
+              No coverage yet
             </div>
           ) : (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "40px 20px",
-                color: "var(--text-muted-custom)",
-                fontSize: 13,
-              }}
-            >
-              No notes
+            coverages.map((it, i) => (
+              <div
+                key={it.id}
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  padding: "16px 20px",
+                  borderTop: i === 0 ? "none" : "1px solid var(--border-custom)",
+                  alignItems: "flex-start",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                      color: TEAL,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {it.publication}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      letterSpacing: "-0.005em",
+                      lineHeight: 1.3,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {it.headline ?? titleCase(it.type)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-muted-custom)",
+                      marginTop: 4,
+                      fontWeight: 500,
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {formatDate(it.date)}
+                  </div>
+                </div>
+                {it.reach != null && (
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <MicroLabel>Reach</MicroLabel>
+                    <div style={{ fontSize: 15, fontWeight: 800, marginTop: 4, color: "var(--text-primary)" }}>
+                      {formatReach(it.reach)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </Card>
+      )}
+
+      {activeTab === "Notes" && (
+        <Card style={{ padding: 20 }}>
+          <MicroLabel style={{ marginBottom: 12 }}>Working notes</MicroLabel>
+          {contact.notes ? (
+            <div style={{ fontSize: 13, lineHeight: 1.6, fontWeight: 500, color: "var(--text-primary)" }}>
+              <p style={{ marginTop: 0, whiteSpace: "pre-wrap" }}>{contact.notes}</p>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "var(--text-muted-custom)", fontStyle: "italic", fontWeight: 500 }}>
+              No notes yet
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

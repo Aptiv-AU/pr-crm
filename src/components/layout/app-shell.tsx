@@ -2,9 +2,19 @@
 
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { Topbar } from "@/components/layout/topbar";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { GlobalSearch } from "@/components/shared/global-search";
 import { Icon } from "@/components/ui/icon";
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase())
+    .slice(0, 2)
+    .join("");
+}
 
 interface ClientOption {
   id: string;
@@ -42,12 +52,19 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
       <Sidebar clients={clients} badgeCounts={badgeCounts} userData={userData} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} clients={clients} badgeCounts={badgeCounts} userData={userData} />
       <GlobalSearch />
-      <main
-        className="flex-1 overflow-y-auto"
-        style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
-      >
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Topbar
+          userInitials={getInitials(userData.name)}
+          userName={userData.name}
+          userRole={userData.orgName}
+        />
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        >
+          {children}
+        </main>
+      </div>
 
       {/* Mobile floating menu button (drawer replaces the removed mobile topbar) */}
       {!drawerOpen && (

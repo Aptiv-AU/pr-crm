@@ -4,12 +4,14 @@ import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { titleCase } from "@/lib/format/title-case";
 
 interface ContactHeroProps {
   contact: {
     id: string;
     name: string;
+    email: string | null;
     outlet: string;
     beat: string;
     tier: string;
@@ -18,113 +20,104 @@ interface ContactHeroProps {
     avatarBg: string;
     avatarFg: string;
     photo?: string | null;
-  };
-  stats: {
-    coverageCount: number;
-    replyRate: number;
-    campaignCount: number;
+    title?: string | null;
+    city?: string | null;
   };
   onEdit: () => void;
+  onNewPitch?: () => void;
+  onBack?: () => void;
 }
 
-const tierVariantMap: Record<string, BadgeVariant> = {
-  A: "solid",
-  B: "default",
-  C: "default",
+const TIER_VAR: Record<string, BadgeVariant> = {
+  A: "tierA",
+  B: "tierB",
+  C: "tierC",
+  D: "tierD",
 };
 
-const healthVariantMap: Record<string, BadgeVariant> = {
-  warm: "warm",
-  cool: "cool",
-  cold: "cool",
-};
+export function ContactHero({ contact, onEdit, onNewPitch, onBack }: ContactHeroProps) {
+  const tierVariant = TIER_VAR[contact.tier] ?? "default";
+  const healthVariant: BadgeVariant = contact.health === "warm" ? "warm" : "cool";
+  const profileTitle = contact.title ?? "";
+  const profileLocation = contact.city ?? "";
 
-export function ContactHero({ contact, stats, onEdit }: ContactHeroProps) {
   return (
-    <Card style={{ padding: 0 }}>
-      <div className="p-5 md:p-6">
-        {/* Header row */}
-        <div className="flex flex-col md:flex-row md:items-start gap-3">
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
-            <ContactAvatar contact={contact} size={56} />
-            <div style={{ minWidth: 0 }}>
-              <div
-                className="text-2xl md:text-[28px] font-extrabold tracking-tight leading-tight"
-                style={{ color: "var(--text-primary)" }}
-              >
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      {onBack && (
+        <div>
+          <Button size="xs" variant="ghost" icon="chevronL" onClick={onBack}>
+            Back to contacts
+          </Button>
+        </div>
+      )}
+
+      <Card style={{ padding: 24 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 18, flexWrap: "wrap" }}>
+          <ContactAvatar contact={contact} size={72} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", color: "var(--text-primary)" }}>
                 {contact.name}
-              </div>
-              <div
-                className="text-sm italic font-medium mt-1"
-                style={{ color: "var(--text-sub)" }}
-              >
-                {contact.outlet}
-              </div>
+              </span>
+              <Badge variant={tierVariant}>{contact.tier}-list</Badge>
+              <Badge variant={healthVariant}>{titleCase(contact.health)}</Badge>
             </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <Badge variant="default">{contact.beat}</Badge>
-              <Badge variant={tierVariantMap[contact.tier] ?? "default"}>
-                {contact.tier}
-              </Badge>
-              <Badge variant={healthVariantMap[contact.health] ?? "default"}>
-                {titleCase(contact.health)}
-              </Badge>
+            {(profileTitle || contact.outlet) && (
+              <div
+                style={{
+                  fontSize: 14,
+                  fontStyle: "italic",
+                  color: "var(--text-sub)",
+                  fontWeight: 500,
+                  marginTop: 6,
+                }}
+              >
+                {profileTitle ? `${profileTitle} · ${contact.outlet}` : contact.outlet}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 18, marginTop: 14, flexWrap: "wrap" }}>
+              {contact.email && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12,
+                    color: "var(--text-sub)",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Icon name="mail" size={12} color="var(--text-sub)" />
+                  <span style={{ fontFamily: "var(--font-mono)" }}>{contact.email}</span>
+                </span>
+              )}
+              {(contact.beat || profileLocation) && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12,
+                    color: "var(--text-sub)",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Icon name="tag" size={12} color="var(--text-sub)" />
+                  {[contact.beat, profileLocation].filter(Boolean).join(" · ")}
+                </span>
+              )}
             </div>
           </div>
-
-          {/* Action buttons */}
-          <div style={{ display: "flex", gap: 8 }} className="ml-0 md:ml-auto">
-            <Button variant="default" size="sm" icon="edit" onClick={onEdit}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Button size="sm" variant="outline" icon="edit" onClick={onEdit}>
               Edit
             </Button>
-            <Button variant="default" size="sm" icon="mail">
-              Email
-            </Button>
-            <Button variant="primary" size="sm" icon="plus">
-              Add to campaign
+            <Button size="sm" variant="primary" icon="outreach" onClick={onNewPitch}>
+              New pitch
             </Button>
           </div>
         </div>
-
-        {/* Stats strip */}
-        <div className="grid grid-cols-3 gap-3 mt-5">
-          {[
-            { label: "Coverage", value: stats.coverageCount },
-            { label: "Reply rate", value: `${stats.replyRate}%` },
-            { label: "Campaigns", value: stats.campaignCount },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 8,
-                backgroundColor: "var(--page-bg)",
-                border: "1px solid var(--border-custom)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                  lineHeight: 1.2,
-                }}
-              >
-                {stat.value}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted-custom)",
-                  marginTop: 2,
-                }}
-              >
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }

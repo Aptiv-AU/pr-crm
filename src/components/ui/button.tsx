@@ -3,7 +3,7 @@
 import { type CSSProperties, type ButtonHTMLAttributes, type Ref } from "react";
 import { Icon, type IconName } from "./icon";
 
-type ButtonVariant = "primary" | "default" | "ghost";
+type ButtonVariant = "primary" | "default" | "ghost" | "outline";
 type ButtonSize = "xs" | "sm" | "md";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -29,6 +29,11 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
     backgroundColor: "transparent",
     color: "var(--text-sub)",
     border: "1px solid transparent",
+  },
+  outline: {
+    backgroundColor: "transparent",
+    color: "var(--text-primary)",
+    border: "1px solid var(--border-custom)",
   },
 };
 

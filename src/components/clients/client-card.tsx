@@ -1,9 +1,8 @@
-"use client";
-
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
+import { Card } from "@/components/ui/card";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
-import { titleCase } from "@/lib/format/title-case";
+import { ClientBadge } from "@/components/shared/client-badge";
 
 interface Campaign {
   id: string;
@@ -21,167 +20,171 @@ interface ClientCardProps {
     bgColour: string;
     initials: string;
     logo?: string | null;
+    currency?: string | null;
+    createdAt: Date | string;
     campaigns: Campaign[];
     _count: { campaigns: number };
   };
   contactCount: number;
 }
 
-const statusVariantMap: Record<string, BadgeVariant> = {
-  active: "active",
-  outreach: "outreach",
-  draft: "draft",
-};
+const audFormatter = new Intl.NumberFormat("en-AU", {
+  style: "currency",
+  currency: "AUD",
+  maximumFractionDigits: 0,
+});
+
+function formatSince(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
+}
+
+function stageFor(client: ClientCardProps["client"]): {
+  label: string;
+  variant: BadgeVariant;
+} {
+  const active = client.campaigns.some((c) => c.status !== "complete");
+  if (active) return { label: "Active", variant: "active" };
+  return { label: "Paused", variant: "cool" };
+}
+
+function MicroLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 800,
+        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: "var(--text-muted-custom)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function ClientCard({ client, contactCount }: ClientCardProps) {
-  const activeCampaigns = client.campaigns
-    .filter((c) => c.status !== "complete")
-    .slice(0, 2);
+  const stage = stageFor(client);
+  const campaignCount = client._count.campaigns;
 
   return (
     <Link
       href={`/clients/${client.slug}`}
-      className="block rounded-xl transition-all overflow-hidden"
-      style={{
-        backgroundColor: "var(--card-bg)",
-        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
-        textDecoration: "none",
-        color: "inherit",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
-      }}
+      className="block transition-shadow"
+      style={{ textDecoration: "none", color: "inherit" }}
     >
-      {/* Client Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "14px 16px",
-        }}
-      >
-        {/* Logo or Initials Badge */}
-        {client.logo ? (
-          <img
-            src={client.logo}
-            alt={client.name}
-            style={{
-              height: 38,
-              maxWidth: 96,
-              width: "auto",
-              borderRadius: 6,
-              objectFit: "contain",
-              flexShrink: 0,
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 9,
-              backgroundColor: client.bgColour,
-              color: client.colour,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 13,
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-          >
-            {client.initials}
-          </div>
-        )}
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              lineHeight: 1.3,
-            }}
-          >
-            {client.name}
-          </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "var(--text-muted-custom)",
-              lineHeight: 1.3,
-            }}
-          >
-            {client.industry}
-          </div>
-        </div>
-
-        <Icon name="chevronR" size={14} color="var(--text-muted-custom)" />
-      </div>
-
-      {/* Stats Strip */}
-      <div
-        className="grid grid-cols-3"
-        style={{ backgroundColor: "var(--surface-container-low)" }}
-      >
-        {[
-          { label: "Contacts", value: contactCount },
-          { label: "Campaigns", value: client._count.campaigns },
-          { label: "Coverage", value: 0 },
-        ].map((stat) => (
-          <div key={stat.label} className="px-3 py-3 text-center">
+      <Card style={{ padding: 22 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 14,
+          }}
+        >
+          <ClientBadge client={client} size={44} />
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
-              className="text-lg font-extrabold tracking-tight"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {stat.value}
-            </div>
-            <div
-              className="text-[9px] font-bold uppercase tracking-[0.12em] mt-0.5"
-              style={{ color: "var(--text-muted-custom)" }}
-            >
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Active Campaigns */}
-      {activeCampaigns.length > 0 && (
-        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column" as const, gap: 6 }}>
-          {activeCampaigns.map((campaign) => (
-            <div
-              key={campaign.id}
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
                 gap: 8,
+                flexWrap: "wrap",
               }}
             >
               <span
                 style={{
-                  fontSize: 12,
-                  color: "var(--text-sub)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap" as const,
-                  minWidth: 0,
+                  fontSize: 17,
+                  fontWeight: 800,
+                  letterSpacing: "-0.01em",
+                  color: "var(--text-primary)",
                 }}
               >
-                {campaign.name}
+                {client.name}
               </span>
-              <Badge variant={statusVariantMap[campaign.status] ?? "default"}>
-                {titleCase(campaign.status)}
-              </Badge>
+              <Badge variant={stage.variant}>{stage.label}</Badge>
             </div>
-          ))}
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-sub)",
+                fontStyle: "italic",
+                fontWeight: 500,
+                marginTop: 4,
+              }}
+            >
+              {client.industry}
+            </div>
+          </div>
+          <Icon name="chevronR" size={14} color="var(--text-muted-custom)" />
         </div>
-      )}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 12,
+            marginTop: 18,
+            paddingTop: 16,
+            borderTop: "1px solid var(--border-custom)",
+          }}
+        >
+          <div>
+            <MicroLabel>Retainer</MicroLabel>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                marginTop: 6,
+                color: "var(--text-primary)",
+              }}
+            >
+              —
+            </div>
+          </div>
+          <div>
+            <MicroLabel>Campaigns</MicroLabel>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                marginTop: 6,
+                color: "var(--text-primary)",
+              }}
+            >
+              {campaignCount}
+            </div>
+          </div>
+          <div>
+            <MicroLabel>Contacts</MicroLabel>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                marginTop: 6,
+                color: "var(--text-primary)",
+              }}
+            >
+              {contactCount}
+            </div>
+          </div>
+          <div>
+            <MicroLabel>Since</MicroLabel>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                marginTop: 6,
+                color: "var(--text-primary)",
+              }}
+            >
+              {formatSince(client.createdAt)}
+            </div>
+          </div>
+        </div>
+      </Card>
     </Link>
   );
 }
+
+export { audFormatter };
