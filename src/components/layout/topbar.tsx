@@ -87,10 +87,10 @@ export function Topbar({
           {orgLogo ? (
             <img
               src={orgLogo}
-              alt=""
+              alt={orgName}
               style={{
                 height: 26,
-                maxWidth: 120,
+                maxWidth: 160,
                 width: "auto",
                 borderRadius: 4,
                 objectFit: "contain",
@@ -98,36 +98,38 @@ export function Topbar({
               }}
             />
           ) : (
-            <div
-              aria-hidden
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 6,
-                background: "var(--surface-container-low)",
-                color: "var(--text-sub)",
-                fontSize: 10,
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {initials}
-            </div>
+            <>
+              <div
+                aria-hidden
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 6,
+                  background: "var(--surface-container-low)",
+                  color: "var(--text-sub)",
+                  fontSize: 10,
+                  fontWeight: 800,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                {initials}
+              </div>
+              <span
+                className="truncate"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  color: "var(--text-primary)",
+                }}
+              >
+                {orgName}
+              </span>
+            </>
           )}
-          <span
-            className="truncate"
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-              color: "var(--text-primary)",
-            }}
-          >
-            {orgName}
-          </span>
         </div>
       </div>
 
