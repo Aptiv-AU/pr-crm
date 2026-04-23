@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
-import { APP_NAME } from "@/lib/constants";
 import { ClientSwitcher } from "@/components/clients/client-switcher";
 import { buildGlobalItems, buildWorkspaceItems, type BadgeCounts, type NavItem as NavDef } from "./nav-items";
 
@@ -61,30 +60,15 @@ export function Sidebar({ clients, badgeCounts, userData: _userData }: SidebarPr
 
   return (
     <aside
-      className="hidden md:flex flex-col sticky top-0 h-screen shrink-0"
+      className="hidden md:flex flex-col shrink-0 self-stretch overflow-y-auto"
       style={{
         width: 240,
         backgroundColor: "var(--sidebar-bg)",
+        borderRight: "1px solid var(--border-custom)",
       }}
     >
-      {/* Wordmark */}
-      <div className="px-4 pt-6 pb-2">
-        <div
-          className="font-extrabold tracking-tight leading-none"
-          style={{ color: "var(--accent-custom)", fontSize: 22 }}
-        >
-          {APP_NAME}
-        </div>
-        <div
-          className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
-          style={{ color: "var(--text-muted-custom)" }}
-        >
-          Editorial CRM
-        </div>
-      </div>
-
-      {/* Client switcher (search pill now lives in topbar) */}
-      <div className="pt-3 pb-1">
+      {/* Client switcher (brand moved to topbar) */}
+      <div className="pt-4 pb-1">
         <ClientSwitcher clients={clients} />
       </div>
 

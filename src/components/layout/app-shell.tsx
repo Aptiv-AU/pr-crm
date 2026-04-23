@@ -35,6 +35,7 @@ interface BadgeCounts {
 interface UserData {
   name: string;
   orgName: string;
+  orgLogo?: string | null;
   locale?: string;
   timezone?: string;
 }
@@ -50,20 +51,30 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "var(--page-bg)" }}>
-      <Sidebar clients={clients} badgeCounts={badgeCounts} userData={userData} />
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} clients={clients} badgeCounts={badgeCounts} userData={userData} />
+    <div
+      className="flex flex-col h-screen"
+      style={{ backgroundColor: "var(--page-bg)" }}
+    >
+      <Topbar
+        userInitials={getInitials(userData.name)}
+        userName={userData.name}
+        orgName={userData.orgName}
+        orgLogo={userData.orgLogo}
+        locale={userData.locale}
+        timezone={userData.timezone}
+      />
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        clients={clients}
+        badgeCounts={badgeCounts}
+        userData={userData}
+      />
       <GlobalSearch />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Topbar
-          userInitials={getInitials(userData.name)}
-          userName={userData.name}
-          userRole={userData.orgName}
-          locale={userData.locale}
-          timezone={userData.timezone}
-        />
+      <div className="flex flex-1 min-h-0">
+        <Sidebar clients={clients} badgeCounts={badgeCounts} userData={userData} />
         <main
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto min-w-0"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
           {children}

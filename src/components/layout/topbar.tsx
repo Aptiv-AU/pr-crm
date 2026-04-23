@@ -1,123 +1,142 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
 import { Icon } from "@/components/ui/icon";
 import { TopbarSearch } from "@/components/layout/topbar-search";
+import { APP_NAME } from "@/lib/constants";
 
 interface TopbarProps {
   userInitials: string;
   userName: string;
-  userRole?: string;
+  orgName: string;
+  orgLogo?: string | null;
+  orgInitials?: string;
   locale?: string;
   timezone?: string;
 }
 
-function getPageTitle(pathname: string): string {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return "Pressroom";
-  const section = segments[0];
-  return section.charAt(0).toUpperCase() + section.slice(1);
-}
-
-function formatToday(d: Date, locale: string, timezone?: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      timeZone: timezone,
-    }).format(d);
-  } catch {
-    return d.toDateString();
-  }
+function orgInitialsFromName(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase())
+    .slice(0, 2)
+    .join("");
 }
 
 /**
- * Editorial masthead topbar — 76px, accent rule + date eyebrow + large H1,
- * right-aligned search pill / notifications / user chip.
+ * App shell topbar — spans the full window width. Left: wordmark + org
+ * chip. Middle: global search. Right: notifications + user pill.
  */
 export function Topbar({
   userInitials,
   userName,
-  userRole = "Member",
-  locale = "en-AU",
-  timezone,
+  orgName,
+  orgLogo,
+  orgInitials,
+  locale: _locale,
+  timezone: _timezone,
 }: TopbarProps) {
-  const pathname = usePathname();
-  const pageTitle = getPageTitle(pathname);
-
-  const [today, setToday] = useState<string | null>(null);
-  useEffect(
-    () => setToday(formatToday(new Date(), locale, timezone)),
-    [locale, timezone]
-  );
+  const initials = orgInitials || orgInitialsFromName(orgName) || "—";
 
   return (
     <header
-      className="hidden md:flex items-center justify-between shrink-0 sticky top-0 z-40"
+      className="hidden md:flex items-center shrink-0 sticky top-0 z-40"
       style={{
-        height: 76,
-        padding: "0 28px 0 32px",
+        height: 64,
+        padding: "0 24px",
         gap: 20,
         background: "var(--card-bg)",
         borderBottom: "1px solid var(--border-custom)",
       }}
     >
-      <div className="flex items-center gap-4 min-w-0">
-        <div
+      {/* Left: wordmark + org chip */}
+      <div className="flex items-center gap-4 min-w-0 shrink-0">
+        <Link
+          href="/dashboard"
+          className="no-underline"
+          aria-label={APP_NAME}
+          style={{
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: "-0.02em",
+            color: "var(--accent-custom)",
+            lineHeight: 1,
+          }}
+        >
+          {APP_NAME.toUpperCase()}
+        </Link>
+        <span
           aria-hidden
-          className="rounded-sm shrink-0"
-          style={{ width: 3, height: 36, background: "var(--accent-custom)" }}
+          style={{
+            width: 1,
+            height: 22,
+            background: "var(--border-custom)",
+          }}
         />
-        <div className="min-w-0">
-          <div
-            className="flex items-baseline gap-2 uppercase"
-            style={{
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: "0.18em",
-              color: "var(--text-muted-custom)",
-            }}
-          >
-            <span>Today</span>
-            <span style={{ color: "var(--border-mid)" }}>—</span>
-            <span
+        <div
+          className="flex items-center gap-2.5 min-w-0"
+          title={orgName}
+          style={{
+            maxWidth: 260,
+          }}
+        >
+          {orgLogo ? (
+            <img
+              src={orgLogo}
+              alt=""
               style={{
-                fontFamily: "var(--font-mono)",
-                letterSpacing: "0.06em",
-                color: "var(--text-sub)",
-                textTransform: "none",
-                fontWeight: 600,
-                fontSize: 10,
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                objectFit: "cover",
+                flexShrink: 0,
               }}
-              suppressHydrationWarning
+            />
+          ) : (
+            <div
+              aria-hidden
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                background: "var(--surface-container-low)",
+                color: "var(--text-sub)",
+                fontSize: 10,
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
             >
-              {today ?? " "}
-            </span>
-          </div>
-          <div
-            className="font-extrabold truncate"
+              {initials}
+            </div>
+          )}
+          <span
+            className="truncate"
             style={{
-              fontSize: 22,
-              letterSpacing: "-0.02em",
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
               color: "var(--text-primary)",
-              marginTop: 4,
-              lineHeight: 1,
-              maxWidth: 540,
             }}
           >
-            {pageTitle}
-          </div>
+            {orgName}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
-        <TopbarSearch />
+      {/* Middle: search — centered with flexible padding. */}
+      <div className="flex-1 flex justify-center min-w-0">
+        <TopbarSearch width={440} />
+      </div>
 
+      {/* Right: notifications + user */}
+      <div className="flex items-center gap-3 shrink-0">
         <button
           type="button"
           title="Notifications"
@@ -146,7 +165,7 @@ export function Topbar({
           />
         </button>
 
-        <UserMenu userInitials={userInitials} userName={userName} userRole={userRole} />
+        <UserMenu userInitials={userInitials} userName={userName} />
       </div>
     </header>
   );
@@ -155,11 +174,9 @@ export function Topbar({
 function UserMenu({
   userInitials,
   userName,
-  userRole,
 }: {
   userInitials: string;
   userName: string;
-  userRole: string;
 }) {
   const [open, setOpen] = useState(false);
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -212,30 +229,16 @@ function UserMenu({
         >
           {userInitials}
         </div>
-        <div className="text-left">
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              lineHeight: 1,
-            }}
-          >
-            {userName}
-          </div>
-          <div
-            className="uppercase"
-            style={{
-              fontSize: 9,
-              fontWeight: 600,
-              color: "var(--text-muted-custom)",
-              marginTop: 2,
-              letterSpacing: "0.1em",
-            }}
-          >
-            {userRole}
-          </div>
-        </div>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            lineHeight: 1,
+          }}
+        >
+          {userName}
+        </span>
         <Icon name="chevronD" size={11} color="var(--text-muted-custom)" />
       </button>
 
