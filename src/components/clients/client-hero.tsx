@@ -10,6 +10,15 @@ import { ClientForm } from "@/components/clients/client-form";
 import { archiveClient } from "@/actions/client-actions";
 import { ClientBadge } from "@/components/shared/client-badge";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  RetainerPanel,
+  type RetainerPeriodView,
+} from "@/components/clients/retainer-panel";
+import {
+  CADENCE_SUFFIX,
+  formatCurrency,
+  monthlyEquivalentCents,
+} from "@/lib/retainer";
 
 interface ClientHeroProps {
   client: {
@@ -28,10 +37,21 @@ interface ClientHeroProps {
     replyRate: number;
   };
   hasActiveCampaigns?: boolean;
+  retainer?: {
+    periods: RetainerPeriodView[];
+    currency: string;
+    locale: string;
+    activePeriod: RetainerPeriodView | null;
+  };
 }
 
-export function ClientHero({ client, hasActiveCampaigns = true }: ClientHeroProps) {
+export function ClientHero({
+  client,
+  hasActiveCampaigns = true,
+  retainer,
+}: ClientHeroProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [retainerOpen, setRetainerOpen] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const router = useRouter();
 
@@ -92,6 +112,12 @@ export function ClientHero({ client, hasActiveCampaigns = true }: ClientHeroProp
               {client.industry}
             </div>
           </div>
+          {retainer && (
+            <RetainerStat
+              retainer={retainer}
+              onEdit={() => setRetainerOpen(true)}
+            />
+          )}
           <div
             style={{
               display: "flex",
@@ -139,6 +165,108 @@ export function ClientHero({ client, hasActiveCampaigns = true }: ClientHeroProp
       >
         <ClientForm client={client} onSuccess={handleSuccess} />
       </SlideOverPanel>
+
+      {retainer && (
+        <RetainerPanel
+          open={retainerOpen}
+          onClose={() => setRetainerOpen(false)}
+          clientId={client.id}
+          clientName={client.name}
+          periods={retainer.periods}
+          currency={retainer.currency}
+          locale={retainer.locale}
+        />
+      )}
     </>
+  );
+}
+
+function RetainerStat({
+  retainer,
+  onEdit,
+}: {
+  retainer: NonNullable<ClientHeroProps["retainer"]>;
+  onEdit: () => void;
+}) {
+  const active = retainer.activePeriod;
+  const monthly = active
+    ? monthlyEquivalentCents(active.cadence, active.amountCents)
+    : 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      title="Manage retainer"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 2,
+        padding: "8px 14px",
+        borderRadius: 10,
+        border: "1px solid var(--border-custom)",
+        background: "var(--card-bg)",
+        cursor: "pointer",
+        textAlign: "left",
+        minWidth: 140,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 9,
+          fontWeight: 800,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "var(--text-muted-custom)",
+        }}
+      >
+        Retainer
+      </span>
+      {active ? (
+        <>
+          <span
+            style={{
+              fontSize: 18,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              color: "var(--text-primary)",
+              lineHeight: 1.1,
+            }}
+          >
+            {formatCurrency(active.amountCents, retainer.currency, retainer.locale)}
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--text-sub)",
+                marginLeft: 2,
+              }}
+            >
+              {CADENCE_SUFFIX[active.cadence]}
+            </span>
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--text-sub)",
+              fontWeight: 500,
+            }}
+          >
+            {formatCurrency(monthly, retainer.currency, retainer.locale)}/mo
+          </span>
+        </>
+      ) : (
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: "var(--accent-custom)",
+          }}
+        >
+          Set retainer →
+        </span>
+      )}
+    </button>
   );
 }

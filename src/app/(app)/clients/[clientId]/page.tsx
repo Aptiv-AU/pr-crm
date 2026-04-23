@@ -4,6 +4,10 @@ import { ClientHero } from "@/components/clients/client-hero";
 import { ClientTabs } from "@/components/clients/client-tabs";
 import { db } from "@/lib/db";
 import { isCuid } from "@/lib/slug/resolve";
+import { getRetainerPeriods } from "@/lib/queries/retainer-queries";
+import { activePeriodOn } from "@/lib/retainer";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
+import type { RetainerPeriodView } from "@/components/clients/retainer-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +33,29 @@ export default async function ClientDetailPage({
   }
   if (!clientId) notFound();
 
-  const [client, stats] = await Promise.all([
+  const [client, stats, periods, org] = await Promise.all([
     getClientById(clientId),
     getClientStats(clientId),
+    getRetainerPeriods(clientId),
+    getCurrentOrg(),
   ]);
 
   if (!client) {
     notFound();
   }
+
+  const periodViews: RetainerPeriodView[] = periods.map((p) => ({
+    id: p.id,
+    cadence: p.cadence,
+    amountCents: p.amount,
+    startIso: p.startDate.toISOString(),
+    endIso: p.endDate?.toISOString() ?? null,
+    note: p.note,
+  }));
+  const activeRow = activePeriodOn(periods);
+  const activePeriod = activeRow
+    ? periodViews.find((pv) => pv.id === activeRow.id) ?? null
+    : null;
 
   return (
     <div className="px-6 py-8 md:px-10 md:py-10 max-w-[1600px] mx-auto space-y-6">
@@ -52,6 +71,12 @@ export default async function ClientDetailPage({
         }}
         stats={stats}
         hasActiveCampaigns={client.campaigns.some((c) => c.status !== "complete")}
+        retainer={{
+          periods: periodViews,
+          currency: client.currency || org?.currency || "AUD",
+          locale: org?.locale || "en-AU",
+          activePeriod,
+        }}
       />
 
       <div>

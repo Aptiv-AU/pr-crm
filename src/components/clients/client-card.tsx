@@ -26,6 +26,7 @@ interface ClientCardProps {
     _count: { campaigns: number };
   };
   contactCount: number;
+  retainer?: { label: string; sub?: string } | null;
 }
 
 const audFormatter = new Intl.NumberFormat("en-AU", {
@@ -64,7 +65,7 @@ function MicroLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ClientCard({ client, contactCount }: ClientCardProps) {
+export function ClientCard({ client, contactCount, retainer }: ClientCardProps) {
   const stage = stageFor(client);
   const campaignCount = client._count.campaigns;
 
@@ -136,11 +137,23 @@ export function ClientCard({ client, contactCount }: ClientCardProps) {
                 fontSize: 14,
                 fontWeight: 700,
                 marginTop: 6,
-                color: "var(--text-primary)",
+                color: retainer ? "var(--text-primary)" : "var(--text-muted-custom)",
               }}
             >
-              —
+              {retainer?.label ?? "—"}
             </div>
+            {retainer?.sub && (
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 500,
+                  color: "var(--text-muted-custom)",
+                  marginTop: 2,
+                }}
+              >
+                {retainer.sub}
+              </div>
+            )}
           </div>
           <div>
             <MicroLabel>Campaigns</MicroLabel>

@@ -5,6 +5,12 @@ import { AddClientButton } from "@/components/clients/add-client-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
+import {
+  getActiveRetainerByClientIds,
+  getTotalMonthlyRetainerCents,
+} from "@/lib/queries/retainer-queries";
+import { formatCompactCurrency, formatCurrency } from "@/lib/retainer";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -91,18 +97,26 @@ export default async function ClientsPage() {
     });
   }
 
-  const [clients, orgStats] = await Promise.all([
+  const [clients, orgStats, totalMonthlyCents, fullOrg] = await Promise.all([
     getClients(org.id),
     getOrganizationStats(org.id),
+    getTotalMonthlyRetainerCents(org.id),
+    getCurrentOrg(),
   ]);
 
-  const clientContactCounts = await Promise.all(
-    clients.map((client) =>
-      db.campaignContact.count({
-        where: { campaign: { clientId: client.id } },
-      })
-    )
-  );
+  const locale = fullOrg?.locale || "en-AU";
+  const currency = fullOrg?.currency || "AUD";
+
+  const [clientContactCounts, retainerByClient] = await Promise.all([
+    Promise.all(
+      clients.map((client) =>
+        db.campaignContact.count({
+          where: { campaign: { clientId: client.id } },
+        })
+      )
+    ),
+    getActiveRetainerByClientIds(clients.map((c) => c.id)),
+  ]);
 
   const mv = Number(orgStats.mediaValue);
   const mediaValueFormatted =
@@ -110,8 +124,21 @@ export default async function ClientsPage() {
 
   const tenure = avgTenureMonths(clients.map((c) => c.createdAt));
 
+  const retainerClientCount = retainerByClient.size;
+  const monthlyRetainerFormatted =
+    totalMonthlyCents > 0
+      ? formatCompactCurrency(totalMonthlyCents, currency, locale)
+      : "—";
+
   const statItems: StatItem[] = [
-    { label: "On retainer", value: String(orgStats.clientCount) },
+    {
+      label: "Monthly retainer",
+      value: monthlyRetainerFormatted,
+      sub:
+        retainerClientCount > 0
+          ? `${retainerClientCount} ${retainerClientCount === 1 ? "client" : "clients"} on retainer`
+          : "No retainers set",
+    },
     { label: "Active campaigns", value: String(orgStats.campaignCount) },
     { label: "Contacts", value: String(orgStats.contactCount) },
     { label: "Avg tenure", value: tenure > 0 ? `${tenure}mo` : "—" },
@@ -142,13 +169,24 @@ export default async function ClientsPage() {
           }}
           className="max-md:!grid-cols-1"
         >
-          {clients.map((client, idx) => (
-            <ClientCard
-              key={client.id}
-              client={client}
-              contactCount={clientContactCounts[idx]}
-            />
-          ))}
+          {clients.map((client, idx) => {
+            const ret = retainerByClient.get(client.id);
+            return (
+              <ClientCard
+                key={client.id}
+                client={client}
+                contactCount={clientContactCounts[idx]}
+                retainer={
+                  ret
+                    ? {
+                        label: formatCurrency(ret.monthlyCents, currency, locale),
+                        sub: "per month",
+                      }
+                    : null
+                }
+              />
+            );
+          })}
         </div>
       ) : (
         <EmptyState

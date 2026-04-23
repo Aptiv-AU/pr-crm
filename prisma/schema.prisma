@@ -102,9 +102,31 @@ model Client {
   createdAt      DateTime     @default(now())
   campaigns      Campaign[]
   contacts       ClientContact[]
+  retainerPeriods RetainerPeriod[]
 
   @@unique([organizationId, slug])
   @@index([archivedAt])
+}
+
+enum RetainerCadence {
+  weekly
+  fortnightly
+  monthly
+}
+
+model RetainerPeriod {
+  id        String          @id @default(cuid())
+  clientId  String
+  client    Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  cadence   RetainerCadence
+  amount    Int
+  startDate DateTime
+  endDate   DateTime?
+  note      String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([clientId, startDate])
 }
 
 model ClientContact {
