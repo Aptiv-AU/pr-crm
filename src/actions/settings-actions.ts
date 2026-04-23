@@ -49,16 +49,21 @@ export async function updateOrganizationSettings(formData: FormData) {
   const name = formData.get("name") as string | null;
   const currency = formData.get("currency") as string | null;
   const logo = formData.get("logo") as string | null;
+  const locale = formData.get("locale") as string | null;
+  const timezone = formData.get("timezone") as string | null;
 
   await db.organization.update({
     where: { id: organizationId },
     data: {
       ...(name ? { name } : {}),
       ...(currency ? { currency } : {}),
+      ...(locale ? { locale } : {}),
+      ...(timezone ? { timezone } : {}),
       logo: logo || null,
     },
   });
 
   revalidatePath("/settings");
+  revalidatePath("/", "layout");
   revalidateTag(`org:${organizationId}`, "max");
 }

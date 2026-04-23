@@ -6,11 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
 import { Icon } from "@/components/ui/icon";
+import { TopbarSearch } from "@/components/layout/topbar-search";
 
 interface TopbarProps {
   userInitials: string;
   userName: string;
   userRole?: string;
+  locale?: string;
+  timezone?: string;
 }
 
 function getPageTitle(pathname: string): string {
@@ -20,25 +23,38 @@ function getPageTitle(pathname: string): string {
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-function formatToday(d: Date): string {
-  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+function formatToday(d: Date, locale: string, timezone?: string): string {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: timezone,
+    }).format(d);
+  } catch {
+    return d.toDateString();
+  }
 }
 
 /**
  * Editorial masthead topbar — 76px, accent rule + date eyebrow + large H1,
  * right-aligned search pill / notifications / user chip.
  */
-export function Topbar({ userInitials, userName, userRole = "Member" }: TopbarProps) {
+export function Topbar({
+  userInitials,
+  userName,
+  userRole = "Member",
+  locale = "en-AU",
+  timezone,
+}: TopbarProps) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
 
   const [today, setToday] = useState<string | null>(null);
-  useEffect(() => setToday(formatToday(new Date())), []);
+  useEffect(
+    () => setToday(formatToday(new Date(), locale, timezone)),
+    [locale, timezone]
+  );
 
   return (
     <header
@@ -100,45 +116,7 @@ export function Topbar({ userInitials, userName, userRole = "Member" }: TopbarPr
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new Event("open-search"))}
-          className="inline-flex items-center gap-2.5 cursor-pointer"
-          style={{
-            height: 38,
-            padding: "0 14px",
-            width: 340,
-            borderRadius: 999,
-            border: "1px solid var(--border-custom)",
-            background: "var(--card-bg)",
-            boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
-          }}
-        >
-          <Icon name="search" size={13} color="var(--text-sub)" />
-          <span
-            className="flex-1 text-left"
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--text-sub)",
-            }}
-          >
-            Search clients, pitches, people…
-          </span>
-          <kbd
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: "2px 6px",
-              borderRadius: 4,
-              background: "var(--surface-container-low)",
-              color: "var(--text-muted-custom)",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            ⌘K
-          </kbd>
-        </button>
+        <TopbarSearch />
 
         <button
           type="button"

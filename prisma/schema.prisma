@@ -18,6 +18,8 @@ model Organization {
   name          String
   logo          String?
   currency      String    @default("AUD")
+  locale        String    @default("en-AU")
+  timezone      String    @default("Australia/Sydney")
   contactEmail  String?
   primaryColour String?
   aiProvider    String?

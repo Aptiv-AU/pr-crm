@@ -57,17 +57,11 @@ export function GlobalSearch() {
     function handleOpen() {
       setIsOpen(true);
     }
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setIsOpen((prev) => !prev);
-      }
-    }
+    // Cmd+K is owned by the inline TopbarSearch on desktop; this modal is
+    // only reachable via the mobile drawer's "open-search" event.
     window.addEventListener("open-search", handleOpen);
-    document.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("open-search", handleOpen);
-      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 

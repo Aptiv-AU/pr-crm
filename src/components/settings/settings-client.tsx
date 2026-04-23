@@ -23,6 +23,8 @@ interface SettingsClientProps {
     name: string;
     currency: string;
     logo: string | null;
+    locale: string;
+    timezone: string;
     aiProvider: string | null;
     aiModel: string | null;
   };
@@ -102,6 +104,8 @@ export function SettingsClient({
   const [orgName, setOrgName] = useState(org.name);
   const [orgLogo, setOrgLogo] = useState<string | null>(org.logo ?? null);
   const [currency, setCurrency] = useState(org.currency);
+  const [locale, setLocale] = useState(org.locale);
+  const [timezone, setTimezone] = useState(org.timezone);
   const [orgSaving, setOrgSaving] = useState(false);
   const [orgSaved, setOrgSaved] = useState(false);
 
@@ -141,6 +145,8 @@ export function SettingsClient({
     const formData = new FormData();
     formData.set("name", orgName);
     formData.set("currency", currency);
+    formData.set("locale", locale);
+    formData.set("timezone", timezone);
     formData.set("logo", orgLogo ?? "");
     await updateOrganizationSettings(formData);
     setOrgSaving(false);
@@ -333,7 +339,6 @@ export function SettingsClient({
                 <SettingsRow
                   label="Currency"
                   hint="AUD is the default for Australian workspaces."
-                  last
                 >
                   <TextInput
                     value={currency}
@@ -342,6 +347,31 @@ export function SettingsClient({
                       setOrgSaved(false);
                     }}
                     style={{ width: 180 }}
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Region"
+                  hint="Locale code controls date, number and currency formatting."
+                >
+                  <LocaleSelect
+                    value={locale}
+                    onChange={(v) => {
+                      setLocale(v);
+                      setOrgSaved(false);
+                    }}
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Time zone"
+                  hint="Used when showing and scheduling dates across the app."
+                  last
+                >
+                  <TimezoneSelect
+                    value={timezone}
+                    onChange={(v) => {
+                      setTimezone(v);
+                      setOrgSaved(false);
+                    }}
                   />
                 </SettingsRow>
                 <SaveBar saving={orgSaving} saved={orgSaved} onSave={handleSaveOrg} />
@@ -772,5 +802,99 @@ function AdvancedLink({
       </div>
       <Icon name="chevronR" size={14} color="var(--text-sub)" />
     </Link>
+  );
+}
+
+const LOCALES: { value: string; label: string }[] = [
+  { value: "en-AU", label: "English (Australia) — 23 Apr 2026" },
+  { value: "en-GB", label: "English (United Kingdom) — 23 Apr 2026" },
+  { value: "en-NZ", label: "English (New Zealand) — 23/04/2026" },
+  { value: "en-US", label: "English (United States) — Apr 23, 2026" },
+  { value: "en-CA", label: "English (Canada) — Apr 23, 2026" },
+  { value: "en-IE", label: "English (Ireland) — 23 Apr 2026" },
+];
+
+const TIMEZONES: string[] = [
+  "Australia/Sydney",
+  "Australia/Melbourne",
+  "Australia/Brisbane",
+  "Australia/Adelaide",
+  "Australia/Perth",
+  "Australia/Hobart",
+  "Australia/Darwin",
+  "Pacific/Auckland",
+  "Europe/London",
+  "Europe/Dublin",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "Asia/Singapore",
+  "Asia/Hong_Kong",
+  "Asia/Tokyo",
+  "UTC",
+];
+
+function LocaleSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        height: 36,
+        padding: "0 10px",
+        width: 320,
+        borderRadius: 8,
+        border: "1px solid var(--border-custom)",
+        background: "var(--card-bg)",
+        color: "var(--text-primary)",
+        fontSize: 13,
+        fontFamily: "inherit",
+      }}
+    >
+      {LOCALES.map((l) => (
+        <option key={l.value} value={l.value}>
+          {l.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function TimezoneSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        height: 36,
+        padding: "0 10px",
+        width: 320,
+        borderRadius: 8,
+        border: "1px solid var(--border-custom)",
+        background: "var(--card-bg)",
+        color: "var(--text-primary)",
+        fontSize: 13,
+        fontFamily: "inherit",
+      }}
+    >
+      {TIMEZONES.map((tz) => (
+        <option key={tz} value={tz}>
+          {tz.replace(/_/g, " ")}
+        </option>
+      ))}
+    </select>
   );
 }

@@ -40,6 +40,8 @@ export default async function SettingsPage() {
         name: org.name,
         currency: org.currency,
         logo: org.logo,
+        locale: org.locale,
+        timezone: org.timezone,
         aiProvider: org.aiProvider,
         aiModel: org.aiModel,
       }}

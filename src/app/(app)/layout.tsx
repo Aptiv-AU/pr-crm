@@ -56,6 +56,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       userData={{
         name: user?.name ?? session.user.email?.split("@")[0] ?? "User",
         orgName: org.name,
+        locale: org.locale,
+        timezone: org.timezone,
       }}
     >
       {children}

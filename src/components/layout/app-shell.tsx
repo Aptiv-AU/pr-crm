@@ -35,6 +35,8 @@ interface BadgeCounts {
 interface UserData {
   name: string;
   orgName: string;
+  locale?: string;
+  timezone?: string;
 }
 
 interface AppShellProps {
@@ -57,6 +59,8 @@ export function AppShell({ children, clients, badgeCounts, userData }: AppShellP
           userInitials={getInitials(userData.name)}
           userName={userData.name}
           userRole={userData.orgName}
+          locale={userData.locale}
+          timezone={userData.timezone}
         />
         <main
           className="flex-1 overflow-y-auto"
