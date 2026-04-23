@@ -89,10 +89,11 @@ export function Topbar({
               src={orgLogo}
               alt=""
               style={{
-                width: 26,
                 height: 26,
-                borderRadius: 6,
-                objectFit: "cover",
+                maxWidth: 120,
+                width: "auto",
+                borderRadius: 4,
+                objectFit: "contain",
                 flexShrink: 0,
               }}
             />
