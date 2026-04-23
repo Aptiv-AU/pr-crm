@@ -12,6 +12,7 @@ import { PageContainer, PageHeader } from "@/components/layout/page-header";
 interface CoverageListClientProps {
   coverages: {
     id: string;
+    slug: string;
     publication: string;
     date: string;
     type: string;
@@ -232,13 +233,7 @@ export function CoverageListClient({
           </div>
         ) : (
           coverages.map((c, i) => (
-            <CoverageRow
-              key={c.id}
-              coverage={c}
-              campaigns={campaigns}
-              contacts={contacts}
-              isFirst={i === 0}
-            />
+            <CoverageRow key={c.id} coverage={c} isFirst={i === 0} />
           ))
         )}
       </Card>

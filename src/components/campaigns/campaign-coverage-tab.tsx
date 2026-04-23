@@ -13,6 +13,7 @@ interface CampaignCoverageTabProps {
   campaignName: string;
   coverages: {
     id: string;
+    slug: string;
     publication: string;
     date: string;
     type: string;
@@ -103,8 +104,6 @@ export function CampaignCoverageTab({
                   client: { id: "", name: "", initials: "", colour: "", bgColour: "" },
                 },
               }}
-              campaigns={campaigns}
-              contacts={contacts}
             />
           ))}
         </div>

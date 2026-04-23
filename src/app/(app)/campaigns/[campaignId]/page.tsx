@@ -168,6 +168,7 @@ export default async function CampaignDetailPage({
     })),
     coverages: campaign.coverages.map((cov) => ({
       id: cov.id,
+      slug: cov.slug,
       publication: cov.publication,
       date: toIso(cov.date) ?? new Date().toISOString(),
       type: cov.type,

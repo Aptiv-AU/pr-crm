@@ -107,6 +107,7 @@ interface CampaignTabsProps {
   }[];
   coverages?: {
     id: string;
+    slug: string;
     publication: string;
     date: string;
     type: string;

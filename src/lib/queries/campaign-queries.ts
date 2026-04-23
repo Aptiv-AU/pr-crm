@@ -136,6 +136,7 @@ export async function getCampaignById(campaignId: string) {
       coverages: {
         select: {
           id: true,
+          slug: true,
           publication: true,
           date: true,
           type: true,

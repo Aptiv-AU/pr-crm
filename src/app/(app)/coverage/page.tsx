@@ -27,6 +27,7 @@ export default async function CoveragePage() {
 
   const serializedCoverages = coverages.map((c) => ({
     id: c.id,
+    slug: c.slug,
     publication: c.publication,
     date: c.date.toISOString(),
     type: c.type,
