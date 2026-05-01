@@ -5,6 +5,15 @@ import { OutreachStatus } from "@prisma/client";
 const STALE_CLAIM_MS = 15 * 60 * 1000;
 
 /**
+ * H-5 backoff window. After a failed attempt we wait this long before
+ * the row is eligible to be re-claimed by the cron. Combined with the
+ * MAX_SEND_FAILURES cap it bounds how fast a transient failure can
+ * burn through retries (3 attempts × 5 minutes = ~15 minutes to
+ * terminal failure).
+ */
+const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
+
+/**
  * Atomically claim due outreaches for sending. Stamps `claimedAt = now` on
  * matching rows in ONE UPDATE, then returns the claimed ids + their orgIds.
  *
@@ -22,6 +31,7 @@ export async function claimDueOutreaches(
   limit = 50
 ): Promise<Array<{ id: string; orgId: string }>> {
   const staleCutoff = new Date(now.getTime() - STALE_CLAIM_MS);
+  const failureCutoff = new Date(now.getTime() - FAILURE_BACKOFF_MS);
   const rows = await db.$queryRaw<Array<{ id: string; orgId: string }>>`
     UPDATE "Outreach" o
     SET "claimedAt" = ${now}
@@ -32,6 +42,7 @@ export async function claimDueOutreaches(
         AND o2."scheduledAt" IS NOT NULL
         AND o2."scheduledAt" <= ${now}
         AND (o2."claimedAt" IS NULL OR o2."claimedAt" < ${staleCutoff})
+        AND (o2."lastSendAttemptAt" IS NULL OR o2."lastSendAttemptAt" < ${failureCutoff})
       ORDER BY o2."scheduledAt" ASC
       LIMIT ${limit}
       FOR UPDATE SKIP LOCKED

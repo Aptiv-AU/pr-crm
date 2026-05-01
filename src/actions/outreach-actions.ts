@@ -15,6 +15,11 @@ type SendableOutreach = Prisma.OutreachGetPayload<{
   include: { contact: true; campaign: true };
 }>;
 
+// H-5 failure recording lives in lib/outreach so cron + tests can import
+// it without dragging in this module's "use server" graph.
+import { recordSendFailure } from "@/lib/outreach/record-failure";
+export { recordSendFailure };
+
 export const saveBrief = action("saveBrief", async (campaignId: string, brief: string) => {
   const orgId = await requireOrgId();
   const campaign = await db.campaign.findFirst({
@@ -330,14 +335,9 @@ export async function sendOutreachForOrg(outreachId: string, orgId: string) {
     const token = await providerFor(account).getValidToken(account.id);
     return await sendOutreachWithAccount(outreachId, orgId, account, token);
   } catch (err) {
-    // Release the claim on any failure so a retry is possible. (sent rows
-    // never come back here — markOutreachSent has already moved status.)
-    await db.outreach
-      .updateMany({
-        where: { id: outreachId, status: OutreachStatus.approved },
-        data: { claimedAt: null },
-      })
-      .catch(() => {});
+    // H-5: record the failure (increment counter, store error, either
+    // release the claim or transition to terminal `failed` at threshold).
+    await recordSendFailure(outreachId, err).catch(() => {});
     throw err;
   }
 }

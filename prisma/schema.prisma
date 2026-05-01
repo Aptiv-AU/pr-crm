@@ -338,6 +338,9 @@ model Outreach {
   sentAt         DateTime?
   lastCheckedForReplyAt DateTime?
   claimedAt     DateTime?
+  sendFailureCount Int    @default(0)
+  lastSendError String?   @db.Text
+  lastSendAttemptAt DateTime?
   createdAt     DateTime  @default(now())
 
   replies       Reply[]
@@ -501,6 +504,7 @@ enum OutreachStatus {
   approved
   sent
   replied
+  failed
 }
 
 enum PhaseStatus {

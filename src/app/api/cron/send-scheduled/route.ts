@@ -4,6 +4,7 @@ import { claimDueOutreaches } from "@/lib/outreach/schedule";
 import {
   resolveOrgEmailAccount,
   sendOutreachWithAccount,
+  recordSendFailure,
 } from "@/actions/outreach-actions";
 
 export const dynamic = "force-dynamic";
@@ -81,16 +82,15 @@ export async function GET(request: Request) {
     try {
       ({ account, token } = await resolveOrgEmailAccount(orgId));
     } catch (err) {
-      // Whole org can't send (no account / token refresh failed). Release
-      // every claim in this batch so the next tick will retry.
+      // Whole org can't send (no account / token refresh failed). Each
+      // row counts as a failed attempt — H-5 caps at MAX_SEND_FAILURES so
+      // a permanently-broken org account can't loop on every tick forever.
       console.error(
         `[cron/send-scheduled] org ${orgId} account resolve failed:`,
         err instanceof Error ? err.message : err
       );
       failed += ids.length;
-      await db.outreach
-        .updateMany({ where: { id: { in: ids } }, data: { claimedAt: null } })
-        .catch(() => {});
+      await Promise.all(ids.map((id) => recordSendFailure(id, err).catch(() => {})));
       continue;
     }
 
@@ -103,10 +103,8 @@ export async function GET(request: Request) {
           `[cron/send-scheduled] ${id} failed:`,
           err instanceof Error ? err.message : err
         );
-        // Release the claim so a subsequent run can retry; keep status=approved.
-        await db.outreach
-          .update({ where: { id }, data: { claimedAt: null } })
-          .catch(() => {});
+        // H-5: increment failure counter; release claim or terminate at cap.
+        await recordSendFailure(id, err).catch(() => {});
         return false;
       }
     });
