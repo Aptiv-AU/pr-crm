@@ -10,6 +10,14 @@ export async function getContactsByFilter(orgId: string, filter: SegmentFilter) 
   });
 }
 
+/**
+ * P0-2: hard cap at 1000 most-recent rows. /contacts ships the full
+ * list to a client component; full pagination is the proper fix but
+ * this stops a 50K-contact org from blowing past Vercel's 4.5 MB RSC
+ * cap.
+ */
+export const CONTACT_LIST_HARD_LIMIT = 1000;
+
 export async function getContacts(organizationId: string, beat?: string) {
   const contacts = await db.contact.findMany({
     where: {
@@ -24,6 +32,7 @@ export async function getContacts(organizationId: string, beat?: string) {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: CONTACT_LIST_HARD_LIMIT,
   });
 
   return contacts;
