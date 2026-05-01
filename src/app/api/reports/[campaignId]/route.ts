@@ -4,6 +4,24 @@ import { requireOrgId } from "@/lib/server/org";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { CampaignReport } from "@/lib/pdf/campaign-report";
+import { assertPublicHttpsUrl } from "@/lib/net/assert-public-host";
+
+/**
+ * Belt-and-braces SSRF guard for coverage attachments fetched by
+ * @react-pdf/renderer at PDF render time. Coverage rows persisted before
+ * H-1 landed may have hostile URLs; re-validate here so a stored bad
+ * value can never round-trip through the metadata service.
+ */
+async function safeAttachmentForPdf(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  if (/\.public\.blob\.vercel-storage\.com\//.test(url)) return url;
+  try {
+    await assertPublicHttpsUrl(url);
+    return url;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(
   _request: Request,
@@ -78,15 +96,17 @@ export async function GET(
     0
   );
 
-  const coverages = campaign.coverages.map((c) => ({
-    publication: c.publication,
-    date: c.date.toISOString(),
-    type: c.type,
-    mediaValue: c.mediaValue ? Number(c.mediaValue) : null,
-    url: c.url ?? null,
-    contactName: c.contact?.name ?? null,
-    attachmentUrl: c.attachmentUrl ?? null,
-  }));
+  const coverages = await Promise.all(
+    campaign.coverages.map(async (c) => ({
+      publication: c.publication,
+      date: c.date.toISOString(),
+      type: c.type,
+      mediaValue: c.mediaValue ? Number(c.mediaValue) : null,
+      url: c.url ?? null,
+      contactName: c.contact?.name ?? null,
+      attachmentUrl: await safeAttachmentForPdf(c.attachmentUrl ?? null),
+    }))
+  );
 
   const org = campaign.organization;
   const client = campaign.client;

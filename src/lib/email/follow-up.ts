@@ -194,13 +194,19 @@ export async function generateFollowUps(
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  // Find outreaches needing follow-up #1: sent, not replied, followUpNumber=0, sent >= 3 days ago
+  // H-6: a reply on the original outreach flips THAT row to `replied`,
+  // not the follow-up. So filter by `replies: { none: {} }` here, then
+  // do a final pass below to drop any candidate whose sibling row in
+  // the same (contactId, campaignId) is already in `replied` status.
+  // Find outreaches needing follow-up #1: sent, no reply on the thread,
+  // followUpNumber=0, sent >= 3 days ago.
   const needsFirstFollowUp = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
       status: OutreachStatus.sent,
       followUpNumber: 0,
       sentAt: { lte: threeDaysAgo },
+      replies: { none: {} },
     },
     include: {
       contact: true,
@@ -208,13 +214,15 @@ export async function generateFollowUps(
     },
   });
 
-  // Find outreaches needing follow-up #2: sent, not replied, followUpNumber=1, sent >= 7 days ago
+  // Find outreaches needing follow-up #2: sent, no reply on this row,
+  // followUpNumber=1, sent >= 7 days ago.
   const needsSecondFollowUp = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
       status: OutreachStatus.sent,
       followUpNumber: 1,
       sentAt: { lte: sevenDaysAgo },
+      replies: { none: {} },
     },
     include: {
       contact: true,
@@ -222,9 +230,41 @@ export async function generateFollowUps(
     },
   });
 
+  // Final guard: even if no Reply row exists on this specific outreach,
+  // skip if any sibling outreach in the same (contactId, campaignId)
+  // thread is already in `replied` status (i.e. the original reply
+  // landed on a different row).
+  const candidateKeys = new Set(
+    [...needsFirstFollowUp, ...needsSecondFollowUp].map(
+      (o) => `${o.contactId}:${o.campaignId}`
+    )
+  );
+  let repliedKeys = new Set<string>();
+  if (candidateKeys.size > 0) {
+    const repliedSiblings = await db.outreach.findMany({
+      where: {
+        status: OutreachStatus.replied,
+        OR: Array.from(candidateKeys).map((k) => {
+          const [contactId, campaignId] = k.split(":");
+          return { contactId, campaignId };
+        }),
+      },
+      select: { contactId: true, campaignId: true },
+    });
+    repliedKeys = new Set(
+      repliedSiblings.map((r) => `${r.contactId}:${r.campaignId}`)
+    );
+  }
+  const filteredFirst = needsFirstFollowUp.filter(
+    (o) => !repliedKeys.has(`${o.contactId}:${o.campaignId}`)
+  );
+  const filteredSecond = needsSecondFollowUp.filter(
+    (o) => !repliedKeys.has(`${o.contactId}:${o.campaignId}`)
+  );
+
   const candidates = [
-    ...needsFirstFollowUp.map((o) => ({ outreach: o, nextFollowUp: 1 })),
-    ...needsSecondFollowUp.map((o) => ({ outreach: o, nextFollowUp: 2 })),
+    ...filteredFirst.map((o) => ({ outreach: o, nextFollowUp: 1 })),
+    ...filteredSecond.map((o) => ({ outreach: o, nextFollowUp: 2 })),
   ];
 
   if (candidates.length === 0) return 0;

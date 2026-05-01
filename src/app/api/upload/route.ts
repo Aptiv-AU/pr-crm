@@ -1,6 +1,14 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { requireOrgId } from "@/lib/server/org";
+import crypto from "node:crypto";
+
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -77,8 +85,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ url: `/api/placeholder-image?name=${encodeURIComponent(file.name)}` });
     }
 
-    const blob = await put(file.name, file, {
+    // H-7: per-org prefix + opaque UUID. Previously the client filename
+    // was used as the key — flat namespace across all tenants, control
+    // characters in the URL, no addRandomSuffix on older SDK versions.
+    const orgId = await requireOrgId();
+    const ext = MIME_TO_EXT[sniffed] ?? "bin";
+    const key = `${orgId}/uploads/${crypto.randomUUID()}.${ext}`;
+    const blob = await put(key, file, {
       access: "public",
+      addRandomSuffix: false,
+      contentType: sniffed,
     });
 
     return NextResponse.json({ url: blob.url });

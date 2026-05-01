@@ -292,10 +292,48 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
   return { data: { suggestions } };
 });
 
+/**
+ * Atomically claim an approved outreach for sending. Returns true if this
+ * caller acquired the claim, false if another sender (the cron, or a
+ * concurrent manual click) got there first. The cron uses its own claim
+ * path (`claimDueOutreaches`); this is only for the manual / bulk paths.
+ */
+async function claimForManualSend(outreachId: string, orgId: string): Promise<boolean> {
+  const result = await db.outreach.updateMany({
+    where: {
+      id: outreachId,
+      status: OutreachStatus.approved,
+      claimedAt: null,
+      campaign: { organizationId: orgId },
+    },
+    data: { claimedAt: new Date() },
+  });
+  return result.count > 0;
+}
+
 export async function sendOutreachForOrg(outreachId: string, orgId: string) {
-  const account = await requireEmailAccount(orgId);
-  const token = await providerFor(account).getValidToken(account.id);
-  return sendOutreachWithAccount(outreachId, orgId, account, token);
+  // H-4: atomically take the claim before resolving the mailbox or doing
+  // any work. Two parallel manual sends used to both pass the read-only
+  // check and dual-deliver.
+  const claimed = await claimForManualSend(outreachId, orgId);
+  if (!claimed) {
+    throw new Error("Outreach is not approved or is already being sent");
+  }
+  try {
+    const account = await requireEmailAccount(orgId);
+    const token = await providerFor(account).getValidToken(account.id);
+    return await sendOutreachWithAccount(outreachId, orgId, account, token);
+  } catch (err) {
+    // Release the claim on any failure so a retry is possible. (sent rows
+    // never come back here — markOutreachSent has already moved status.)
+    await db.outreach
+      .updateMany({
+        where: { id: outreachId, status: OutreachStatus.approved },
+        data: { claimedAt: null },
+      })
+      .catch(() => {});
+    throw err;
+  }
 }
 
 /**
@@ -409,19 +447,15 @@ async function loadSendableOutreach(
   id: string,
   orgId: string
 ): Promise<SendableOutreach> {
+  // The claim handshake is now done by the caller (cron's
+  // `claimDueOutreaches` or `claimForManualSend`); a `claimedAt: null`
+  // filter here would reject already-claimed rows in the cron path.
   const outreach = await db.outreach.findFirst({
-    where: {
-      id,
-      campaign: { organizationId: orgId },
-      // Race guard: a row currently being claimed by the cron worker (or a
-      // concurrent manual click) must not be picked up here. `claimedAt` is
-      // set atomically by `claimDueOutreaches` before any send happens.
-      claimedAt: null,
-    },
+    where: { id, campaign: { organizationId: orgId } },
     include: { contact: true, campaign: true },
   });
   if (!outreach) {
-    throw new Error("Outreach not found or already being sent");
+    throw new Error("Outreach not found");
   }
   if (outreach.status !== OutreachStatus.approved) {
     throw new Error("Outreach must be approved before sending");

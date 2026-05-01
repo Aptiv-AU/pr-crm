@@ -1,9 +1,22 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { CampaignStatus, PhaseStatus } from "@prisma/client";
+import { CampaignStatus, PhaseStatus, Prisma } from "@prisma/client";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
+
+/**
+ * Allowed phase transitions. The phase state machine is strictly
+ * sequential: a row can only enter `active` from `pending`, and only
+ * enter `complete` from `active`. `revertToPhase` handles the legitimate
+ * reverse path (with a $transaction).
+ */
+function isLegalTransition(from: PhaseStatus, to: PhaseStatus): boolean {
+  if (from === to) return true;
+  if (from === PhaseStatus.pending && to === PhaseStatus.active) return true;
+  if (from === PhaseStatus.active && to === PhaseStatus.complete) return true;
+  return false;
+}
 
 export const updatePhaseStatus = action(
   "updatePhaseStatus",
@@ -18,10 +31,21 @@ export const updatePhaseStatus = action(
       throw new Error("Phase not found");
     }
 
-    await db.campaignPhase.update({
-      where: { id: phaseId },
-      data: { status },
-    });
+    if (!isLegalTransition(phase.status, status)) {
+      throw new Error(
+        `Illegal phase transition: ${phase.status} → ${status}`
+      );
+    }
+
+    // H-8: wrap all writes in $transaction so a crash mid-flight can't
+    // leave the campaign in a partially-advanced state (phase complete,
+    // next phase still pending, currentPhase stale).
+    const writes: Prisma.PrismaPromise<unknown>[] = [
+      db.campaignPhase.update({
+        where: { id: phaseId },
+        data: { status },
+      }),
+    ];
 
     if (status === PhaseStatus.complete) {
       const nextPhase = await db.campaignPhase.findFirst({
@@ -33,22 +57,27 @@ export const updatePhaseStatus = action(
       });
 
       if (nextPhase) {
-        await db.campaignPhase.update({
-          where: { id: nextPhase.id },
-          data: { status: PhaseStatus.active },
-        });
-
-        await db.campaign.update({
-          where: { id: phase.campaignId },
-          data: { currentPhase: nextPhase.name },
-        });
+        writes.push(
+          db.campaignPhase.update({
+            where: { id: nextPhase.id },
+            data: { status: PhaseStatus.active },
+          }),
+          db.campaign.update({
+            where: { id: phase.campaignId },
+            data: { currentPhase: nextPhase.name },
+          })
+        );
       } else {
-        await db.campaign.update({
-          where: { id: phase.campaignId },
-          data: { status: CampaignStatus.complete },
-        });
+        writes.push(
+          db.campaign.update({
+            where: { id: phase.campaignId },
+            data: { status: CampaignStatus.complete },
+          })
+        );
       }
     }
+
+    await db.$transaction(writes);
 
     return {
       revalidate: ["/campaigns", `/campaigns/${phase.campaignId}`],

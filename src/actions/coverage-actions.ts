@@ -4,6 +4,26 @@ import { db } from "@/lib/db";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
 import { generateSlug } from "@/lib/slug/generate";
+import { assertPublicHttpsUrl } from "@/lib/net/assert-public-host";
+
+/**
+ * Validate a user-supplied attachment URL before persisting. Coverage
+ * attachments are server-fetched by @react-pdf/renderer when reports are
+ * generated, so a URL like http://169.254.169.254/... could SSRF the
+ * cloud metadata service. Locally-uploaded blobs (Vercel Blob) bypass
+ * validation — they're already controlled by us.
+ */
+async function sanitizeAttachmentUrl(raw: string | null): Promise<string | null> {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  // Vercel Blob URLs and any in-app upload — already trusted.
+  if (trimmed.startsWith("https://") && /\.public\.blob\.vercel-storage\.com\//.test(trimmed)) {
+    return trimmed;
+  }
+  await assertPublicHttpsUrl(trimmed);
+  return trimmed;
+}
 
 async function assertOptionalCampaignInOrg(
   campaignId: string | null,
@@ -51,6 +71,7 @@ export const createCoverage = action("createCoverage", async (formData: FormData
   ]);
 
   const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
+  const safeAttachmentUrl = await sanitizeAttachmentUrl(attachmentUrl);
 
   const slug = await generateSlug("coverage", organizationId, publication);
 
@@ -65,7 +86,7 @@ export const createCoverage = action("createCoverage", async (formData: FormData
       type,
       url: url || null,
       mediaValue: mediaValue && !isNaN(mediaValue) ? mediaValue : null,
-      attachmentUrl: attachmentUrl || null,
+      attachmentUrl: safeAttachmentUrl,
       notes: notes || null,
     },
   });
@@ -115,6 +136,7 @@ export const updateCoverage = action(
     ]);
 
     const mediaValue = mediaValueStr ? parseFloat(mediaValueStr) : null;
+    const safeAttachmentUrl = await sanitizeAttachmentUrl(attachmentUrl);
 
     await db.coverage.update({
       where: { id: coverageId },
@@ -126,7 +148,7 @@ export const updateCoverage = action(
         type,
         url: url || null,
         mediaValue: mediaValue && !isNaN(mediaValue) ? mediaValue : null,
-        attachmentUrl: attachmentUrl || null,
+        attachmentUrl: safeAttachmentUrl,
         notes: notes || null,
       },
     });

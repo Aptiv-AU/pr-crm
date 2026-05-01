@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
+import { requireRole } from "@/lib/server/role";
 import { renderTemplate } from "@/lib/templates/render";
 
 export const createTemplate = action(
@@ -32,6 +33,7 @@ export const updateTemplate = action(
 
 export const deleteTemplate = action("deleteTemplate", async (id: string) => {
   const organizationId = await requireOrgId();
+  await requireRole(["owner", "admin"]);
   const existing = await db.emailTemplate.findFirst({
     where: { id, organizationId },
     select: { id: true },

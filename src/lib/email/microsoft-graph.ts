@@ -149,6 +149,13 @@ export async function sendMail(
   params: { to: string; subject: string; bodyHtml: string }
 ): Promise<{ messageId: string; conversationId: string }> {
   const { to, subject, bodyHtml } = params;
+  // Same defence as Gmail (S-4): refuse multi-recipient strings and
+  // strip control characters before any value reaches the wire. Graph's
+  // JSON body mostly absorbs CRLF safely, but the OData fallback filter
+  // below interpolates the subject into a query string.
+  const { stripControlChars, assertSingleRfc5322Address } = await import("./sanitize");
+  const safeTo = assertSingleRfc5322Address(to);
+  const safeSubject = stripControlChars(subject);
 
   // 1. Create draft
   const draftRes = await fetch(`${GRAPH_BASE}/me/messages`, {
@@ -158,9 +165,9 @@ export async function sendMail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      subject,
+      subject: safeSubject,
       body: { contentType: "HTML", content: bodyHtml },
-      toRecipients: [{ emailAddress: { address: to } }],
+      toRecipients: [{ emailAddress: { address: safeTo } }],
     }),
   });
 
@@ -204,8 +211,8 @@ export async function sendMail(
     // Message may have moved; fall through to search
   }
 
-  // Fallback: search sent items by subject
-  const filter = encodeURIComponent(`subject eq '${subject.replace(/'/g, "''")}'`);
+  // Fallback: search sent items by subject (use sanitised value).
+  const filter = encodeURIComponent(`subject eq '${safeSubject.replace(/'/g, "''")}'`);
   const searchRes = await fetch(
     `${GRAPH_BASE}/me/mailFolders/sentitems/messages?$filter=${filter}&$orderby=sentDateTime desc&$top=1&$select=id,conversationId`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
