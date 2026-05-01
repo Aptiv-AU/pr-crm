@@ -249,11 +249,17 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
     })
     .then((cc: { contactId: string }[]) => cc.map((c) => c.contactId));
 
+  // P1-4: select only the columns the prompt actually uses. Was loading
+  // every column for every contact in the org and feeding the row to the
+  // model verbatim. Also cap at 500 — the prompt becomes useless above
+  // that and a 50K-row org would blow the context window anyway.
   const contacts = await db.contact.findMany({
     where: {
       organizationId: orgId,
       id: { notIn: existingContactIds.length > 0 ? existingContactIds : undefined },
     },
+    select: { id: true, name: true, outlet: true, beat: true, tier: true },
+    take: 500,
   });
 
   if (contacts.length === 0) {
@@ -264,7 +270,7 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
     campaign.brief,
     campaign.client.name,
     campaign.client.industry,
-    contacts.map((c: typeof contacts[number]) => ({
+    contacts.map((c) => ({
       id: c.id,
       name: c.name,
       outlet: c.outlet ?? "",

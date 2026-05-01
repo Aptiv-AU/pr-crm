@@ -26,6 +26,14 @@ type OutreachWithRefs = Prisma.OutreachGetPayload<{
  * - Skips outreaches re-checked within REPLY_CHECK_STALENESS_MS.
  * - Processes outreaches in bounded-concurrency batches of OUTREACHES_CONCURRENCY.
  */
+/**
+ * P1-5: hard cap per tick. Daily cadence × 5K active threads used to do
+ * 5K Gmail/Graph calls per run; now we take the oldest-checked N rows
+ * each tick and let subsequent ticks pick up the rest. Bumped via the
+ * cron schedule, not this number.
+ */
+const REPLY_CHECK_BATCH_PER_ORG = 200;
+
 export async function checkForReplies(organizationId: string): Promise<number> {
   const now = Date.now();
   const windowCutoff = new Date(now - REPLY_CHECK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -46,6 +54,11 @@ export async function checkForReplies(organizationId: string): Promise<number> {
       contact: true,
       campaign: true,
     },
+    // Prioritise rows that haven't been checked recently. nulls-first via
+    // the OR above means new rows surface first; among already-checked
+    // rows, oldest-checked wins.
+    orderBy: { lastCheckedForReplyAt: { sort: "asc", nulls: "first" } },
+    take: REPLY_CHECK_BATCH_PER_ORG,
   });
 
   if (outreaches.length === 0) return 0;
