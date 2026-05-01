@@ -4,6 +4,7 @@ import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { parsePitchResponse } from "@/lib/ai/prompts";
 import { OutreachStatus, type Prisma } from "@prisma/client";
+import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 
 const OUTREACHES_CONCURRENCY = 5;
 const FOLLOWUPS_CONCURRENCY = 5;
@@ -126,7 +127,12 @@ async function checkOne(
             receivedAt: new Date(reply.receivedDateTime),
             subject: reply.subject,
             bodyText: reply.bodyText,
-            bodyHtml: reply.bodyHtml,
+            // M-4: sanitise on write — bodyHtml from a third-party sender
+            // is the textbook stored-XSS vector for any future inbox UI
+            // that uses dangerouslySetInnerHTML.
+            bodyHtml: reply.bodyHtml
+              ? sanitizeSignatureHtml(reply.bodyHtml)
+              : reply.bodyHtml,
           },
           update: {},
         });

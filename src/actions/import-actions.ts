@@ -236,8 +236,20 @@ export const importContacts = action(
       let mergeTarget: ExistingMergeRow | undefined;
       if (!forceCreate.has(idx)) {
         const fmId = forceMerge.get(idx);
-        if (fmId) mergeTarget = existingById.get(fmId);
-        else if (c.email) mergeTarget = existingByEmail.get(c.email);
+        if (fmId) {
+          mergeTarget = existingById.get(fmId);
+          // M-6: the user explicitly asked to merge into `fmId`. If that
+          // id doesn't resolve to a row in this org (deleted between
+          // preview and submit, or wrong org), don't silently fall through
+          // to "create new" — fail loudly so they re-run the import.
+          if (!mergeTarget) {
+            throw new Error(
+              `Merge target ${fmId} not found in this org — re-run the import to refresh duplicates`
+            );
+          }
+        } else if (c.email) {
+          mergeTarget = existingByEmail.get(c.email);
+        }
       }
 
       if (mergeTarget) {

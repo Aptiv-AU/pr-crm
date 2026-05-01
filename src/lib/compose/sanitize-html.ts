@@ -8,8 +8,14 @@ const ALLOWED_TAGS = [
   "font", "small", "sub", "sup",
 ];
 
+// M-2: dropped `style` from the allow-list. DOMPurify v3 strips the
+// obvious `expression()`/`behavior:`/`javascript:` payloads, but leaves
+// `position:fixed; z-index:9999` style overlays — enough to UI-redress
+// the signature preview's `dangerouslySetInnerHTML` block. We
+// re-introduce explicit color/size/face attributes for legacy mail HTML
+// instead of accepting an arbitrary style attribute.
 const ALLOWED_ATTR = [
-  "href", "src", "alt", "title", "style", "width", "height",
+  "href", "src", "alt", "title", "width", "height",
   "color", "size", "face", "class",
 ];
 

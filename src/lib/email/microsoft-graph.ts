@@ -212,20 +212,28 @@ export async function sendMail(
   }
 
   // Fallback: search sent items by subject (use sanitised value).
-  const filter = encodeURIComponent(`subject eq '${safeSubject.replace(/'/g, "''")}'`);
-  const searchRes = await fetch(
-    `${GRAPH_BASE}/me/mailFolders/sentitems/messages?$filter=${filter}&$orderby=sentDateTime desc&$top=1&$select=id,conversationId`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
+  // M-8: wrap in try/catch — a 401 on this post-send lookup must not
+  // bubble up and make the caller treat the *send* as failed (the cron
+  // would then release the claim and retry, dual-delivering).
+  try {
+    const filter = encodeURIComponent(`subject eq '${safeSubject.replace(/'/g, "''")}'`);
+    const searchRes = await fetch(
+      `${GRAPH_BASE}/me/mailFolders/sentitems/messages?$filter=${filter}&$orderby=sentDateTime desc&$top=1&$select=id,conversationId`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
 
-  if (searchRes.ok) {
-    const searchData = await searchRes.json();
-    if (searchData.value && searchData.value.length > 0) {
-      return {
-        messageId: searchData.value[0].id,
-        conversationId: searchData.value[0].conversationId ?? "",
-      };
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.value && searchData.value.length > 0) {
+        return {
+          messageId: searchData.value[0].id,
+          conversationId: searchData.value[0].conversationId ?? "",
+        };
+      }
     }
+  } catch {
+    // Silently fall through — the message was successfully sent; we
+    // just couldn't enrich the conversationId.
   }
 
   // Return what we have even if we couldn't get conversationId

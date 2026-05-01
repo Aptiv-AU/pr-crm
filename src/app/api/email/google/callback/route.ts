@@ -51,8 +51,10 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${baseUrl}/api/email/google/callback`;
     const tokens = await exchangeGoogleCode(code, redirectUri);
 
+    // M-1: scope by (userId, provider) so re-connecting Gmail doesn't
+    // overwrite the user's Microsoft account row.
     const existing = await db.emailAccount.findFirst({
-      where: { userId },
+      where: { userId, provider: "google" },
     });
 
     let accountId: string;

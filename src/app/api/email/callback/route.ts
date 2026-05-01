@@ -54,9 +54,11 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${baseUrl}/api/email/callback`;
     const tokens = await exchangeCodeForTokens(code, redirectUri);
 
-    // Bind the tokens to the signed-in user.
+    // M-1: scope by (userId, provider). Without the provider filter,
+    // connecting Outlook would silently overwrite Gmail tokens for the
+    // same user.
     const existing = await db.emailAccount.findFirst({
-      where: { userId },
+      where: { userId, provider: "microsoft" },
     });
 
     let accountId: string;
