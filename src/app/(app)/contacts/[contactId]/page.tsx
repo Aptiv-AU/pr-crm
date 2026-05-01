@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getContactByIdCached, getContactDetailStats } from "@/lib/queries/contact-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { ContactDetailClient } from "@/components/contacts/contact-detail-client";
 import { isCuid } from "@/lib/slug/resolve";
 
@@ -14,19 +15,23 @@ export default async function ContactDetailPage({
 }) {
   const { contactId: handle } = await params;
 
-  // Resolve handle (cuid or slug) → cuid
+  const org = await getCurrentOrg();
+  if (!org) notFound();
+
+  // Resolve handle (cuid or slug) → cuid, scoped to caller's org.
   let contactId: string | null = null;
   if (isCuid(handle)) {
-    contactId = handle;
+    const owned = await db.contact.findFirst({
+      where: { id: handle, organizationId: org.id },
+      select: { id: true },
+    });
+    contactId = owned?.id ?? null;
   } else {
-    const org = await db.organization.findFirst({ select: { id: true } });
-    if (org) {
-      const found = await db.contact.findFirst({
-        where: { organizationId: org.id, slug: handle },
-        select: { id: true },
-      });
-      contactId = found?.id ?? null;
-    }
+    const found = await db.contact.findFirst({
+      where: { organizationId: org.id, slug: handle },
+      select: { id: true },
+    });
+    contactId = found?.id ?? null;
   }
 
   if (!contactId) {
@@ -34,7 +39,7 @@ export default async function ContactDetailPage({
   }
 
   const [contact, stats] = await Promise.all([
-    getContactByIdCached(contactId),
+    getContactByIdCached(contactId, org.id),
     getContactDetailStats(contactId),
   ]);
 

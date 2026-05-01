@@ -6,6 +6,8 @@ export function stripQuotedReply(html: string): string {
     .trim();
 }
 
+import { safeFontFamily, safeFontSize } from "@/lib/html/escape";
+
 export function extractFontStyle(html: string): {
   fontFamily: string | null;
   fontSize: string | null;
@@ -15,9 +17,14 @@ export function extractFontStyle(html: string): {
   const style = m[1];
   const famMatch = style.match(/font-family\s*:\s*([^;]+)/i);
   const sizeMatch = style.match(/font-size\s*:\s*([^;]+)/i);
+  // Source HTML here is scraped from a Sent-folder message — attacker-
+  // controlled if the user's history includes a malicious reply.
+  // Validate against an allow-list before returning.
+  const famRaw = famMatch ? famMatch[1].trim() : "";
+  const sizeRaw = sizeMatch ? sizeMatch[1].trim() : "";
   return {
-    fontFamily: famMatch ? famMatch[1].trim() : null,
-    fontSize: sizeMatch ? sizeMatch[1].trim() : null,
+    fontFamily: famRaw ? safeFontFamily(famRaw, "") || null : null,
+    fontSize: sizeRaw ? safeFontSize(sizeRaw, "") || null : null,
   };
 }
 

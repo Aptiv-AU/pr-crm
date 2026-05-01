@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
 import { ClientCard } from "@/components/clients/client-card";
@@ -90,22 +91,17 @@ function avgTenureMonths(dates: Date[]): number {
 }
 
 export default async function ClientsPage() {
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({
-      data: { name: "NWPR", currency: "AUD" },
-    });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
-  const [clients, orgStats, totalMonthlyCents, fullOrg] = await Promise.all([
+  const [clients, orgStats, totalMonthlyCents] = await Promise.all([
     getClients(org.id),
     getOrganizationStats(org.id),
     getTotalMonthlyRetainerCents(org.id),
-    getCurrentOrg(),
   ]);
 
-  const locale = fullOrg?.locale || "en-AU";
-  const currency = fullOrg?.currency || "AUD";
+  const locale = org.locale || "en-AU";
+  const currency = org.currency || "AUD";
 
   const [clientContactCounts, retainerByClient] = await Promise.all([
     Promise.all(

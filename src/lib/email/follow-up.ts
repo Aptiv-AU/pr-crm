@@ -187,7 +187,7 @@ async function checkOne(
 export async function generateFollowUps(
   organizationId: string
 ): Promise<number> {
-  const config = await getAIConfig();
+  const config = await getAIConfig(organizationId);
   if (!config) return 0;
 
   const now = new Date();

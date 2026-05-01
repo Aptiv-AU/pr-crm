@@ -8,6 +8,7 @@ import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
 import { providerFor, type SendResult } from "@/lib/email/provider";
 import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
+import { escapeHtml, safeFontFamily, safeFontSize } from "@/lib/html/escape";
 import { OutreachStatus, type EmailAccount, type Prisma } from "@prisma/client";
 
 type SendableOutreach = Prisma.OutreachGetPayload<{
@@ -222,7 +223,7 @@ export const deleteOutreach = action("deleteOutreach", async (outreachId: string
 
 export const suggestContacts = action("suggestContacts", async (campaignId: string) => {
   const orgId = await requireOrgId();
-  const config = await getAIConfig();
+  const config = await getAIConfig(orgId);
   if (!config) {
     throw new Error("No AI provider configured. Add an API key in environment variables.");
   }
@@ -453,18 +454,25 @@ async function requireEmailAccount(orgId: string): Promise<EmailAccount> {
 }
 
 function renderOutreachHtml(body: string, account: EmailAccount): string {
+  // Body is plain text typed (or token-rendered) by the user; HTML-escape
+  // before paragraph wrapping or any `<script>`/`<img onerror>` payload
+  // becomes live HTML in the recipient's inbox.
   const paragraphHtml = body
     .split(/\n\n+/)
-    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
     .join("");
 
-  const fontFamily =
-    account.fontFamily ??
-    (account.provider === "google"
+  const fontFamilyDefault =
+    account.provider === "google"
       ? "Arial, Helvetica, sans-serif"
-      : "Aptos, Calibri, sans-serif");
-  const fontSize =
-    account.fontSize ?? (account.provider === "google" ? "13px" : "11pt");
+      : "Aptos, Calibri, sans-serif";
+  const fontSizeDefault = account.provider === "google" ? "13px" : "11pt";
+  // Account-stored fonts are written by setManualSignature/resolveStyle,
+  // both of which can be poisoned (an attacker-controlled signature could
+  // store `Arial; "><script>...`). Validate against an allow-list so a
+  // bad value falls back rather than breaking out of the style attribute.
+  const fontFamily = safeFontFamily(account.fontFamily, fontFamilyDefault);
+  const fontSize = safeFontSize(account.fontSize, fontSizeDefault);
   const signature = sanitizeSignatureHtml(account.signatureHtml);
 
   const wrap = (inner: string) =>

@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { SettingsClient } from "@/components/settings/settings-client";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +10,8 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
   // Get all users in the org for user management
   const users = await db.user.findMany({
@@ -30,7 +29,9 @@ export default async function SettingsPage() {
     minimax: !!(process.env.MINIMAX_API_KEY && process.env.MINIMAX_API_KEY !== "" && !process.env.MINIMAX_API_KEY.startsWith("your-")),
   };
 
+  // C-4: scope by current user (each user owns their connected mailbox).
   const emailAccount = await db.emailAccount.findFirst({
+    where: { userId: session.user.id },
     select: { id: true, email: true, provider: true, createdAt: true },
   });
 

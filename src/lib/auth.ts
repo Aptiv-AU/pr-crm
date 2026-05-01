@@ -16,13 +16,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   events: {
     createUser: async ({ user }) => {
-      // Assign new users to an existing org, or create one
-      let org = await db.organization.findFirst();
-      if (!org) {
-        org = await db.organization.create({
-          data: { name: "My Organization", currency: "AUD" },
-        });
-      }
+      // Each signup gets its own org. An invite-token flow is required
+      // before two users can share an org — auto-joining the oldest org
+      // (the previous behaviour) silently exposed every existing tenant.
+      const org = await db.organization.create({
+        data: { name: "My Organization", currency: "AUD" },
+      });
       await db.user.update({
         where: { id: user.id! },
         data: { organizationId: org.id },

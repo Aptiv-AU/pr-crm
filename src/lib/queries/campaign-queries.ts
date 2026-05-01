@@ -39,9 +39,9 @@ export async function getCampaigns(
   return campaigns;
 }
 
-export async function getCampaignById(campaignId: string) {
-  const campaign = await db.campaign.findUnique({
-    where: { id: campaignId },
+export async function getCampaignById(campaignId: string, organizationId: string) {
+  const campaign = await db.campaign.findFirst({
+    where: { id: campaignId, organizationId },
     include: {
       client: {
         select: {
@@ -166,12 +166,12 @@ export async function getCampaignById(campaignId: string) {
  * campaign or its joined children (phases, contacts, suppliers,
  * budget line items, outreach, coverage).
  */
-export const getCampaignByIdCached = (campaignId: string) =>
+export const getCampaignByIdCached = (campaignId: string, organizationId: string) =>
   unstable_cache(
-    async (id: string) => getCampaignById(id),
-    ["campaign-detail", campaignId],
+    async (id: string, orgId: string) => getCampaignById(id, orgId),
+    ["campaign-detail", campaignId, organizationId],
     { tags: [`campaign:${campaignId}`], revalidate: 3600 },
-  )(campaignId);
+  )(campaignId, organizationId);
 
 export async function getCampaignStats(organizationId: string) {
   const [total, active, draft, complete] = await Promise.all([

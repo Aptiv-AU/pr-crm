@@ -27,17 +27,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let org = user?.organizationId ? await getOrgById(user.organizationId) : null;
 
   if (!org) {
-    // Edge case: user exists but no org — create one and assign
-    org = await db.organization.findFirst();
-    if (!org) {
-      org = await db.organization.create({
-        data: { name: "My Organization", currency: "AUD" },
-      });
-    }
+    // Edge case: user exists but no org (legacy account, or org row deleted).
+    // Create a fresh org for this user — never auto-join an existing tenant.
+    const fresh = await db.organization.create({
+      data: { name: "My Organization", currency: "AUD" },
+    });
     await db.user.update({
       where: { id: session.user.id },
-      data: { organizationId: org.id },
+      data: { organizationId: fresh.id },
     });
+    org = fresh;
   }
 
   const [clients, badges] = await Promise.all([

@@ -29,9 +29,9 @@ export async function getContacts(organizationId: string, beat?: string) {
   return contacts;
 }
 
-export async function getContactById(contactId: string) {
-  const contact = await db.contact.findUnique({
-    where: { id: contactId },
+export async function getContactById(contactId: string, organizationId: string) {
+  const contact = await db.contact.findFirst({
+    where: { id: contactId, organizationId },
     include: {
       campaignContacts: {
         include: {
@@ -97,12 +97,12 @@ export async function getContactById(contactId: string) {
  * Busted by any mutation on the contact or its joined children
  * (outreach, coverage, campaignContact, interaction, tag assignment).
  */
-export const getContactByIdCached = (contactId: string) =>
+export const getContactByIdCached = (contactId: string, organizationId: string) =>
   unstable_cache(
-    async (id: string) => getContactById(id),
-    ["contact-detail", contactId],
+    async (id: string, orgId: string) => getContactById(id, orgId),
+    ["contact-detail", contactId, organizationId],
     { tags: [`contact:${contactId}`], revalidate: 3600 },
-  )(contactId);
+  )(contactId, organizationId);
 
 export async function getContactStats(organizationId: string) {
   const [total, aList, warm] = await Promise.all([

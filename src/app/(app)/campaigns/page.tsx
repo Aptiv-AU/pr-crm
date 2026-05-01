@@ -1,18 +1,18 @@
+import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import {
   getCampaigns,
   getCampaignStatsCached,
   getCampaignFiltersCached,
 } from "@/lib/queries/campaign-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { CampaignsListClient } from "@/components/campaigns/campaigns-list-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function CampaignsPage() {
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
   const [campaigns, stats, filters, allClients] = await Promise.all([
     getCampaigns(org.id),

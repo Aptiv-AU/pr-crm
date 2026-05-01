@@ -1,14 +1,13 @@
-import { db } from "@/lib/db";
+import { notFound } from "next/navigation";
 import { getSuppliers, getSupplierStats, getServiceCategories } from "@/lib/queries/supplier-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { SuppliersListClient } from "@/components/suppliers/suppliers-list-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuppliersPage() {
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
   const [suppliers, stats, categories] = await Promise.all([
     getSuppliers(org.id),
