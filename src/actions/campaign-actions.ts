@@ -89,8 +89,11 @@ export const updateCampaign = action(
 
     const name = formData.get("name") as string | null;
     const statusRaw = formData.get("status") as string | null;
+    // B-1: `in` matches "toString"/"hasOwnProperty"/etc on string-valued
+    // Prisma enums. Use a strict allow-list of the actual enum values.
+    const VALID_STATUSES = new Set<string>(Object.values(CampaignStatus));
     const status =
-      statusRaw && statusRaw in CampaignStatus
+      statusRaw && VALID_STATUSES.has(statusRaw)
         ? (statusRaw as CampaignStatus)
         : null;
     const budgetStr = formData.get("budget") as string | null;

@@ -47,9 +47,12 @@ export async function GET(request: Request) {
     // Parallelise across orgs in bounded batches. Within each org, replies
     // must be detected before follow-ups are generated (so we don't follow-up
     // on threads that actually got replies) — keep that step sequential.
+    // B-2: use allSettled so one org's token-refresh failure doesn't kill
+    // the whole batch (and skip generateFollowUps for every other org).
+    let failed = 0;
     for (let i = 0; i < orgsWithEmail.length; i += ORGS_CONCURRENCY) {
       const batch = orgsWithEmail.slice(i, i + ORGS_CONCURRENCY);
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         batch.map(async (org) => {
           const replies = await checkForReplies(org.id);
           const followUps = await generateFollowUps(org.id);
@@ -57,14 +60,20 @@ export async function GET(request: Request) {
         })
       );
       for (const r of results) {
-        totalReplies += r.replies;
-        totalFollowUps += r.followUps;
+        if (r.status === "fulfilled") {
+          totalReplies += r.value.replies;
+          totalFollowUps += r.value.followUps;
+        } else {
+          failed += 1;
+          console.error("[cron/check-replies] org failed:", r.reason);
+        }
       }
     }
 
     return NextResponse.json({
       repliesFound: totalReplies,
       followUpsGenerated: totalFollowUps,
+      orgsFailed: failed,
       timestamp: new Date(),
     });
   } catch (error) {

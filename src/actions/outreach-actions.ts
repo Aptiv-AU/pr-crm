@@ -426,9 +426,15 @@ export const cancelScheduledOutreach = action(
     const orgId = await requireOrgId();
     const existing = await db.outreach.findFirst({
       where: { id: outreachId, campaign: { organizationId: orgId } },
-      select: { campaignId: true, contactId: true },
+      select: { campaignId: true, contactId: true, status: true },
     });
     if (!existing) throw new Error("Outreach not found");
+    // B-6: only `approved` rows can be unscheduled. Without this, a
+    // sent/replied row could have its scheduledAt cleared (UI cosmetic
+    // bug, but worth blocking).
+    if (existing.status !== OutreachStatus.approved) {
+      throw new Error("Only approved outreach can be unscheduled");
+    }
     await db.outreach.update({
       where: { id: outreachId },
       data: { scheduledAt: null, claimedAt: null },

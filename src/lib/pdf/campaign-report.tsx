@@ -36,6 +36,8 @@ function formatCurrency(value: number, currency: string): string {
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
+  // B-8: bad ISO strings yield `Invalid Date`. Show the em-dash instead.
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
