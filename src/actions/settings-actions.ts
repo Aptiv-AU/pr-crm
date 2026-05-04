@@ -4,9 +4,11 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireOrgId } from "@/lib/server/org";
+import { requireRole } from "@/lib/server/role";
 
 export async function updateAISettings(formData: FormData) {
   const organizationId = await requireOrgId();
+  await requireRole(["owner", "admin"]);
   const aiProvider = formData.get("aiProvider") as string | null;
   const aiModel = formData.get("aiModel") as string | null;
 
@@ -46,6 +48,7 @@ export async function updateUserProfile(formData: FormData) {
 
 export async function updateOrganizationSettings(formData: FormData) {
   const organizationId = await requireOrgId();
+  await requireRole(["owner", "admin"]);
   const name = formData.get("name") as string | null;
   const currency = formData.get("currency") as string | null;
   const logo = formData.get("logo") as string | null;

@@ -67,7 +67,13 @@ async function downloadAndStorePhoto(url: string): Promise<string | null> {
     const res = await fetch(url, { redirect: "manual" });
     if (res.status >= 300 && res.status < 400) return null;
     if (!res.ok) return null;
-    const length = Number(res.headers.get("content-length") ?? 0);
+    // M-10: refuse responses without a Content-Length. Previously a
+    // missing header coerced to 0 and bypassed the size cap, then
+    // arrayBuffer() read the full chunked body uncapped.
+    const lengthHeader = res.headers.get("content-length");
+    if (!lengthHeader) return null;
+    const length = Number(lengthHeader);
+    if (!Number.isFinite(length) || length <= 0) return null;
     if (length > 5 * 1024 * 1024) return null;
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];

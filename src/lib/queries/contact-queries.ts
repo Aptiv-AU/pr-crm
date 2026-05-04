@@ -10,6 +10,14 @@ export async function getContactsByFilter(orgId: string, filter: SegmentFilter) 
   });
 }
 
+/**
+ * P0-2: hard cap at 1000 most-recent rows. /contacts ships the full
+ * list to a client component; full pagination is the proper fix but
+ * this stops a 50K-contact org from blowing past Vercel's 4.5 MB RSC
+ * cap.
+ */
+export const CONTACT_LIST_HARD_LIMIT = 1000;
+
 export async function getContacts(organizationId: string, beat?: string) {
   const contacts = await db.contact.findMany({
     where: {
@@ -24,14 +32,15 @@ export async function getContacts(organizationId: string, beat?: string) {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: CONTACT_LIST_HARD_LIMIT,
   });
 
   return contacts;
 }
 
-export async function getContactById(contactId: string) {
-  const contact = await db.contact.findUnique({
-    where: { id: contactId },
+export async function getContactById(contactId: string, organizationId: string) {
+  const contact = await db.contact.findFirst({
+    where: { id: contactId, organizationId },
     include: {
       campaignContacts: {
         include: {
@@ -97,12 +106,12 @@ export async function getContactById(contactId: string) {
  * Busted by any mutation on the contact or its joined children
  * (outreach, coverage, campaignContact, interaction, tag assignment).
  */
-export const getContactByIdCached = (contactId: string) =>
+export const getContactByIdCached = (contactId: string, organizationId: string) =>
   unstable_cache(
-    async (id: string) => getContactById(id),
-    ["contact-detail", contactId],
+    async (id: string, orgId: string) => getContactById(id, orgId),
+    ["contact-detail", contactId, organizationId],
     { tags: [`contact:${contactId}`], revalidate: 3600 },
-  )(contactId);
+  )(contactId, organizationId);
 
 export async function getContactStats(organizationId: string) {
   const [total, aList, warm] = await Promise.all([

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { parseCsvHeader, parseCsvRows } from "@/lib/import/csv-parser";
+// P0-6: papaparse (~50 KB) is only needed once the user picks a file —
+// import dynamically so it stays out of the main /contacts chunk.
 import {
   CONTACT_IMPORT_FIELDS,
   mapRowsToContacts,
@@ -46,6 +47,9 @@ export function ContactImporter() {
     setError(null);
     try {
       const text = await file.text();
+      const { parseCsvHeader, parseCsvRows } = await import(
+        "@/lib/import/csv-parser"
+      );
       const hs = parseCsvHeader(text);
       if (hs.length === 0) {
         setError("That file doesn't look like a CSV with a header row.");

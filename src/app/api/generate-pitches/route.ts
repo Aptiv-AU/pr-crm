@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const config = await getAIConfig();
+  const config = await getAIConfig(organizationId);
   if (!config) {
     return new Response(
       JSON.stringify({ error: "No AI provider configured. Add an API key in environment variables." }),

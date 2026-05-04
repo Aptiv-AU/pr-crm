@@ -1,14 +1,13 @@
-import { db } from "@/lib/db";
+import { notFound } from "next/navigation";
 import { getAllOutreaches, getOutreachStatsCached } from "@/lib/queries/outreach-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { OutreachListClient } from "@/components/outreach/outreach-list-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function OutreachPage() {
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
   const [outreaches, stats] = await Promise.all([
     getAllOutreaches(org.id),

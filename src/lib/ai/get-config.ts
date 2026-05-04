@@ -9,8 +9,8 @@ const ENV_KEYS: Record<AIProvider, string> = {
   minimax: "MINIMAX_API_KEY",
 };
 
-export async function getAIConfig(): Promise<AIConfig | null> {
-  const org = await db.organization.findFirst();
+export async function getAIConfig(organizationId: string): Promise<AIConfig | null> {
+  const org = await db.organization.findUnique({ where: { id: organizationId } });
   if (!org) return null;
 
   // If the organization has an explicit AI provider set, use that

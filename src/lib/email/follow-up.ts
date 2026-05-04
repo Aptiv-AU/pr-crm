@@ -4,6 +4,7 @@ import { getAIConfig } from "@/lib/ai/get-config";
 import { generateText } from "@/lib/ai/provider";
 import { parsePitchResponse } from "@/lib/ai/prompts";
 import { OutreachStatus, type Prisma } from "@prisma/client";
+import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
 
 const OUTREACHES_CONCURRENCY = 5;
 const FOLLOWUPS_CONCURRENCY = 5;
@@ -25,6 +26,14 @@ type OutreachWithRefs = Prisma.OutreachGetPayload<{
  * - Skips outreaches re-checked within REPLY_CHECK_STALENESS_MS.
  * - Processes outreaches in bounded-concurrency batches of OUTREACHES_CONCURRENCY.
  */
+/**
+ * P1-5: hard cap per tick. Daily cadence × 5K active threads used to do
+ * 5K Gmail/Graph calls per run; now we take the oldest-checked N rows
+ * each tick and let subsequent ticks pick up the rest. Bumped via the
+ * cron schedule, not this number.
+ */
+const REPLY_CHECK_BATCH_PER_ORG = 200;
+
 export async function checkForReplies(organizationId: string): Promise<number> {
   const now = Date.now();
   const windowCutoff = new Date(now - REPLY_CHECK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -45,6 +54,11 @@ export async function checkForReplies(organizationId: string): Promise<number> {
       contact: true,
       campaign: true,
     },
+    // Prioritise rows that haven't been checked recently. nulls-first via
+    // the OR above means new rows surface first; among already-checked
+    // rows, oldest-checked wins.
+    orderBy: { lastCheckedForReplyAt: { sort: "asc", nulls: "first" } },
+    take: REPLY_CHECK_BATCH_PER_ORG,
   });
 
   if (outreaches.length === 0) return 0;
@@ -126,7 +140,12 @@ async function checkOne(
             receivedAt: new Date(reply.receivedDateTime),
             subject: reply.subject,
             bodyText: reply.bodyText,
-            bodyHtml: reply.bodyHtml,
+            // M-4: sanitise on write — bodyHtml from a third-party sender
+            // is the textbook stored-XSS vector for any future inbox UI
+            // that uses dangerouslySetInnerHTML.
+            bodyHtml: reply.bodyHtml
+              ? sanitizeSignatureHtml(reply.bodyHtml)
+              : reply.bodyHtml,
           },
           update: {},
         });
@@ -187,20 +206,26 @@ async function checkOne(
 export async function generateFollowUps(
   organizationId: string
 ): Promise<number> {
-  const config = await getAIConfig();
+  const config = await getAIConfig(organizationId);
   if (!config) return 0;
 
   const now = new Date();
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  // Find outreaches needing follow-up #1: sent, not replied, followUpNumber=0, sent >= 3 days ago
+  // H-6: a reply on the original outreach flips THAT row to `replied`,
+  // not the follow-up. So filter by `replies: { none: {} }` here, then
+  // do a final pass below to drop any candidate whose sibling row in
+  // the same (contactId, campaignId) is already in `replied` status.
+  // Find outreaches needing follow-up #1: sent, no reply on the thread,
+  // followUpNumber=0, sent >= 3 days ago.
   const needsFirstFollowUp = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
       status: OutreachStatus.sent,
       followUpNumber: 0,
       sentAt: { lte: threeDaysAgo },
+      replies: { none: {} },
     },
     include: {
       contact: true,
@@ -208,13 +233,15 @@ export async function generateFollowUps(
     },
   });
 
-  // Find outreaches needing follow-up #2: sent, not replied, followUpNumber=1, sent >= 7 days ago
+  // Find outreaches needing follow-up #2: sent, no reply on this row,
+  // followUpNumber=1, sent >= 7 days ago.
   const needsSecondFollowUp = await db.outreach.findMany({
     where: {
       campaign: { organizationId },
       status: OutreachStatus.sent,
       followUpNumber: 1,
       sentAt: { lte: sevenDaysAgo },
+      replies: { none: {} },
     },
     include: {
       contact: true,
@@ -222,9 +249,41 @@ export async function generateFollowUps(
     },
   });
 
+  // Final guard: even if no Reply row exists on this specific outreach,
+  // skip if any sibling outreach in the same (contactId, campaignId)
+  // thread is already in `replied` status (i.e. the original reply
+  // landed on a different row).
+  const candidateKeys = new Set(
+    [...needsFirstFollowUp, ...needsSecondFollowUp].map(
+      (o) => `${o.contactId}:${o.campaignId}`
+    )
+  );
+  let repliedKeys = new Set<string>();
+  if (candidateKeys.size > 0) {
+    const repliedSiblings = await db.outreach.findMany({
+      where: {
+        status: OutreachStatus.replied,
+        OR: Array.from(candidateKeys).map((k) => {
+          const [contactId, campaignId] = k.split(":");
+          return { contactId, campaignId };
+        }),
+      },
+      select: { contactId: true, campaignId: true },
+    });
+    repliedKeys = new Set(
+      repliedSiblings.map((r) => `${r.contactId}:${r.campaignId}`)
+    );
+  }
+  const filteredFirst = needsFirstFollowUp.filter(
+    (o) => !repliedKeys.has(`${o.contactId}:${o.campaignId}`)
+  );
+  const filteredSecond = needsSecondFollowUp.filter(
+    (o) => !repliedKeys.has(`${o.contactId}:${o.campaignId}`)
+  );
+
   const candidates = [
-    ...needsFirstFollowUp.map((o) => ({ outreach: o, nextFollowUp: 1 })),
-    ...needsSecondFollowUp.map((o) => ({ outreach: o, nextFollowUp: 2 })),
+    ...filteredFirst.map((o) => ({ outreach: o, nextFollowUp: 1 })),
+    ...filteredSecond.map((o) => ({ outreach: o, nextFollowUp: 2 })),
   ];
 
   if (candidates.length === 0) return 0;

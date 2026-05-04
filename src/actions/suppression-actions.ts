@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { action } from "@/lib/server/action";
 import { requireOrgId } from "@/lib/server/org";
+import { requireRole } from "@/lib/server/role";
 
 export const addSuppression = action(
   "addSuppression",
@@ -38,6 +39,10 @@ export const addSuppression = action(
 
 export const removeSuppression = action("removeSuppression", async (id: string) => {
   const organizationId = await requireOrgId();
+  // Removing a suppression re-enables sends to a previously opted-out
+  // address — gate to org admins so a low-trust account can't undo
+  // unsubscribes (CAN-SPAM / Australian Spam Act exposure).
+  await requireRole(["owner", "admin"]);
   const existing = await db.suppression.findFirst({
     where: { id, organizationId },
     select: { id: true },

@@ -11,6 +11,7 @@ export default async function EmailSettingsPage() {
   if (!session?.user) redirect("/auth/signin");
 
   const emailAccount = await db.emailAccount.findFirst({
+    where: { userId: session.user.id },
     select: {
       id: true,
       email: true,

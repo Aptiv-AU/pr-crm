@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getClients, getOrganizationStats } from "@/lib/queries/client-queries";
 import { ClientCard } from "@/components/clients/client-card";
@@ -90,33 +91,48 @@ function avgTenureMonths(dates: Date[]): number {
 }
 
 export default async function ClientsPage() {
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({
-      data: { name: "NWPR", currency: "AUD" },
-    });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
-  const [clients, orgStats, totalMonthlyCents, fullOrg] = await Promise.all([
+  const [clients, orgStats, totalMonthlyCents] = await Promise.all([
     getClients(org.id),
     getOrganizationStats(org.id),
     getTotalMonthlyRetainerCents(org.id),
-    getCurrentOrg(),
   ]);
 
-  const locale = fullOrg?.locale || "en-AU";
-  const currency = fullOrg?.currency || "AUD";
+  const locale = org.locale || "en-AU";
+  const currency = org.currency || "AUD";
 
-  const [clientContactCounts, retainerByClient] = await Promise.all([
-    Promise.all(
-      clients.map((client) =>
-        db.campaignContact.count({
-          where: { campaign: { clientId: client.id } },
-        })
-      )
-    ),
+  // P0-3: previously did Promise.all(clients.map(c => count(...))) which
+  // generated one DB round trip per client. Replace with a single
+  // groupBy keyed off the campaign's clientId so 100 clients become
+  // one query.
+  const [contactCountRows, retainerByClient] = await Promise.all([
+    db.campaignContact.groupBy({
+      by: ["campaignId"],
+      where: { campaign: { clientId: { in: clients.map((c) => c.id) } } },
+      _count: { _all: true },
+    }),
     getActiveRetainerByClientIds(clients.map((c) => c.id)),
   ]);
+
+  // groupBy returns by campaignId; collapse to per-client totals via a
+  // tiny lookup of campaign → client.
+  const campaignClientMap = new Map<string, string>();
+  if (contactCountRows.length > 0) {
+    const campaigns = await db.campaign.findMany({
+      where: { id: { in: contactCountRows.map((r) => r.campaignId) } },
+      select: { id: true, clientId: true },
+    });
+    for (const c of campaigns) campaignClientMap.set(c.id, c.clientId);
+  }
+  const countsByClientId = new Map<string, number>();
+  for (const row of contactCountRows) {
+    const clientId = campaignClientMap.get(row.campaignId);
+    if (!clientId) continue;
+    countsByClientId.set(clientId, (countsByClientId.get(clientId) ?? 0) + row._count._all);
+  }
+  const clientContactCounts = clients.map((c) => countsByClientId.get(c.id) ?? 0);
 
   const mv = Number(orgStats.mediaValue);
   const mediaValueFormatted =

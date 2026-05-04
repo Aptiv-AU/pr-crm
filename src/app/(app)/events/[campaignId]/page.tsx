@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getEventDetail } from "@/lib/queries/event-queries";
 import { getContacts } from "@/lib/queries/contact-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { createOrUpdateEventDetail } from "@/actions/event-actions";
 import { EventDetailClient } from "@/components/events/event-detail-client";
 import { isCuid } from "@/lib/slug/resolve";
@@ -15,18 +16,22 @@ export default async function EventDetailPage({
 }) {
   const { campaignId: handle } = await params;
 
+  const org = await getCurrentOrg();
+  if (!org) notFound();
+
   let campaignId: string | null = null;
   if (isCuid(handle)) {
-    campaignId = handle;
+    const owned = await db.campaign.findFirst({
+      where: { id: handle, organizationId: org.id },
+      select: { id: true },
+    });
+    campaignId = owned?.id ?? null;
   } else {
-    const orgForLookup = await db.organization.findFirst({ select: { id: true } });
-    if (orgForLookup) {
-      const found = await db.campaign.findFirst({
-        where: { organizationId: orgForLookup.id, slug: handle },
-        select: { id: true },
-      });
-      campaignId = found?.id ?? null;
-    }
+    const found = await db.campaign.findFirst({
+      where: { organizationId: org.id, slug: handle },
+      select: { id: true },
+    });
+    campaignId = found?.id ?? null;
   }
   if (!campaignId) notFound();
 
@@ -47,12 +52,6 @@ export default async function EventDetailPage({
       notFound();
     }
     eventDetail = refreshed.eventDetail;
-  }
-
-  // Fetch org contacts for available contacts
-  const org = await db.organization.findFirst();
-  if (!org) {
-    notFound();
   }
 
   const orgContacts = await getContacts(org.id);

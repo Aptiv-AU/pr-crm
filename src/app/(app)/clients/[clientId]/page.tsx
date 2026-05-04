@@ -18,26 +18,30 @@ export default async function ClientDetailPage({
 }) {
   const { clientId: handle } = await params;
 
+  const org = await getCurrentOrg();
+  if (!org) notFound();
+
   let clientId: string | null = null;
   if (isCuid(handle)) {
-    clientId = handle;
+    // Validate CUID belongs to caller's org — getClientById is unscoped.
+    const owned = await db.client.findFirst({
+      where: { id: handle, organizationId: org.id },
+      select: { id: true },
+    });
+    clientId = owned?.id ?? null;
   } else {
-    const org = await db.organization.findFirst({ select: { id: true } });
-    if (org) {
-      const found = await db.client.findFirst({
-        where: { organizationId: org.id, slug: handle },
-        select: { id: true },
-      });
-      clientId = found?.id ?? null;
-    }
+    const found = await db.client.findFirst({
+      where: { organizationId: org.id, slug: handle },
+      select: { id: true },
+    });
+    clientId = found?.id ?? null;
   }
   if (!clientId) notFound();
 
-  const [client, stats, periods, org] = await Promise.all([
+  const [client, stats, periods] = await Promise.all([
     getClientById(clientId),
     getClientStats(clientId),
     getRetainerPeriods(clientId),
-    getCurrentOrg(),
   ]);
 
   if (!client) {

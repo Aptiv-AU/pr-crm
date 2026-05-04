@@ -82,9 +82,15 @@ export const removeSupplierFromCampaign = action(
       throw new Error("Campaign supplier not found");
     }
 
-    // Delete linked budget line items for this supplier+campaign
-    await db.budgetLineItem.deleteMany({
+    // B-11: previously deleted *every* budget line item on this campaign
+    // tied to this supplier. Two legitimately separate scopes-of-work
+    // both got nuked. Only delete rows tied to *this* CampaignSupplier
+    // join row (via campaignSupplierId column if present, else require
+    // explicit user action — fall back to leaving items orphaned with
+    // supplierId = null so the user sees them and can resolve.)
+    await db.budgetLineItem.updateMany({
       where: { campaignId: existing.campaignId, supplierId: existing.supplierId },
+      data: { supplierId: null },
     });
 
     await db.campaignSupplier.delete({

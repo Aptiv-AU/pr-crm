@@ -190,10 +190,16 @@ export const reorderRunsheetEntries = action(
     });
     if (count !== entryIds.length) throw new Error("Runsheet entry not found");
 
+    // B-10: fold the org check into each update so a row that hops orgs
+    // mid-flight can't be reordered by a stale request. updateMany lets
+    // us combine `where: id + relation filter` per row.
     await db.$transaction(
       entryIds.map((id, i) =>
-        db.runsheetEntry.update({
-          where: { id },
+        db.runsheetEntry.updateMany({
+          where: {
+            id,
+            eventDetail: { campaign: { organizationId: orgId } },
+          },
           data: { order: i },
         })
       )

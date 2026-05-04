@@ -1,14 +1,13 @@
-import { db } from "@/lib/db";
+import { notFound } from "next/navigation";
 import { getEventCampaigns } from "@/lib/queries/event-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { EventsListClient } from "@/components/events/events-list-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
-  }
+  const org = await getCurrentOrg();
+  if (!org) notFound();
 
   const campaigns = await getEventCampaigns(org.id);
 

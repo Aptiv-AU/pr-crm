@@ -2,6 +2,15 @@ import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { OutreachStatus } from "@prisma/client";
 
+/**
+ * P0-1: hard cap at 500 most-recent rows. The /outreach page renders
+ * everything as a client-side Kanban; without this, an org with 50K
+ * outreaches blows past Vercel's 4.5 MB RSC payload cap and OOMs on
+ * mobile. Server-side filter/paginate is the proper fix; this cap
+ * stops the bleeding until that ships.
+ */
+export const OUTREACH_LIST_HARD_LIMIT = 500;
+
 export async function getAllOutreaches(organizationId: string) {
   return db.outreach.findMany({
     where: { campaign: { organizationId } },
@@ -19,6 +28,7 @@ export async function getAllOutreaches(organizationId: string) {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: OUTREACH_LIST_HARD_LIMIT,
   });
 }
 

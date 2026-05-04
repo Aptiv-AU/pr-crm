@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getCampaignByIdCached } from "@/lib/queries/campaign-queries";
 import { getContacts } from "@/lib/queries/contact-queries";
 import { getSuppliers } from "@/lib/queries/supplier-queries";
+import { getCurrentOrg } from "@/lib/queries/org-queries";
 import { CampaignDetailClient } from "@/components/campaigns/campaign-detail-client";
 import { isCuid } from "@/lib/slug/resolve";
 
@@ -21,15 +23,17 @@ export default async function CampaignDetailPage({
 }) {
   const { campaignId: handle } = await params;
 
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({ data: { name: "NWPR", currency: "AUD" } });
-  }
+  const [org, session] = await Promise.all([getCurrentOrg(), auth()]);
+  if (!org) notFound();
 
-  // Resolve handle (cuid or slug) → cuid
+  // Resolve handle (cuid or slug) → cuid, scoped to caller's org.
   let campaignId: string | null = null;
   if (isCuid(handle)) {
-    campaignId = handle;
+    const owned = await db.campaign.findFirst({
+      where: { id: handle, organizationId: org.id },
+      select: { id: true },
+    });
+    campaignId = owned?.id ?? null;
   } else {
     const found = await db.campaign.findFirst({
       where: { organizationId: org.id, slug: handle },
@@ -43,7 +47,7 @@ export default async function CampaignDetailPage({
   }
 
   const [campaign, orgContacts, orgSuppliers, allClients, emailAccount, suppressions] = await Promise.all([
-    getCampaignByIdCached(campaignId),
+    getCampaignByIdCached(campaignId, org.id),
     getContacts(org.id),
     getSuppliers(org.id),
     db.client.findMany({
@@ -51,7 +55,15 @@ export default async function CampaignDetailPage({
       select: { id: true, name: true, initials: true, colour: true, bgColour: true },
       orderBy: { name: "asc" },
     }),
-    db.emailAccount.findFirst(),
+    // C-4: only show "send via Gmail/Outlook" if the *viewing user* has a
+    // mailbox connected. Was an unscoped findFirst leaking another tenant's
+    // address.
+    session?.user?.id
+      ? db.emailAccount.findFirst({
+          where: { userId: session.user.id },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
     db.suppression.findMany({
       where: { organizationId: org.id },
       select: { email: true },

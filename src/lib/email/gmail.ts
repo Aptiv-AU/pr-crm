@@ -120,6 +120,7 @@ export async function exchangeGoogleCode(
  */
 export async function refreshGoogleToken(refreshToken: string): Promise<{
   accessToken: string;
+  refreshToken: string | null;
   expiresAt: Date;
 }> {
   const client = oauthClient("");
@@ -127,6 +128,7 @@ export async function refreshGoogleToken(refreshToken: string): Promise<{
   const { credentials } = await client.refreshAccessToken();
   return {
     accessToken: credentials.access_token!,
+    refreshToken: credentials.refresh_token ?? null,
     expiresAt: new Date(credentials.expiry_date ?? Date.now() + 3500 * 1000),
   };
 }
@@ -147,6 +149,12 @@ export async function getValidGoogleToken(emailAccountId: string): Promise<strin
     data: {
       accessToken: refreshed.accessToken,
       expiresAt: refreshed.expiresAt,
+      // M-9: persist a rotated refresh token if Google returned one.
+      // Without this, eventually the stored refresh_token expires and
+      // the account silently breaks.
+      ...(refreshed.refreshToken
+        ? { refreshToken: refreshed.refreshToken }
+        : {}),
     },
   });
   return refreshed.accessToken;

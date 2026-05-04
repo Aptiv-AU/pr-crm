@@ -8,6 +8,7 @@ import { generateText } from "@/lib/ai/provider";
 import { buildContactSuggestionPrompt } from "@/lib/ai/prompts";
 import { providerFor, type SendResult } from "@/lib/email/provider";
 import { sanitizeSignatureHtml } from "@/lib/compose/sanitize-html";
+import { escapeHtml, safeFontFamily, safeFontSize } from "@/lib/html/escape";
 import { OutreachStatus, type EmailAccount, type Prisma } from "@prisma/client";
 
 type SendableOutreach = Prisma.OutreachGetPayload<{
@@ -222,7 +223,7 @@ export const deleteOutreach = action("deleteOutreach", async (outreachId: string
 
 export const suggestContacts = action("suggestContacts", async (campaignId: string) => {
   const orgId = await requireOrgId();
-  const config = await getAIConfig();
+  const config = await getAIConfig(orgId);
   if (!config) {
     throw new Error("No AI provider configured. Add an API key in environment variables.");
   }
@@ -248,11 +249,17 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
     })
     .then((cc: { contactId: string }[]) => cc.map((c) => c.contactId));
 
+  // P1-4: select only the columns the prompt actually uses. Was loading
+  // every column for every contact in the org and feeding the row to the
+  // model verbatim. Also cap at 500 — the prompt becomes useless above
+  // that and a 50K-row org would blow the context window anyway.
   const contacts = await db.contact.findMany({
     where: {
       organizationId: orgId,
       id: { notIn: existingContactIds.length > 0 ? existingContactIds : undefined },
     },
+    select: { id: true, name: true, outlet: true, beat: true, tier: true },
+    take: 500,
   });
 
   if (contacts.length === 0) {
@@ -263,7 +270,7 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
     campaign.brief,
     campaign.client.name,
     campaign.client.industry,
-    contacts.map((c: typeof contacts[number]) => ({
+    contacts.map((c) => ({
       id: c.id,
       name: c.name,
       outlet: c.outlet ?? "",
@@ -291,10 +298,48 @@ export const suggestContacts = action("suggestContacts", async (campaignId: stri
   return { data: { suggestions } };
 });
 
+/**
+ * Atomically claim an approved outreach for sending. Returns true if this
+ * caller acquired the claim, false if another sender (the cron, or a
+ * concurrent manual click) got there first. The cron uses its own claim
+ * path (`claimDueOutreaches`); this is only for the manual / bulk paths.
+ */
+async function claimForManualSend(outreachId: string, orgId: string): Promise<boolean> {
+  const result = await db.outreach.updateMany({
+    where: {
+      id: outreachId,
+      status: OutreachStatus.approved,
+      claimedAt: null,
+      campaign: { organizationId: orgId },
+    },
+    data: { claimedAt: new Date() },
+  });
+  return result.count > 0;
+}
+
 export async function sendOutreachForOrg(outreachId: string, orgId: string) {
-  const account = await requireEmailAccount(orgId);
-  const token = await providerFor(account).getValidToken(account.id);
-  return sendOutreachWithAccount(outreachId, orgId, account, token);
+  // H-4: atomically take the claim before resolving the mailbox or doing
+  // any work. Two parallel manual sends used to both pass the read-only
+  // check and dual-deliver.
+  const claimed = await claimForManualSend(outreachId, orgId);
+  if (!claimed) {
+    throw new Error("Outreach is not approved or is already being sent");
+  }
+  try {
+    const account = await requireEmailAccount(orgId);
+    const token = await providerFor(account).getValidToken(account.id);
+    return await sendOutreachWithAccount(outreachId, orgId, account, token);
+  } catch (err) {
+    // Release the claim on any failure so a retry is possible. (sent rows
+    // never come back here — markOutreachSent has already moved status.)
+    await db.outreach
+      .updateMany({
+        where: { id: outreachId, status: OutreachStatus.approved },
+        data: { claimedAt: null },
+      })
+      .catch(() => {});
+    throw err;
+  }
 }
 
 /**
@@ -387,9 +432,15 @@ export const cancelScheduledOutreach = action(
     const orgId = await requireOrgId();
     const existing = await db.outreach.findFirst({
       where: { id: outreachId, campaign: { organizationId: orgId } },
-      select: { campaignId: true, contactId: true },
+      select: { campaignId: true, contactId: true, status: true },
     });
     if (!existing) throw new Error("Outreach not found");
+    // B-6: only `approved` rows can be unscheduled. Without this, a
+    // sent/replied row could have its scheduledAt cleared (UI cosmetic
+    // bug, but worth blocking).
+    if (existing.status !== OutreachStatus.approved) {
+      throw new Error("Only approved outreach can be unscheduled");
+    }
     await db.outreach.update({
       where: { id: outreachId },
       data: { scheduledAt: null, claimedAt: null },
@@ -408,19 +459,15 @@ async function loadSendableOutreach(
   id: string,
   orgId: string
 ): Promise<SendableOutreach> {
+  // The claim handshake is now done by the caller (cron's
+  // `claimDueOutreaches` or `claimForManualSend`); a `claimedAt: null`
+  // filter here would reject already-claimed rows in the cron path.
   const outreach = await db.outreach.findFirst({
-    where: {
-      id,
-      campaign: { organizationId: orgId },
-      // Race guard: a row currently being claimed by the cron worker (or a
-      // concurrent manual click) must not be picked up here. `claimedAt` is
-      // set atomically by `claimDueOutreaches` before any send happens.
-      claimedAt: null,
-    },
+    where: { id, campaign: { organizationId: orgId } },
     include: { contact: true, campaign: true },
   });
   if (!outreach) {
-    throw new Error("Outreach not found or already being sent");
+    throw new Error("Outreach not found");
   }
   if (outreach.status !== OutreachStatus.approved) {
     throw new Error("Outreach must be approved before sending");
@@ -453,18 +500,25 @@ async function requireEmailAccount(orgId: string): Promise<EmailAccount> {
 }
 
 function renderOutreachHtml(body: string, account: EmailAccount): string {
+  // Body is plain text typed (or token-rendered) by the user; HTML-escape
+  // before paragraph wrapping or any `<script>`/`<img onerror>` payload
+  // becomes live HTML in the recipient's inbox.
   const paragraphHtml = body
     .split(/\n\n+/)
-    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
     .join("");
 
-  const fontFamily =
-    account.fontFamily ??
-    (account.provider === "google"
+  const fontFamilyDefault =
+    account.provider === "google"
       ? "Arial, Helvetica, sans-serif"
-      : "Aptos, Calibri, sans-serif");
-  const fontSize =
-    account.fontSize ?? (account.provider === "google" ? "13px" : "11pt");
+      : "Aptos, Calibri, sans-serif";
+  const fontSizeDefault = account.provider === "google" ? "13px" : "11pt";
+  // Account-stored fonts are written by setManualSignature/resolveStyle,
+  // both of which can be poisoned (an attacker-controlled signature could
+  // store `Arial; "><script>...`). Validate against an allow-list so a
+  // bad value falls back rather than breaking out of the style attribute.
+  const fontFamily = safeFontFamily(account.fontFamily, fontFamilyDefault);
+  const fontSize = safeFontSize(account.fontSize, fontSizeDefault);
   const signature = sanitizeSignatureHtml(account.signatureHtml);
 
   const wrap = (inner: string) =>
